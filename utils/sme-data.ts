@@ -1,0 +1,362 @@
+/**
+ * Centralized SME data utilities and global color system
+ * This ensures consistent pillar scores, colors, and styling across all views
+ */
+
+// ============================================================================
+// GLOBAL COLOR SYSTEM
+// ============================================================================
+
+/**
+ * Risk Level Colors
+ * Used for: Risk badges, scatter plot dots, risk indicators
+ */
+export const RISK_COLORS = {
+  Low: {
+    bg: 'bg-emerald-500',
+    bgLight: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    textDark: 'text-emerald-600',
+    border: 'border-emerald-100',
+    borderDark: 'border-emerald-200',
+    dot: 'bg-emerald-500',
+    chart: '#10b981', // emerald-500
+  },
+  Medium: {
+    bg: 'bg-amber-500',
+    bgLight: 'bg-amber-50',
+    text: 'text-amber-700',
+    textDark: 'text-amber-600',
+    border: 'border-amber-100',
+    borderDark: 'border-amber-200',
+    dot: 'bg-amber-500',
+    chart: '#f59e0b', // amber-500
+  },
+  High: {
+    bg: 'bg-rose-500',
+    bgLight: 'bg-rose-50',
+    text: 'text-rose-700',
+    textDark: 'text-rose-600',
+    border: 'border-rose-100',
+    borderDark: 'border-rose-200',
+    dot: 'bg-rose-500',
+    chart: '#f43f5e', // rose-500
+  }
+} as const
+
+/**
+ * Readiness Score Colors
+ * Used for: Score badges, progress bars, readiness indicators
+ */
+export const READINESS_COLORS = {
+  'Investment Ready': { // 80-100
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-800',
+    border: 'border-emerald-200',
+    progress: 'bg-emerald-600',
+    chart: '#059669', // emerald-600
+  },
+  'Near Ready': { // 60-79
+    bg: 'bg-amber-100',
+    text: 'text-amber-800',
+    border: 'border-amber-200',
+    progress: 'bg-amber-500',
+    chart: '#f59e0b', // amber-500
+  },
+  'Early Stage': { // 40-59
+    bg: 'bg-amber-100', // Same as Near Ready
+    text: 'text-amber-800',
+    border: 'border-amber-200',
+    progress: 'bg-amber-500',
+    chart: '#f59e0b', // amber-500
+  },
+  'Pre-Investment': { // 0-39
+    bg: 'bg-rose-100',
+    text: 'text-rose-800',
+    border: 'border-rose-200',
+    progress: 'bg-rose-600',
+    chart: '#e11d48', // rose-600
+  }
+} as const
+
+/**
+ * Status Colors
+ * Used for: Goal status, action status, general status indicators
+ */
+export const STATUS_COLORS = {
+  active: {
+    bg: 'bg-cyan-100',
+    text: 'text-cyan-700',
+    border: 'border-cyan-200',
+    dot: 'bg-cyan-500',
+  },
+  completed: {
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    dot: 'bg-emerald-500',
+  },
+  achieved: {
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    dot: 'bg-emerald-500',
+  },
+  pending: {
+    bg: 'bg-amber-100',
+    text: 'text-amber-700',
+    border: 'border-amber-200',
+    dot: 'bg-amber-500',
+  },
+  overdue: {
+    bg: 'bg-rose-100',
+    text: 'text-rose-700',
+    border: 'border-rose-200',
+    dot: 'bg-rose-500',
+  },
+  cancelled: {
+    bg: 'bg-gray-100',
+    text: 'text-gray-700',
+    border: 'border-gray-200',
+    dot: 'bg-gray-500',
+  }
+} as const
+
+/**
+ * Priority Colors
+ * Used for: Action priorities, task priorities
+ */
+export const PRIORITY_COLORS = {
+  high: {
+    bg: 'bg-rose-50',
+    text: 'text-rose-700',
+    border: 'border-rose-100',
+  },
+  medium: {
+    bg: 'bg-amber-50',
+    text: 'text-amber-700',
+    border: 'border-amber-100',
+  },
+  low: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-100',
+  }
+} as const
+
+/**
+ * Primary Action Colors
+ * Used for: Primary buttons, CTAs, success indicators
+ */
+export const PRIMARY_COLORS = {
+  primary: 'bg-[#198754]', // Green primary
+  primaryHover: 'hover:bg-[#157347]',
+  primaryText: 'text-white',
+  success: 'bg-emerald-600',
+  successHover: 'hover:bg-emerald-700',
+  successText: 'text-white',
+} as const
+
+/**
+ * Chart Colors for Data Visualization
+ * Used for: All charts, graphs, and data visualizations
+ */
+export const CHART_COLORS = {
+  risk: {
+    low: '#10b981',      // emerald-500
+    medium: '#f59e0b',   // amber-500
+    high: '#f43f5e',     // rose-500
+  },
+  readiness: {
+    investmentReady: '#059669',  // emerald-600
+    nearReady: '#f59e0b',        // amber-500 (Yellow)
+    earlyStage: '#f59e0b',       // amber-500 (Yellow)
+    preInvestment: '#e11d48',    // rose-600 (Red)
+  },
+  pillar: {
+    excellent: '#10b981',  // 80-100: emerald-500
+    good: '#f59e0b',       // 60-79: amber-500 (Yellow)
+    fair: '#f59e0b',       // 40-59: amber-500 (Yellow)
+    poor: '#f43f5e',       // 0-39: rose-500 (Red)
+  },
+  growth: {
+    high: '#10b981',      // emerald-500
+    medium: '#0891b2',    // cyan-600
+    low: '#f59e0b',       // amber-500
+  }
+} as const
+
+// ============================================================================
+// HELPER FUNCTIONS FOR COLORS
+// ============================================================================
+
+/**
+ * Get risk level color classes
+ */
+export const getRiskColors = (risk: string) => {
+  return RISK_COLORS[risk as keyof typeof RISK_COLORS] || RISK_COLORS.Medium
+}
+
+/**
+ * Get readiness level from score
+ */
+export const getReadinessLevel = (score: number): keyof typeof READINESS_COLORS => {
+  if (score >= 70) return 'Investment Ready'
+  if (score >= 60) return 'Near Ready'
+  if (score >= 40) return 'Early Stage'
+  return 'Pre-Investment'
+}
+
+/**
+ * Get readiness color classes
+ */
+export const getReadinessColors = (score: number) => {
+  const level = getReadinessLevel(score)
+  return READINESS_COLORS[level]
+}
+
+/**
+ * Get status color classes
+ */
+export const getStatusColors = (status: string) => {
+  return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || STATUS_COLORS.pending
+}
+
+/**
+ * Get priority color classes
+ */
+export const getPriorityColors = (priority: string) => {
+  return PRIORITY_COLORS[priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS.medium
+}
+
+/**
+ * Get pillar color based on score
+ */
+export const getPillarChartColor = (score: number): string => {
+  if (score >= 70) return CHART_COLORS.pillar.excellent
+  if (score >= 60) return CHART_COLORS.pillar.good
+  if (score >= 40) return CHART_COLORS.pillar.fair
+  return CHART_COLORS.pillar.poor
+}
+
+// ============================================================================
+// SME DATA GENERATION
+// ============================================================================
+
+// Deterministic random generator for consistent data
+const seededRandom = (seed: number): number => {
+  const x = Math.sin(seed) * 10000
+  return x - Math.floor(x)
+}
+
+// Standard pillar names in consistent order
+export const PILLAR_NAMES = [
+  'Team & Leadership',
+  'Business Model',
+  'Market & Traction',
+  'Financial Readiness',
+  'Operations',
+  'Legal & Governance',
+  'Data & Digital Maturity',
+  'Growth & Scalability'
+]
+
+export interface PillarScore {
+  name: string
+  score: number
+  potential: number
+}
+
+/**
+ * Generate consistent pillar scores for an SME
+ * This function MUST be used everywhere to ensure data consistency
+ * 
+ * @param smeId - The unique ID of the SME
+ * @param baseScore - The overall readiness score of the SME
+ * @returns Array of pillar scores with consistent values
+ */
+export const generatePillarScores = (smeId: string | number, baseScore: number): PillarScore[] => {
+  const id = Number(smeId) || 1
+  
+  return PILLAR_NAMES.map((name, index) => {
+    // Use consistent seed based on ID and pillar index
+    const variance = (seededRandom(id * 100 + index * 10) * 30) - 15
+    let score = Math.round(baseScore + variance)
+    
+    // Clamp score between 10 and 95
+    score = Math.max(10, Math.min(95, score))
+    
+    // Calculate improvement potential (40% of remaining score to 100)
+    const potential = Math.round((100 - score) * 0.4)
+    
+    return {
+      name,
+      score,
+      potential
+    }
+  })
+}
+
+/**
+ * Generate consistent progress/history data for an SME
+ * 
+ * @param smeId - The unique ID of the SME
+ * @param currentScore - Current readiness score
+ * @param readinessHistory - Optional existing history array
+ * @returns Array of historical data points
+ */
+export const generateProgressData = (
+  smeId: string | number,
+  currentScore: number,
+  readinessHistory?: number[]
+): { date: string; score: number }[] => {
+  // If readiness history exists in the data, use it
+  if (readinessHistory && readinessHistory.length > 0) {
+    return readinessHistory.map((score, index) => ({
+      date: `Month ${index + 1}`,
+      score
+    }))
+  }
+  
+  // Otherwise generate consistent historical data
+  const id = Number(smeId) || 1
+  const prevScore = Math.max(10, currentScore - Math.round(seededRandom(id * 50) * 20))
+  
+  return [
+    { date: 'Jan 2024', score: prevScore },
+    { date: 'Jul 2024', score: currentScore }
+  ]
+}
+
+/**
+ * Get risk level from score
+ */
+export const getRiskFromScore = (score: number): string => {
+  if (score >= 70) return 'Low'
+  if (score >= 60) return 'Medium'
+  return 'High'
+}
+
+/**
+ * Get pillar color class based on score (for progress bars)
+ */
+export const getPillarColor = (score: number): string => {
+  const colors = getReadinessColors(score)
+  return colors.progress || 'bg-gray-500'
+}
+
+/**
+ * Get risk badge styles (DEPRECATED - use getRiskColors instead)
+ */
+export const getRiskBadgeStyles = (risk: string): string => {
+  const colors = getRiskColors(risk as 'Low' | 'Medium' | 'High')
+  return `${colors.bgLight} ${colors.textDark} ${colors.border}`
+}
+
+/**
+ * Get risk dot styles (DEPRECATED - use getRiskColors instead)
+ */
+export const getRiskDotStyles = (risk: string): string => {
+  const colors = getRiskColors(risk as 'Low' | 'Medium' | 'High')
+  return colors.dot
+}
