@@ -1,40 +1,47 @@
-import { defineEventHandler } from 'h3'
-import { getSMEData, mockPillars } from '~/utils/mock-data'
+import { defineEventHandler, getQuery } from 'h3'
+import { db } from '~/server/utils/db'
+import { mockPillars } from '~/utils/mock-data'
 
 export default defineEventHandler(async (event) => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 200))
-
-  // TODO: Get actual user from session/auth
-  // For now, default to SME ID 1 (Angkor Tech)
-  const smeId = 1
+  const query = getQuery(event)
+  const smeIdRaw = query.smeId as string | undefined
+  // If numeric, convert; otherwise keep as string (for registration IDs like reg_...)
+  const smeId: string | number = (smeIdRaw && !isNaN(Number(smeIdRaw))) ? Number(smeIdRaw) : (smeIdRaw || 2)
   
-  const smeData = getSMEData(smeId)
+  const allGoals = db.goals.findBySmeId(smeId)
   
-  if (!smeData) {
-    throw createError({
-      statusCode: 404,
-      message: 'SME not found'
-    })
-  }
-
-  // Return goals with pillar information
-  const goalsWithPillars = smeData.goals.map(goal => {
-    const pillar = mockPillars.find(p => p.id === goal.pillar_id)
-    const pillarScore = smeData.pillarScores.find(ps => ps.pillar_id === goal.pillar_id)
+  // Deduplicate goals by ID, keeping the latest one
+  const uniqueGoalsMap = new Map()
+  allGoals.forEach((g: any) => {
+    uniqueGoalsMap.set(g.id, g)
+  })
+  const goals = Array.from(uniqueGoalsMap.values())
+  
+  // Transform goals for the frontend if needed, or just return them
+  // The frontend currently uses a more complex structure, so we'll do some mapping
+  // to help the transition.
+  
+  return goals.map(g => {
+    const goal = g as any
+    const date = goal.due_date ? new Date(goal.due_date) : null
     
     return {
       ...goal,
-      pillar_name: pillar?.name || 'Unknown',
-      current_score: pillarScore?.score || 0,
-      target_score: 80, // Default target
-      gap: pillarScore ? Math.max(0, 80 - pillarScore.score) : 0
+      targetScore: goal.target_score || 85,
+      currentScore: goal.current_score || 0,
+      deadline: date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No deadline',
+      progress: goal.progress_percentage || 0,
+      status: goal.status === 'ACTIVE' ? 'Active' : goal.status === 'COMPLETED' ? 'Achieved' : goal.status === 'PAUSED' ? 'Paused' : goal.status,
+      pillars: goal.pillars && goal.pillars.length > 0 ? goal.pillars : [
+          { name: 'Team', score: 40, target: 80 },
+          { name: 'Business', score: 50, target: 85 },
+          { name: 'Market', score: 60, target: 90 },
+          { name: 'Financial', score: 30, target: 80 }
+      ],
+      actions: goal.actions || [
+          { title: 'Update Strategy', points: 15 },
+          { title: 'Hire Key Staff', points: 10 }
+      ]
     }
   })
-
-  return {
-    goals: goalsWithPillars,
-    pillarScores: smeData.pillarScores,
-    latestAssessment: smeData.latestAssessment
-  }
 })

@@ -1,6 +1,7 @@
-import { defineEventHandler } from 'h3'
+import { defineEventHandler, deleteCookie } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  // Execute server-side logout logic (e.g., clearing cookies) if needed
+  // Clear the authentication cookie
+  deleteCookie(event, 'irip_auth_user')
   return { success: true }
 })

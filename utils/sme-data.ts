@@ -276,6 +276,14 @@ export interface PillarScore {
  * @returns Array of pillar scores with consistent values
  */
 export const generatePillarScores = (smeId: string | number, baseScore: number): PillarScore[] => {
+  if (baseScore === 0) {
+    return PILLAR_NAMES.map(name => ({
+      name,
+      score: 0,
+      potential: 0
+    }))
+  }
+  
   const id = Number(smeId) || 1
   
   return PILLAR_NAMES.map((name, index) => {
@@ -317,6 +325,8 @@ export const generateProgressData = (
       score
     }))
   }
+  
+  if (currentScore === 0) return []
   
   // Otherwise generate consistent historical data
   const id = Number(smeId) || 1

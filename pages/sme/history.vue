@@ -8,7 +8,7 @@
                     <p class="text-gray-500">Track your investment readiness progress over time</p>
                 </div>
                 <button @click="toggleCompareMode" :class="[
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2',
+                    'px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2',
                     isCompareMode
                         ? 'bg-gray-800 text-white hover:bg-gray-900'
                         : 'bg-teal-600 text-white hover:bg-teal-700'
@@ -50,7 +50,7 @@
 
             <!-- Stats Cards -->
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
                     <div class="flex items-center gap-3 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 text-gray-400">
@@ -62,7 +62,7 @@
                     <div class="text-3xl font-bold text-gray-900">{{ assessments.length }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
                     <div class="flex items-center gap-3 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 text-teal-600">
@@ -74,7 +74,7 @@
                     <div class="text-3xl font-bold text-teal-600">{{ currentScore }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
                     <div class="flex items-center gap-3 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 text-green-600">
@@ -86,7 +86,7 @@
                     <div class="text-3xl font-bold text-green-600">+{{ totalChange }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
                     <div class="flex items-center gap-3 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 text-blue-600">
@@ -98,7 +98,7 @@
                     <div class="text-3xl font-bold text-blue-600">+{{ avgChange }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
                     <div class="flex items-center gap-3 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 text-yellow-600">
@@ -110,7 +110,7 @@
                     <div class="text-3xl font-bold text-yellow-600">{{ bestScore }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
                     <div class="flex items-center gap-3 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 text-gray-400">
@@ -124,7 +124,7 @@
             </div>
 
             <!-- Tabs -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100">
                 <div class="border-b border-gray-200">
                     <nav class="flex gap-8 px-6" aria-label="Tabs">
                         <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id" :class="[
@@ -203,7 +203,7 @@
                                     </div>
                                 </div>
                                 <button @click="viewDetails(assessment)"
-                                    class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+                                    class="px-4 py-2 border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                         stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -308,13 +308,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-else class="text-center text-gray-400 py-20 bg-white rounded-lg border border-gray-200">
+                        <div v-else class="text-center text-gray-400 py-20 bg-white rounded-md border border-gray-200">
                             <ChartBarIcon class="w-12 h-12 mx-auto mb-3 text-gray-300" />
                             <p class="text-lg font-medium text-gray-900">No Comparison Selected</p>
                             <p class="text-sm mt-1">Please enable "Compare Mode" and select 2 assessments to view
                                 comparison.</p>
                             <button @click="toggleCompareMode"
-                                class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700">
+                                class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-md text-sm font-medium hover:bg-teal-700">
                                 Start Comparing
                             </button>
                         </div>
@@ -326,7 +326,7 @@
         <!-- Assessment Details Modal -->
         <div v-if="selectedAssessment" @click="selectedAssessment = null"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div @click.stop class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div @click.stop class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6 border-b border-gray-200 flex items-center justify-between">
                     <div>
                         <h2 class="text-xl font-bold text-gray-900">Assessment Details</h2>
@@ -379,9 +379,9 @@
 </template>
 
 <script setup lang="ts">
-import ProgressChart from '~/components/dashboard/ProgressChart.vue'
-import PillarComparisonChart from '~/components/dashboard/PillarComparisonChart.vue'
-import ComparisonRadarChart from '~/components/dashboard/ComparisonRadarChart.vue'
+import ProgressChart from '~/components/DashboardProgressChart.vue'
+import PillarComparisonChart from '~/components/DashboardPillarComparisonChart.vue'
+import ComparisonRadarChart from '~/components/DashboardComparisonRadarChart.vue'
 import { ChartBarIcon } from '@heroicons/vue/24/outline'
 
 const activeTab = ref('score-trends') // Default to score trends as requested
@@ -396,57 +396,27 @@ const tabs = [
     { id: 'comparison', name: 'Comparison' }
 ]
 
-// Mock data
-const assessments = ref([
-    {
-        id: 2,
-        name: 'Assessment #2',
-        date: 'July 15, 2024',
-        score: 56,
-        change: 15,
-        isLatest: true,
-        topPillars: [
-            { name: 'Team', score: 39 },
-            { name: 'Business', score: 58 },
-            { name: 'Market', score: 77 },
-            { name: 'Financial', score: 59 }
-        ],
-        pillars: [
-            { name: 'Team & Leadership', score: 39 },
-            { name: 'Business Model', score: 58 },
-            { name: 'Market & Traction', score: 77 },
-            { name: 'Financial Readiness', score: 59 },
-            { name: 'Operations', score: 66 },
-            { name: 'Legal & Governance', score: 54 },
-            { name: 'Data & Digital Maturity', score: 42 },
-            { name: 'Growth & Scalability', score: 53 }
-        ]
-    },
-    {
-        id: 1,
-        name: 'Assessment #1',
-        date: 'January 15, 2024',
-        score: 41,
-        change: null,
-        isLatest: false,
-        topPillars: [
-            { name: 'Team', score: 24 },
-            { name: 'Business', score: 43 },
-            { name: 'Market', score: 62 },
-            { name: 'Financial', score: 44 }
-        ],
-        pillars: [
-            { name: 'Team & Leadership', score: 24 },
-            { name: 'Business Model', score: 43 },
-            { name: 'Market & Traction', score: 62 },
-            { name: 'Financial Readiness', score: 44 },
-            { name: 'Operations', score: 51 },
-            { name: 'Legal & Governance', score: 39 },
-            { name: 'Data & Digital Maturity', score: 28 },
-            { name: 'Growth & Scalability', score: 38 }
-        ]
+const assessments = ref<any[]>([])
+const isLoading = ref(true)
+
+const authStore = useAuthStore()
+
+const fetchHistory = async () => {
+    isLoading.value = true
+    try {
+        const smeId = authStore.user?.company?.id || 3
+        const data = await $fetch(`/api/assessment/history?smeId=${smeId}`)
+        assessments.value = data as any[]
+    } catch (e) {
+        console.error('Failed to fetch history:', e)
+    } finally {
+        isLoading.value = false
     }
-])
+}
+
+onMounted(() => {
+    fetchHistory()
+})
 
 const currentScore = computed(() => assessments.value[0]?.score || 0)
 const totalChange = computed(() => {
@@ -550,11 +520,11 @@ const comparisonData = computed(() => {
         old: oldAss,
         new: newAss,
         radarData: {
-            labels: oldAss.pillars.map(p => p.name.split(' ')[0]),
+            labels: oldAss.pillars.map((p: any) => p.name.split(' ')[0]),
             datasets: [
                 {
                     label: newAss.date, // New (Teal)
-                    data: newAss.pillars.map(p => p.score),
+                    data: newAss.pillars.map((p: any) => p.score),
                     backgroundColor: 'rgba(20, 184, 166, 0.2)',
                     borderColor: '#14B8A6',
                     pointBackgroundColor: '#14B8A6',
@@ -564,7 +534,7 @@ const comparisonData = computed(() => {
                 },
                 {
                     label: oldAss.date, // Old (Blue)
-                    data: oldAss.pillars.map(p => p.score),
+                    data: oldAss.pillars.map((p: any) => p.score),
                     backgroundColor: 'rgba(59, 130, 246, 0.2)',
                     borderColor: '#3B82F6',
                     pointBackgroundColor: '#3B82F6',
@@ -574,9 +544,9 @@ const comparisonData = computed(() => {
                 }
             ]
         },
-        tableData: oldAss.pillars.map((p, i) => {
+        tableData: oldAss.pillars.map((p: any, i: number) => {
             const oldScore = p.score
-            const newScore = newAss.pillars.find(np => np.name === p.name)?.score || 0
+            const newScore = newAss.pillars.find((np: any) => np.name === p.name)?.score || 0
             return {
                 name: p.name,
                 oldScore,
@@ -597,21 +567,23 @@ const chartData = computed(() => {
 })
 
 const pillarChartData = computed(() => {
-    // Take up to 3 latest assessments for comparison
-    const recentAssessments = assessments.value.slice(0, 3)
+    // Show all assessments in the bar chart, or the selected ones if in compare mode
+    const sourceAssessments = isCompareMode.value && selectedAssessmentIds.value.length > 0
+        ? assessments.value.filter(a => selectedAssessmentIds.value.includes(a.id))
+        : assessments.value
 
-    // Get unique pillar names from the first assessment (assuming all have same structure)
-    const pillarNames = recentAssessments[0]?.pillars.map(p => p.name) || []
+    // Get unique pillar names from the first assessment
+    const pillarNames = sourceAssessments[0]?.pillars.map((p: any) => p.name) || []
 
     return {
         labels: pillarNames,
-        datasets: recentAssessments.map((assessment, index) => {
-            const colors = ['#14B8A6', '#3B82F6', '#6366F1'] // Teal, Blue, Indigo
+        datasets: sourceAssessments.map((assessment, index) => {
+            const colors = ['#14B8A6', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B']
             const color = colors[index % colors.length]
 
             return {
                 label: assessment.name,
-                data: assessment.pillars.map(p => p.score),
+                data: assessment.pillars.map((p: any) => p.score),
                 backgroundColor: color,
                 borderColor: color,
                 borderWidth: 1,

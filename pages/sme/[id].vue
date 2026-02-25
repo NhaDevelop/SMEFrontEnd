@@ -11,13 +11,17 @@
                     <div>
                         <div class="flex items-center gap-3">
                             <h1 class="text-2xl font-bold text-gray-900">{{ smeData.name }}</h1>
-                            <span
-                                class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                                Medium Risk
+                            <span :class="[
+                                'px-2.5 py-0.5 rounded-full text-xs font-bold border',
+                                getRiskBadgeClass(smeData.riskLevel)
+                            ]">
+                                {{ smeData.riskLevel }} Risk
                             </span>
-                            <span
-                                class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                Early Stage
+                            <span :class="[
+                                'px-2.5 py-0.5 rounded-full text-xs font-bold border',
+                                getStageBadgeClass(smeData.readinessStatus)
+                            ]">
+                                {{ smeData.readinessStatus || 'Early Stage' }}
                             </span>
                         </div>
                         <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
@@ -63,9 +67,12 @@
                             </div>
                             <div class="h-12 w-px bg-gray-100"></div>
                             <div>
-                                <span
-                                    class="px-3 py-1 bg-gray-100 rounded-full text-xs font-bold text-gray-700 border border-gray-200">Early
-                                    Stage</span>
+                                <span :class="[
+                                    'px-3 py-1 rounded-full text-xs font-bold border',
+                                    getStageBadgeClass(smeData.readinessStatus)
+                                ]">
+                                    {{ smeData.readinessStatus || 'Early Stage' }}
+                                </span>
                                 <p class="text-xs text-gray-500 mt-2">Based on 8 readiness pillars</p>
                                 <p class="text-xs text-red-500 mt-0.5 font-bold">-15 pts since first assessment</p>
                             </div>
@@ -82,10 +89,12 @@
                     <!-- Financial Risk -->
                     <div
                         class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center">
-                        <span
-                            class="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold mb-1 border border-emerald-100">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            Low Risk
+                        <span :class="[
+                            'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-1 border',
+                            getRiskBadgeClass(smeData.riskLevel)
+                        ]">
+                            <span :class="['w-1.5 h-1.5 rounded-full', getRiskDotClass(smeData.riskLevel)]"></span>
+                            {{ smeData.riskLevel }} Risk
                         </span>
                         <p class="text-xs text-gray-500 mt-1 font-medium">Financial Risk</p>
                     </div>
@@ -93,13 +102,13 @@
                     <!-- Stats -->
                     <div
                         class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center">
-                        <span class="text-2xl font-bold text-gray-900">2</span>
+                        <span class="text-2xl font-bold text-gray-900">{{ assessmentCount }}</span>
                         <p class="text-xs text-gray-500 mt-1 font-medium">Assessments</p>
                     </div>
 
                     <div
                         class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center">
-                        <span class="text-2xl font-bold text-gray-900">5</span>
+                        <span class="text-2xl font-bold text-gray-900">{{ actions.length }}</span>
                         <p class="text-xs text-gray-500 mt-1 font-medium">Action Items</p>
                     </div>
                 </div>
@@ -129,7 +138,7 @@
                         </button>
                         <button @click="activeTab = 'history'"
                             :class="[activeTab === 'history' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
-                            <ClockIcon class="w-4 h-4" /> History (2)
+                            <ClockIcon class="w-4 h-4" /> History ({{ assessmentCount }})
                         </button>
                     </nav>
                 </div>
@@ -192,7 +201,8 @@
                     </div>
                 </div>
 
-                <SmeCompInfo v-if="activeTab === 'info'" :sme="smeData" />
+                <SmeCompInfo v-if="activeTab === 'info'" :sme="smeData" :highest="highestPillar" :lowest="lowestPillar"
+                    :assessmentCount="assessmentCount" :actionCount="actions.length" />
                 <SmePillarDetails v-if="activeTab === 'pillars'" :pillars="pillars" />
                 <SmeActions v-if="activeTab === 'actions'" :actions="actions" />
                 <SmeNotes v-if="activeTab === 'notes'" :smeName="smeData.name" />
@@ -225,12 +235,12 @@ import {
     ClockIcon,
     ArrowLongRightIcon
 } from '@heroicons/vue/24/outline'
-import RadarChart from '~/components/dashboard/RadarChart.vue'
-import ProgressChart from '~/components/dashboard/ProgressChart.vue'
-import SmeCompInfo from '~/components/sme/SmeCompInfo.vue'
-import SmePillarDetails from '~/components/sme/SmePillarDetails.vue'
-import SmeActions from '~/components/sme/SmeActions.vue'
-import SmeNotes from '~/components/sme/SmeNotes.vue'
+import RadarChart from '~/components/DashboardRadarChart.vue'
+import ProgressChart from '~/components/DashboardProgressChart.vue'
+import SmeCompInfo from '~/components/SmeCompInfo.vue'
+import SmePillarDetails from '~/components/SmePillarDetails.vue'
+import SmeActions from '~/components/SmeActions.vue'
+import SmeNotes from '~/components/SmeNotes.vue'
 
 import { useInvestorStore } from '~/stores/investor.store'
 import {
@@ -277,7 +287,8 @@ const smeData = computed(() => {
             readinessStatus: investorSme.stage, // Map to readinessStatus
             score: investorSme.score,
             growthPotential: investorSme.growthRate || 75, // Map or default
-            readinessHistory: investorSme.readinessHistory || []
+            readinessHistory: investorSme.readinessHistory || [],
+            pillars: (investorSme as any).pillars
         }
     }
 
@@ -292,7 +303,8 @@ const smeData = computed(() => {
         readinessStatus: 'Unknown',
         score: 0,
         growthPotential: 0,
-        readinessHistory: [] as number[]
+        readinessHistory: [] as number[],
+        pillars: undefined as any[] | undefined
     }
 })
 
@@ -304,9 +316,9 @@ const seededRandom = (seed: number) => {
 
 // Use centralized pillar score generation for consistency
 const pillars = computed(() => {
-    const scores = generatePillarScores(smeData.value.id, smeData.value.score || 50)
+    const scores = smeData.value.pillars || generatePillarScores(smeData.value.id, smeData.value.score ?? 0)
     // Add fullMark property for radar chart compatibility
-    return scores.map(pillar => ({
+    return scores.map((pillar: any) => ({
         ...pillar,
         fullMark: 100
     }))
@@ -316,7 +328,7 @@ const pillars = computed(() => {
 const progressData = computed(() => {
     return generateProgressData(
         smeData.value.id,
-        smeData.value.score || 50,
+        smeData.value.score ?? 0,
         smeData.value.readinessHistory
     )
 })
@@ -332,42 +344,81 @@ interface ActionItem {
 
 const actions = ref<ActionItem[]>([])
 
-const actionPool: Omit<ActionItem, 'completed'>[] = [
-    { title: 'Develop recurring revenue streams', priority: 'medium', pillar: 'Business Model', points: 5 },
-    { title: 'Expand market research and validation', priority: 'medium', pillar: 'Market & Traction', points: 11 },
-    { title: 'Implement quality control measures', priority: 'medium', pillar: 'Operations', points: 18 },
-    { title: 'Establish board governance practices', priority: 'medium', pillar: 'Legal & Governance', points: 18 },
-    { title: 'Enhance cybersecurity measures', priority: 'high', pillar: 'Data & Digital Maturity', points: 10 },
-    { title: 'Hire a dedicated CFO', priority: 'high', pillar: 'Team & Leadership', points: 15 },
-    { title: 'Create a 3-year financial forecast', priority: 'high', pillar: 'Financial Readiness', points: 12 },
-    { title: 'Standardize employee onboarding', priority: 'low', pillar: 'Team & Leadership', points: 5 },
-    { title: 'Register intellectual property', priority: 'medium', pillar: 'Legal & Governance', points: 8 },
-    { title: 'Launch customer loyalty program', priority: 'medium', pillar: 'Market & Traction', points: 7 },
-    { title: 'Audit supply chain partners', priority: 'medium', pillar: 'Operations', points: 9 },
-    { title: 'Migrate to cloud infrastructure', priority: 'medium', pillar: 'Data & Digital Maturity', points: 14 }
-]
 
-const generateActions = () => {
-    const id = Number(smeData.value.id) || 1
-    // Shuffle pool deterministically
-    const shuffled = [...actionPool].sort((a, b) => seededRandom(id + a.points) - 0.5)
-    // Take 4-7 items
-    const count = 4 + Math.floor(seededRandom(id) * 4)
+const assessmentCount = computed(() => smeData.value.readinessHistory?.length || 1)
 
-    actions.value = shuffled.slice(0, count).map(action => ({
-        ...action,
-        completed: false
-    }))
+const highestPillar = computed(() => {
+    if (!pillars.value || pillars.value.length === 0) return { name: 'N/A', score: 0 }
+    return pillars.value.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current)
+})
+
+const lowestPillar = computed(() => {
+    if (!pillars.value || pillars.value.length === 0) return { name: 'N/A', score: 0 }
+    return pillars.value.reduce((prev: any, current: any) => (prev.score < current.score) ? prev : current)
+})
+
+// Style Helpers
+const getRiskBadgeClass = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+        case 'high':
+            return 'bg-rose-100 text-rose-700 border-rose-200'
+        case 'medium':
+            return 'bg-amber-100 text-amber-700 border-amber-200'
+        case 'low':
+        default:
+            return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+    }
+}
+
+const getRiskDotClass = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+        case 'high':
+            return 'bg-rose-500'
+        case 'medium':
+            return 'bg-amber-500'
+        case 'low':
+        default:
+            return 'bg-emerald-500'
+    }
+}
+
+const getStageBadgeClass = (stage: string) => {
+    switch (stage?.toLowerCase()) {
+        case 'scaling':
+            return 'bg-indigo-100 text-indigo-700 border-indigo-200'
+        case 'growth':
+            return 'bg-blue-100 text-blue-700 border-blue-200'
+        case 'early stage':
+        default:
+            return 'bg-yellow-100 text-yellow-700 border-yellow-200'
+    }
+}
+
+const fetchRealActions = async () => {
+    if (!smeId.value) return
+    try {
+        const res: any = await $fetch(`/api/dashboard?smeId=${smeId.value}`)
+        if (res && res.actions) {
+            actions.value = res.actions.map((a: any) => ({
+                title: a.title,
+                priority: a.priority,
+                pillar: a.pillar,
+                points: a.impact || 10,
+                completed: a.status === 'completed'
+            }))
+        }
+    } catch (e) {
+        console.error('Failed to fetch real actions:', e)
+    }
 }
 
 onMounted(() => {
-    // Generate initially
-    generateActions()
+    // Fetch real actions to match SME portal exactly
+    fetchRealActions()
 })
 
-// Re-generate if SME changes (though page reload usually handles this)
-watch(() => smeData.value.id, () => {
-    generateActions()
+watch(() => smeId.value, () => {
+    fetchRealActions()
 })
 
 // Dynamically set layout based on user role

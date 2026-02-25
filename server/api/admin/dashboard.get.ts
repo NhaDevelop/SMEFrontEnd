@@ -1,58 +1,61 @@
 import { defineEventHandler } from 'h3'
-import { 
-  mockSMEProfiles, 
-  mockInvestorProfiles, 
-  mockPrograms, 
-  mockProgramEnrollments,
-  mockAssessments,
-  getAdminLogs,
-  getSMEData
-} from '~/utils/mock-data'
+import { db } from '~/server/utils/db'
+import { storage } from '~/server/utils/storage'
+import { seedUsers } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300))
 
+  const smes = db.smes.findAll()
+  const programs = db.programs.findAll()
+
+  const storageData = storage.get()
+  const assessments = storageData.assessments || []
+  const registrations = storageData.registrations || []
+
+  // Combine seed investors + approved registrations with role 'investor'
+  const seedInvestors = seedUsers.filter(u => u.role === 'investor')
+  const seedEmails = new Set(seedUsers.map(u => u.email.toLowerCase()))
+  const approvedInvestors = registrations.filter((r: any) => r.status === 'approved' && r.role === 'investor' && !seedEmails.has(r.email?.toLowerCase()))
+  const totalInvestors = seedInvestors.length + approvedInvestors.length
+
   // Calculate SME statistics
-  const totalSMEs = mockSMEProfiles.length
-  const completedAssessments = mockAssessments.filter(a => a.status === 'COMPLETED').length
-  const inProgressAssessments = mockAssessments.filter(a => a.status === 'IN_PROGRESS').length
+  const totalSMEs = smes.length
+  const completedAssessments = assessments.filter((a: any) => a.status === 'COMPLETED').length
+  const inProgressAssessments = assessments.filter((a: any) => a.status === 'IN_PROGRESS').length
   
   // Calculate average score from completed assessments
-  const completedAssessmentsList = mockAssessments.filter(a => a.status === 'COMPLETED')
+  const completedAssessmentsList = assessments.filter((a: any) => a.status === 'COMPLETED')
   const avgScore = completedAssessmentsList.length > 0
-    ? completedAssessmentsList.reduce((sum, a) => sum + (a.total_score || 0), 0) / completedAssessmentsList.length
+    ? completedAssessmentsList.reduce((sum: number, a: any) => sum + (a.total_score || 0), 0) / completedAssessmentsList.length
     : 0
 
-  // Get SMEs with their latest assessment data
-  const smesWithData = mockSMEProfiles.map(sme => {
-    const smeData = getSMEData(sme.id)
-    return {
-      ...sme,
-      latestAssessment: smeData?.latestAssessment,
-      score: smeData?.latestAssessment?.total_score || null,
-      status: smeData?.latestAssessment?.status || 'NOT_STARTED'
-    }
-  })
-
   // Program statistics
-  const totalPrograms = mockPrograms.length
-  const activePrograms = mockPrograms.filter(p => {
-    const endDate = new Date(p.end_date)
-    return endDate > new Date()
-  }).length
+  const totalPrograms = programs.length
+  const activePrograms = programs.filter(p => p.status === 'Active').length
 
   // Enrollment statistics
-  const totalEnrollments = mockProgramEnrollments.length
-  const acceptedEnrollments = mockProgramEnrollments.filter(e => e.status === 'ACCEPTED').length
+  const totalEnrollments = programs.reduce((sum, p) => sum + (p.smesCount || 0), 0)
+  const acceptedEnrollments = totalEnrollments
 
   // Recent activity (audit logs)
-  const recentActivity = getAdminLogs(undefined, 10)
+  const recentActivity = registrations
+    .slice(-10) // get most recent
+    .map((r: any) => ({
+      id: r.id || Date.now() + Math.random(),
+      admin: 'System',
+      action: r.status === 'approved' ? 'Approved Registration' : r.status === 'rejected' ? 'Rejected Registration' : 'New Registration',
+      target: r.company || r.name,
+      timestamp: new Date(r.registered_at || Date.now()).toLocaleString(),
+      details: r.role
+    }))
+    .reverse()
 
   return {
     stats: {
       totalSMEs,
-      totalInvestors: mockInvestorProfiles.length,
+      totalInvestors: totalInvestors,
       totalPrograms,
       activePrograms,
       completedAssessments,
@@ -61,14 +64,14 @@ export default defineEventHandler(async (event) => {
       totalEnrollments,
       acceptedEnrollments
     },
-    smes: smesWithData,
+    smes: smes,
     recentActivity,
-    programs: mockPrograms.map(program => {
-      const enrollments = mockProgramEnrollments.filter(e => e.program_id === program.id)
+    programs: programs.map(program => {
+      // Compatibility mapping for existing UI
       return {
         ...program,
-        enrollmentCount: enrollments.length,
-        acceptedCount: enrollments.filter(e => e.status === 'ACCEPTED').length
+        enrollmentCount: program.smesCount || 0,
+        acceptedCount: program.smesCount || 0
       }
     })
   }

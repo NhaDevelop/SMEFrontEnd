@@ -98,16 +98,17 @@
                                     <div class="flex items-center gap-3">
                                         <div
                                             class="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">
-                                            {{ (activeFolder === 'inbox' ? selectedMessage.sender :
-                                            selectedMessage.recipient).charAt(0).toUpperCase() }}
+                                            {{ (activeFolder === 'inbox' ? selectedMessage.senderName :
+                                                selectedMessage.recipientName)?.charAt(0)?.toUpperCase() || 'U' }}
                                         </div>
                                         <div>
                                             <p class="text-sm font-medium text-gray-900">
-                                                {{ activeFolder === 'inbox' ? selectedMessage.sender : 'Me' }}
+                                                {{ activeFolder === 'inbox' ? selectedMessage.senderName : 'Me' }}
                                                 <span class="text-gray-400 font-normal">to</span>
-                                                {{ activeFolder === 'inbox' ? 'Me' : selectedMessage.recipient }}
+                                                {{ activeFolder === 'inbox' ? 'Me' : selectedMessage.recipientName }}
                                             </p>
-                                            <p class="text-xs text-gray-500">{{ selectedMessage.email }}</p>
+                                            <p class="text-xs text-gray-500">{{ activeFolder === 'inbox' ?
+                                                selectedMessage.senderEmail : selectedMessage.recipientEmail }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -228,9 +229,11 @@ const newMessage = ref({
     content: ''
 })
 
-// Mock Data
+// Dynamic Data
 const inbox = ref<any[]>([])
 const sent = ref<any[]>([])
+const loading = ref(false)
+const authStore = useAuthStore()
 
 // Computed
 const filteredMessages = computed(() => activeFolder.value === 'inbox' ? inbox.value : sent.value)
@@ -241,35 +244,104 @@ const isValidMessage = computed(() => {
         newMessage.value.content.trim().length > 0
 })
 
-// Actions
-const sendMessage = () => {
-    // Simulate sending
-    const msg = {
-        id: Date.now(),
-        recipient: newMessage.value.recipient, // Used for display in Sent list
-        email: newMessage.value.recipient,
-        subject: newMessage.value.subject,
-        preview: newMessage.value.content.substring(0, 60) + '...',
-        content: newMessage.value.content,
-        date: 'Just now',
-        fullDate: new Date().toLocaleString(),
-        read: true
+// Fetch Data
+const fetchMessages = async () => {
+    loading.value = true
+    try {
+        const userId = authStore.user?.id
+        // We'll simulate fetching all messages involved with this user's email
+        // In a real database, we'd query where sender == me OR recipient == me
+
+        // For our unified mock db, we rely on the users list to map emails
+        const { data: users } = await useFetch('/api/admin/users')
+        const allUsers = users.value?.users || []
+
+        // Find my email
+        const me = (allUsers as any[]).find((u: any) => u.id === userId) || authStore.user
+
+        // Fetch all messages from DB (since our get endpoint currently expects a chatId, we'll fetch direct for now, or adapt GET)
+        // Let's use generic call approach passing our email mapping
+        let allMessages: any[] = []
+        try {
+            // Note: DB structure might be flat, we'll adapt depending on schema
+            const res = await $fetch('/api/messages')
+            allMessages = Array.isArray(res) ? res : []
+        } catch (e) { /* fallback if api not ready for bare get */ }
+
+        // Format to UI structure
+        const formatted = allMessages.map(m => {
+            const senderUser = (allUsers as any[]).find((u: any) => u.id === m.senderId)
+            const recpUser = (allUsers as any[]).find((u: any) => u.id === m.recipientId)
+
+            return {
+                id: m.id,
+                senderId: m.senderId,
+                recipientId: m.recipientId,
+                senderName: senderUser?.name || 'Unknown User',
+                senderEmail: senderUser?.email || m.senderEmail,
+                recipientName: recpUser?.name || 'Unknown User',
+                recipientEmail: recpUser?.email || m.recipientEmail,
+                subject: m.subject || 'Direct Message',
+                preview: m.text.substring(0, 60) + '...',
+                content: m.text,
+                date: new Date(m.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                fullDate: new Date(m.timestamp).toLocaleString(),
+                read: m.read || false,
+                sender: senderUser?.name || m.senderEmail,
+                recipient: recpUser?.name || m.recipientEmail,
+            }
+        })
+
+        inbox.value = formatted.filter(m => m.recipientEmail === me?.email)
+        sent.value = formatted.filter(m => m.senderEmail === me?.email)
+
+    } catch (e) {
+        console.error('Failed to fetch messages', e)
+    } finally {
+        loading.value = false
     }
+}
 
-    sent.value.unshift(msg)
+onMounted(() => {
+    fetchMessages()
+})
 
-    // Reset and close
-    closeCompose()
+// Actions
+const sendMessage = async () => {
+    try {
+        const userId = authStore.user?.id
+        const userEmail = authStore.user?.email
 
-    // If we were on sent folder, auto-select the new message
-    if (activeFolder.value === 'sent') {
-        selectedMessage.value = msg
+        // Attempt to find recipient user ID
+        const { data: users } = await useFetch('/api/admin/users')
+        const allUsers = users.value?.users || []
+        const targetUser = (allUsers as any[]).find((u: any) => u.email === newMessage.value.recipient)
+
+        await $fetch('/api/messages', {
+            method: 'POST',
+            body: {
+                senderId: userId,
+                senderEmail: userEmail,
+                recipientId: targetUser?.id || 0,
+                recipientEmail: newMessage.value.recipient,
+                subject: newMessage.value.subject,
+                text: newMessage.value.content,
+                chatId: `chat_${userId}_${targetUser?.id || 'unknown'}`
+            }
+        })
+
+        fetchMessages()
+        closeCompose()
+        activeFolder.value = 'sent'
+
+    } catch (e) {
+        console.error('Failed to send message', e)
+        alert('Failed to send message. See console.')
     }
 }
 
 const closeCompose = () => {
     isComposeOpen.value = false
-    activeFolder.value = 'sent' // optional: switch to sent view to see result? Or stay. Let's switch.
     setTimeout(() => {
         newMessage.value = { recipient: '', subject: '', content: '' }
     }, 300)

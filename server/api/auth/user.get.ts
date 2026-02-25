@@ -1,13 +1,16 @@
-import { defineEventHandler, createError } from 'h3'
+import { defineEventHandler, createError, getCookie } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  // In a real app, verify session/token here
-  // For now, allow the client to handle 401 if no valid session exists
+  const userCookie = getCookie(event, 'irip_auth_user')
   
-  // Example for future:
-  // const token = getCookie(event, 'auth_token')
-  // if (!token) throw createError({ statusCode: 401 })
-  
+  if (userCookie) {
+    try {
+      return JSON.parse(userCookie)
+    } catch (e) {
+      // JSON parse failed, clear or ignore
+    }
+  }
+
   throw createError({
     statusCode: 401,
     statusMessage: 'Unauthorized'

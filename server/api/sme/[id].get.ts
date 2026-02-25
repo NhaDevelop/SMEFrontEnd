@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParam } from 'h3'
-import { getSMEData } from '~/utils/mock-data'
+import { db } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {
   // Simulate network delay
@@ -14,8 +14,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const smeId = parseInt(id)
-  const smeData = getSMEData(smeId)
+  // Pass raw ID to support both numeric and alphanumeric "reg_*" IDs
+  const smeData = db.smes.findById(id)
   
   if (!smeData) {
     throw createError({
@@ -27,10 +27,10 @@ export default defineEventHandler(async (event) => {
   return {
     ...smeData,
     // Add computed fields for UI
-    readinessLevel: smeData.latestAssessment?.total_score 
-      ? smeData.latestAssessment.total_score >= 70 
+    readinessLevel: smeData.assessments && smeData.assessments[0]?.score 
+      ? smeData.assessments[0].score >= 70 
         ? 'Investment Ready' 
-        : smeData.latestAssessment.total_score >= 50 
+        : smeData.assessments[0].score >= 50 
           ? 'Developing' 
           : 'Needs Improvement'
       : 'Not Assessed'

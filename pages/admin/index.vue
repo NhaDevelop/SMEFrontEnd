@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import AdminDashboard from '~/components/admin/AdminDashboard.vue'
+import AdminDashboard from '~/components/AdminDashboard.vue'
 
 definePageMeta({
     layout: 'admin',

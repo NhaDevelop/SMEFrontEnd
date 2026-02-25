@@ -5,15 +5,15 @@
       <!-- Logo & Toggle -->
       <div class="p-4 flex items-center justify-between border-b border-gray-700">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div class="w-10 h-10 bg-cyan-500 rounded-md flex items-center justify-center flex-shrink-0">
             <ChartBarSquareIcon class="w-6 h-6 text-white" />
           </div>
           <div v-if="!isCollapsed">
-            <h1 class="text-lg font-bold text-white tracking-wide">IRIP</h1>
+            <h1 class="text-lg font-semibold text-white tracking-wide">IRIP</h1>
           </div>
         </div>
         <button @click="toggleSidebar"
-          class="p-1.5 rounded-lg transition-colors lg:block hidden text-gray-400 hover:text-white hover:bg-gray-700">
+          class="p-1.5 rounded-md transition-colors lg:block hidden text-gray-400 hover:text-white hover:bg-gray-700">
           <ChevronLeftIcon v-if="!isCollapsed" class="w-5 h-5" />
           <ChevronRightIcon v-else class="w-5 h-5" />
         </button>
@@ -24,7 +24,7 @@
         <template v-for="(item, index) in navItems" :key="index">
           <!-- Header Item -->
           <div v-if="item.header" class="px-4 mt-6 mb-2 first:mt-2">
-            <p v-if="!isCollapsed" class="text-xs font-bold text-gray-400 opacity-60 uppercase tracking-wider">{{
+            <p v-if="!isCollapsed" class="text-xs font-semibold text-gray-400 opacity-60 uppercase tracking-wider">{{
               item.header }}</p>
             <div v-else class="h-px bg-white opacity-10 mx-2 mb-2"></div>
           </div>
@@ -32,7 +32,7 @@
           <!-- Link Item -->
           <NuxtLink v-else :to="item.path" v-slot="{ isActive }" custom>
             <a @click="navigateTo(item.path)" :class="[
-              'flex items-center gap-3 px-4 py-3 rounded-lg transition-smooth cursor-pointer group',
+              'flex items-center gap-3 px-4 py-3 rounded-md transition-smooth cursor-pointer group',
               isActive ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             ]">
               <component :is="item.icon"
@@ -46,7 +46,7 @@
       <!-- User Profile -->
       <div class="p-4 border-t border-gray-700">
         <div v-if="user"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-700 transition-smooth cursor-pointer">
+          class="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-gray-700 transition-smooth cursor-pointer">
           <div class="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
             <span class="text-sm font-semibold">{{ user.avatar }}</span>
           </div>
@@ -58,7 +58,7 @@
 
         <!-- Sign Out -->
         <button @click="handleSignOut"
-          class="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-smooth">
+          class="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-smooth">
           <ArrowRightOnRectangleIcon class="w-5 h-5 flex-shrink-0" />
           <span v-if="!isCollapsed">Sign Out</span>
         </button>
@@ -251,13 +251,13 @@ export default {
             icon: FolderIcon
           },
           {
-            path: '/messages',
+            path: '/sme/messages',
             label: 'Messages',
             icon: ChatBubbleLeftRightIcon
           },
           { header: 'REPORTS & ANALYTICS' },
           {
-            path: '/reports',
+            path: '/sme/reports',
             label: 'Reports',
             icon: DocumentTextIcon
           },

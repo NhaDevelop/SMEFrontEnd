@@ -16,10 +16,10 @@
                 <!-- KPI Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Total SMEs -->
-                    <div class="bg-white rounded-xl shadow-soft p-6">
+                    <div class="bg-white rounded-lg shadow-soft p-6">
                         <div class="flex items-center justify-between mb-4">
                             <p class="text-sm font-medium text-gray-500">Total SMEs</p>
-                            <div class="p-2 bg-gray-50 rounded-lg">
+                            <div class="p-2 bg-gray-50 rounded-md">
                                 <BriefcaseIcon class="w-5 h-5 text-gray-500" />
                             </div>
                         </div>
@@ -36,10 +36,10 @@
                     </div>
 
                     <!-- Avg Readiness Score -->
-                    <div class="bg-white rounded-xl shadow-soft p-6">
+                    <div class="bg-white rounded-lg shadow-soft p-6">
                         <div class="flex items-center justify-between mb-4">
                             <p class="text-sm font-medium text-gray-500">Avg. Readiness Score</p>
-                            <div class="p-2 bg-gray-50 rounded-lg">
+                            <div class="p-2 bg-gray-50 rounded-md">
                                 <ChartBarIcon class="w-5 h-5 text-gray-500" />
                             </div>
                         </div>
@@ -56,10 +56,10 @@
                     </div>
 
                     <!-- Investor Ready -->
-                    <div class="bg-white rounded-xl shadow-soft p-6">
+                    <div class="bg-white rounded-lg shadow-soft p-6">
                         <div class="flex items-center justify-between mb-4">
                             <p class="text-sm font-medium text-gray-500">Investor Ready</p>
-                            <div class="p-2 bg-gray-50 rounded-lg">
+                            <div class="p-2 bg-gray-50 rounded-md">
                                 <CheckCircleIcon class="w-5 h-5 text-gray-500" />
                             </div>
                         </div>
@@ -70,10 +70,10 @@
                     </div>
 
                     <!-- High Risk -->
-                    <div class="bg-white rounded-xl shadow-soft p-6">
+                    <div class="bg-white rounded-lg shadow-soft p-6">
                         <div class="flex items-center justify-between mb-4">
                             <p class="text-sm font-medium text-gray-500">High Risk</p>
-                            <div class="p-2 bg-gray-50 rounded-lg">
+                            <div class="p-2 bg-gray-50 rounded-md">
                                 <ExclamationTriangleIcon class="w-5 h-5 text-gray-500" />
                             </div>
                         </div>
@@ -87,7 +87,7 @@
                 <!-- Charts Section -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Readiness Distribution -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
                         <h3 class="text-lg font-bold text-gray-900 mb-6">Readiness Distribution</h3>
 
                         <div class="relative pt-2 pb-6 px-4">
@@ -122,7 +122,7 @@
                                         <div
                                             class="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
                                             <div
-                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-lg py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-md py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
                                                 <p class="text-xs text-gray-500 mb-0.5 font-medium">Investor Ready</p>
                                                 <p class="text-sm font-bold text-gray-900">{{
                                                     readinessDistribution.investorReady }} SMEs</p>
@@ -150,7 +150,7 @@
                                         <div
                                             class="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
                                             <div
-                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-lg py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-md py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
                                                 <p class="text-xs text-gray-500 mb-0.5 font-medium">Near Ready</p>
                                                 <p class="text-sm font-bold text-gray-900">{{
                                                     readinessDistribution.nearReady }} SMEs</p>
@@ -178,7 +178,7 @@
                                         <div
                                             class="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
                                             <div
-                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-lg py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-md py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
                                                 <p class="text-xs text-gray-500 mb-0.5 font-medium">Early Stage</p>
                                                 <p class="text-sm font-bold text-gray-900">{{
                                                     readinessDistribution.earlyStage }} SMEs</p>
@@ -206,7 +206,7 @@
                                         <div
                                             class="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-nowrap">
                                             <div
-                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-lg py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+                                                class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)] rounded-md py-2 px-4 text-center border border-gray-100 transform translate-y-1 group-hover:translate-y-0 transition-transform">
                                                 <p class="text-xs text-gray-500 mb-0.5 font-medium">Pre-Investment</p>
                                                 <p class="text-sm font-bold text-gray-900">{{
                                                     readinessDistribution.preInvestment }} SMEs</p>
@@ -231,14 +231,14 @@
                     </div>
 
                     <!-- Risk vs Growth -->
-                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
                         <h3 class="text-lg font-bold text-gray-900 mb-6">Risk vs Growth Potential</h3>
                         <RiskGrowthScatterPlot :smes="store.dealFlow" @point-click="openSmeModal" />
                     </div>
                 </div>
 
                 <!-- SME Comparison Table -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div class="p-6 border-b border-gray-100">
                         <h2 class="text-lg font-bold text-gray-900">SME Comparison</h2>
                     </div>
@@ -254,11 +254,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useInvestorStore } from '~/stores/investor.store'
-import Marketplace from '~/components/investor/Marketplace.vue'
-import SmeDashboardModal from '~/components/investor/SmeDashboardModal.vue'
-import RiskGrowthScatterPlot from '~/components/investor/RiskGrowthScatterPlot.vue'
+import Marketplace from '~/components/InvestorMarketplace.vue'
+import SmeDashboardModal from '~/components/InvestorSmeDashboardModal.vue'
+import RiskGrowthScatterPlot from '~/components/InvestorRiskGrowthScatterPlot.vue'
 import {
     BriefcaseIcon,
     CheckCircleIcon,
@@ -305,7 +305,13 @@ const handleCreateGoal = () => {
     console.log('Create goal for:', selectedSme.value)
 }
 
+onMounted(() => {
+    if (store.dealFlow.length === 0) {
+        store.fetchDealFlow()
+    }
+})
+
 definePageMeta({
-    // middleware: 'auth-investor' // In real app
+    layout: 'investor'
 })
 </script>

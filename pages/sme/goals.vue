@@ -18,29 +18,30 @@
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
+            <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-md bg-gray-50 flex items-center justify-center text-gray-400">
                     <FlagIcon class="w-6 h-6" />
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-gray-900">2</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ goals.length }}</div>
                     <div class="text-sm text-gray-500">Total Goals</div>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+            <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-md bg-blue-50 flex items-center justify-center text-blue-500">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                         <path
                             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6l5.25 3.15-.75 1.23-5.5-3.3V7z" />
                     </svg>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-gray-900">1</div>
+                    <div class="text-2xl font-bold text-gray-900">{{goals.filter(g => g.status === 'Active').length}}
+                    </div>
                     <div class="text-sm text-gray-500">Active</div>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-500">
+            <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-md bg-green-50 flex items-center justify-center text-green-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -48,16 +49,17 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-gray-900">1</div>
+                    <div class="text-2xl font-bold text-gray-900">{{goals.filter(g => g.status === 'Achieved').length
+                    }}</div>
                     <div class="text-sm text-gray-500">Achieved</div>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+            <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-md bg-orange-50 flex items-center justify-center text-orange-500">
                     <BoltIcon class="w-6 h-6" />
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-gray-900">38%</div>
+                    <div class="text-2xl font-bold text-gray-900">{{ avgProgress }}%</div>
                     <div class="text-sm text-gray-500">Avg Progress</div>
                 </div>
             </div>
@@ -79,18 +81,69 @@
             <!-- Goals List -->
             <div class="lg:col-span-2 space-y-4">
                 <div v-for="goal in filteredGoals" :key="goal.id" @click="selectedGoal = goal" :class="[
-                    'bg-white rounded-xl p-6 border transition-all cursor-pointer',
+                    'bg-white rounded-lg p-6 border transition-all cursor-pointer',
                     selectedGoal?.id === goal.id ? 'border-teal-500 ring-1 ring-teal-500 shadow-md' : 'border-gray-200 hover:border-gray-300 shadow-sm'
                 ]">
                     <div class="flex items-start justify-between mb-2">
                         <div class="flex items-center gap-3">
                             <h3 class="text-lg font-bold text-gray-900">{{ goal.title }}</h3>
                             <span :class="[
-                                'px-2 py-0.5 text-xs font-semibold rounded-full',
-                                goal.status === 'Active' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                                'px-2 py-0.5 text-xs font-semibold rounded-full border',
+                                goal.status === 'Active' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                    goal.status === 'Achieved' ? 'bg-green-50 text-green-700 border-green-100' :
+                                        'bg-orange-50 text-orange-700 border-orange-100'
                             ]">{{ goal.status }}</span>
                         </div>
-                        <button class="text-gray-400 hover:text-gray-600">...</button>
+                        <div class="flex items-center gap-2">
+                            <Menu as="div" class="relative inline-block text-left">
+                                <MenuButton @click.stop
+                                    class="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
+                                    <EllipsisHorizontalIcon class="w-6 h-6" />
+                                </MenuButton>
+
+                                <transition enter-active-class="transition duration-100 ease-out"
+                                    enter-from-class="transform scale-95 opacity-0"
+                                    enter-to-class="transform scale-100 opacity-100"
+                                    leave-active-class="transition duration-75 ease-in"
+                                    leave-from-class="transform scale-100 opacity-100"
+                                    leave-to-class="transform scale-95 opacity-0">
+                                    <MenuItems
+                                        class="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
+                                        <div class="px-1 py-1">
+                                            <MenuItem v-slot="{ active }">
+                                            <button @click.stop="markGoalAsAchieved(goal.id)" :class="[
+                                                active ? 'bg-teal-50 text-teal-700' : 'text-gray-700',
+                                                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                                            ]">
+                                                <CheckCircleIcon class="mr-2 h-4 w-4" />
+                                                Mark as Achieved
+                                            </button>
+                                            </MenuItem>
+                                            <MenuItem v-slot="{ active }">
+                                            <button @click.stop="pauseGoal(goal.id, goal.status)" :class="[
+                                                active ? 'bg-orange-50 text-orange-700' : 'text-gray-700',
+                                                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                                            ]">
+                                                <ClockIcon class="mr-2 h-4 w-4" />
+                                                {{ goal.status === 'Paused' ? 'Resume Goal' : 'Pause Goal' }}
+                                            </button>
+                                            </MenuItem>
+                                        </div>
+                                        <div class="px-1 py-1">
+                                            <MenuItem v-slot="{ active }">
+                                            <button @click.stop="deleteGoal(goal.id)" :class="[
+                                                active ? 'bg-red-50 text-red-700' : 'text-red-600',
+                                                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                                            ]" class="text-red-500">
+                                                <TrashIcon class="mr-2 h-4 w-4" />
+                                                Delete Goal
+                                            </button>
+                                            </MenuItem>
+                                        </div>
+                                    </MenuItems>
+                                </transition>
+                            </Menu>
+                        </div>
                     </div>
                     <p class="text-sm text-gray-500 mb-4">{{ goal.description }}</p>
 
@@ -139,12 +192,44 @@
 
             <!-- Details Sidebar -->
             <div class="lg:col-span-1">
+                <!-- Sidebar: Detailed Analysis -->
                 <div v-if="selectedGoal" class="space-y-6">
+                    <!-- Status & Actions -->
+                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-bold text-gray-900">Goal Achievement</h3>
+                            <span v-if="selectedGoal.status === 'Achieved'"
+                                class="flex items-center gap-1 text-green-600 font-bold text-sm bg-green-50 px-3 py-1 rounded-full border border-green-100 italic">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="w-4 h-4">
+                                    <path fill-rule="evenodd"
+                                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75 0 00-1.06 1.06l2.25 2.25a.75 0 001.14-.094l3.74-5.24z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                Achieved
+                            </span>
+                        </div>
+
+                        <div v-if="selectedGoal.status !== 'Achieved'" class="space-y-4">
+                            <p class="text-sm text-gray-500">Ready to finalize this goal? Ensure all priority actions
+                                are complete and proof is uploaded.</p>
+                            <button @click="markGoalAsAchieved(selectedGoal.id)" :disabled="loading"
+                                class="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50">
+                                <BoltIcon class="w-5 h-5" />
+                                <span>Mark as Achieved</span>
+                            </button>
+                        </div>
+                        <div v-else class="text-center py-2">
+                            <p class="text-sm text-gray-600 font-medium">This goal was successfully completed on {{
+                                selectedGoal.deadline }}.</p>
+                        </div>
+                    </div>
+
                     <!-- Current vs Target Chart -->
-                    <div v-if="radarData" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                    <div v-if="radarData" class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                         <h3 class="font-bold text-gray-900 mb-2">Current vs Target</h3>
                         <p class="text-sm text-gray-500 mb-4">Pillar score comparison</p>
-                        <div class="h-64">
+                        <div class="h-80">
                             <ComparisonRadarChart :data="radarData" />
                         </div>
                         <div class="flex justify-center gap-4 mt-2">
@@ -162,7 +247,7 @@
 
                     <!-- Gap Analysis -->
 
-                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                         <div class="mb-6">
                             <h3 class="font-bold text-gray-900">Gap Analysis</h3>
                             <p class="text-sm text-gray-500 mt-1">Points needed to reach target</p>
@@ -193,7 +278,7 @@
                                 <!-- Bars -->
                                 <div class="flex flex-col justify-between space-y-4 relative z-10">
                                     <div v-for="pillar in selectedGoal.pillars" :key="pillar.name"
-                                        class="h-6 w-full bg-gray-100 rounded-r-md relative group cursor-help">
+                                        class="h-6 w-full bg-gray-100 rounded-r-sm relative group cursor-help">
                                         <div class="h-full bg-blue-500 rounded-r-md transition-all duration-500"
                                             :style="{ width: `${pillar.score}%` }"></div>
 
@@ -207,9 +292,9 @@
                                                     {{ pillar.name }}</div>
                                                 <div class="flex flex-col gap-1">
                                                     <span class="text-blue-600 font-medium">current : {{ pillar.score
-                                                    }}</span>
+                                                        }}</span>
                                                     <span class="text-gray-300">gap : {{ pillar.target - pillar.score
-                                                    }}</span>
+                                                        }}</span>
                                                 </div>
                                             </div>
                                             <!-- Arrow -->
@@ -236,12 +321,12 @@
                     </div>
 
                     <!-- Priority Actions -->
-                    <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                         <h3 class="font-bold text-gray-900 mb-4">Priority Actions</h3>
                         <p class="text-sm text-gray-500 mb-4">Focus areas to reach your goal</p>
                         <div class="space-y-3">
                             <div v-for="(action, idx) in selectedGoal.actions" :key="idx"
-                                class="flex gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                class="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                                 <div :class="[
                                     'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0 shadow-sm',
                                     idx === 0 ? 'bg-red-500' : idx === 1 ? 'bg-orange-400' : 'bg-blue-500'
@@ -260,7 +345,7 @@
 
                 <!-- Empty State -->
                 <div v-else
-                    class="bg-white rounded-xl p-12 border border-gray-200 shadow-sm flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+                    class="bg-white rounded-lg p-12 border border-gray-200 shadow-sm flex flex-col items-center justify-center text-center h-full min-h-[400px]">
                     <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-8 h-8 text-gray-400">
@@ -281,9 +366,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { FlagIcon, BoltIcon } from '@heroicons/vue/24/outline'
-import ComparisonRadarChart from '~/components/dashboard/ComparisonRadarChart.vue'
-import CreateGoalModal from '~/components/sme/CreateGoalModal.vue'
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
+import { FlagIcon, BoltIcon, EllipsisHorizontalIcon, CheckCircleIcon, ClockIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import ComparisonRadarChart from '~/components/DashboardComparisonRadarChart.vue'
+import CreateGoalModal from '~/components/SmeCreateGoalModal.vue'
+import { useAuthStore } from '~/stores/auth.store'
 
 interface Pillar {
     name: string
@@ -321,112 +408,160 @@ definePageMeta({
     middleware: ['auth', 'sme']
 })
 
-const activeFilter = ref('Active (1)')
-const filters = ['Active (1)', 'Achieved (1)', 'All (2)']
+const authStore = useAuthStore()
+const activeFilter = ref('Active (0)')
+const filters = ref(['Active (0)', 'Achieved (0)', 'All (0)'])
 const selectedGoal = ref<Goal | null>(null)
 const showCreateGoalModal = ref(false)
+const goals = ref<Goal[]>([])
+const loading = ref(false)
 
-const handleCreateGoal = (goalData: any) => {
-    const newGoal: Goal = {
-        id: goals.value.length + 1,
-        title: goalData.title,
-        status: 'Active',
-        description: goalData.description,
-        targetScore: goalData.targetScore,
-        currentScore: Math.round(goalData.pillars.reduce((acc: number, p: any) => acc + p.score, 0) / goalData.pillars.length),
-        deadline: new Date(goalData.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        overdue: null,
-        progress: 0, // Calculate based on scores
-        pillars: goalData.pillars.map((p: any) => ({
-            name: p.name.split(' ')[0], // Simplify name for display consistency if needed
-            score: p.score,
-            target: p.target
-        })),
-        gaps: [],
-        actions: []
+const currentSmeId = computed(() => authStore.user?.company?.id || 2)
+
+const fetchGoals = async () => {
+    loading.value = true
+    try {
+        const data = await $fetch<any[]>(`/api/sme/goals?smeId=${currentSmeId.value}`)
+        goals.value = data
+
+        // Auto-select first goal
+        if (goals.value.length > 0 && !selectedGoal.value) {
+            const firstGoal = goals.value[0]
+            if (firstGoal) {
+                selectedGoal.value = firstGoal
+            }
+        }
+
+        updateFilterCounts()
+    } catch (e) {
+        console.error('Failed to fetch goals', e)
+    } finally {
+        loading.value = false
     }
-
-    // Simple progress calculation
-    const progress = Math.round((newGoal.currentScore / newGoal.targetScore) * 100)
-    newGoal.progress = progress > 100 ? 100 : progress
-
-    goals.value.unshift(newGoal)
-    // Update filter count logic (simplistic for demo)
-    filters[0] = `Active (${goals.value.filter(g => g.status === 'Active').length})`
-    filters[2] = `All (${goals.value.length})`
 }
 
-const goals = ref<Goal[]>([
-    {
-        id: 1,
-        title: 'Investor Ready by Q4 2024',
-        status: 'Active',
-        description: 'Achieve investor-ready status with 80+ overall score',
-        targetScore: 80,
-        currentScore: 56,
-        deadline: 'Dec 31, 2024',
-        overdue: 405,
-        progress: 38,
-        pillars: [
-            { name: 'Team', score: 39, target: 85 },
-            { name: 'Business', score: 58, target: 80 },
-            { name: 'Market', score: 77, target: 85 },
-            { name: 'Financial', score: 59, target: 90 },
-            { name: 'Operations', score: 66, target: 75 },
-            { name: 'Legal', score: 54, target: 80 },
-            { name: 'Data', score: 42, target: 70 },
-            { name: 'Growth', score: 53, target: 80 }
-        ],
-        gaps: [
-            { pillar: 'Team', current: 39 },
-            { pillar: 'Business', current: 58 },
-            { pillar: 'Market', current: 77 },
-            { pillar: 'Financial', current: 59 },
-        ],
-        actions: [
-            { title: 'Team & Leadership', points: 46 },
-            { title: 'Data & Digital Maturity', points: 28 },
-            { title: 'Growth & Scalability', points: 27 },
-        ]
-    },
-    {
-        id: 2,
-        title: 'Complete Initial Assessment',
-        status: 'Achieved',
-        description: 'Complete all sections of the initial assessment',
-        targetScore: 100,
-        currentScore: 100,
-        deadline: 'Jan 15, 2024',
-        overdue: null,
-        progress: 100,
-        pillars: [
-            { name: 'Team', score: 100, target: 100 },
-            { name: 'Business', score: 100, target: 100 },
-            { name: 'Market', score: 100, target: 100 },
-            { name: 'Financial', score: 100, target: 100 },
-            { name: 'Operations', score: 100, target: 100 },
-            { name: 'Legal', score: 100, target: 100 },
-            { name: 'Data', score: 100, target: 100 },
-            { name: 'Growth', score: 100, target: 100 }
-        ],
-        gaps: [],
-        actions: [
-            { title: 'Goal Achieved', points: 0 }
-        ]
+const updateFilterCounts = () => {
+    const active = goals.value.filter(g => g.status === 'Active').length
+    const achieved = goals.value.filter(g => g.status === 'Achieved').length
+    const all = goals.value.length
+
+    filters.value[0] = `Active (${active})`
+    filters.value[1] = `Achieved (${achieved})`
+    filters.value[2] = `All (${all})`
+
+    // Maintain active filter if possible
+    if (activeFilter.value.startsWith('Active')) activeFilter.value = filters.value[0]
+    else if (activeFilter.value.startsWith('Achieved')) activeFilter.value = filters.value[1]
+    else activeFilter.value = filters.value[2]
+}
+
+const handleCreateGoal = async (goalData: any) => {
+    try {
+        const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
+            method: 'POST',
+            body: {
+                ...goalData,
+                smeId: currentSmeId.value
+            }
+        })
+
+        if (result.success) {
+            // Re-fetch to get transformed goal from server
+            await fetchGoals()
+            showCreateGoalModal.value = false
+        }
+    } catch (e) {
+        console.error('Failed to create goal', e)
+        alert('Failed to save goal. Please try again.')
     }
-])
+}
+
+const markGoalAsAchieved = async (id: number) => {
+    loading.value = true
+    try {
+        const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
+            method: 'PATCH',
+            body: {
+                id,
+                status: 'COMPLETED'
+            }
+        })
+
+        if (result.success) {
+            await fetchGoals()
+            // Keep the same goal selected
+            selectedGoal.value = (goals.value.find(g => g.id === id) as Goal) || null
+        }
+    } catch (e) {
+        console.error('Failed to update goal', e)
+        alert('Failed to update goal status.')
+    } finally {
+        loading.value = false
+    }
+}
+
+const pauseGoal = async (id: number, currentStatus: string) => {
+    loading.value = true
+    try {
+        const newStatus = currentStatus === 'Paused' ? 'ACTIVE' : 'PAUSED'
+        const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
+            method: 'PATCH',
+            body: {
+                id,
+                status: newStatus
+            }
+        })
+
+        if (result.success) {
+            await fetchGoals()
+            selectedGoal.value = (goals.value.find(g => g.id === id) as Goal) || null
+        }
+    } catch (e) {
+        console.error('Failed to pause goal', e)
+        alert('Failed to update goal status.')
+    } finally {
+        loading.value = false
+    }
+}
+
+const deleteGoal = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this goal? This action cannot be undone.')) return
+
+    loading.value = true
+    try {
+        const result = await $fetch<{ success: boolean }>('/api/sme/goals', {
+            method: 'DELETE',
+            query: { id }
+        })
+
+        if (result.success) {
+            await fetchGoals()
+            if (selectedGoal.value?.id === id) {
+                selectedGoal.value = (goals.value[0] as Goal) || null
+            }
+        }
+    } catch (e) {
+        console.error('Failed to delete goal', e)
+        alert('Failed to delete goal.')
+    } finally {
+        loading.value = false
+    }
+}
 
 onMounted(() => {
-    const firstGoal = goals.value[0]
-    if (firstGoal) {
-        selectedGoal.value = firstGoal
-    }
+    fetchGoals()
 })
 
 const filteredGoals = computed(() => {
     if (activeFilter.value.startsWith('Active')) return goals.value.filter(g => g.status === 'Active')
     if (activeFilter.value.startsWith('Achieved')) return goals.value.filter(g => g.status === 'Achieved')
     return goals.value
+})
+
+const avgProgress = computed(() => {
+    if (goals.value.length === 0) return 0
+    const sum = goals.value.reduce((acc, g) => acc + g.progress, 0)
+    return Math.round(sum / goals.value.length)
 })
 
 const radarData = computed(() => {

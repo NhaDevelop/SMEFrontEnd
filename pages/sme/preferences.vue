@@ -7,7 +7,7 @@
                 <p class="text-gray-500 mt-1">Manage how and when you receive notifications</p>
             </div>
             <button @click="saveChanges"
-                class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2 shadow-sm">
+                class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-md hover:bg-teal-700 transition-colors flex items-center gap-2 shadow-sm">
                 <span v-if="saving"
                     class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
                 <span v-else>Save Changes</span>
@@ -18,8 +18,8 @@
             <!-- Summary Stats -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Email Active -->
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-50 rounded-md flex items-center justify-center text-blue-600">
                         <EnvelopeIcon class="w-6 h-6" />
                     </div>
                     <div>
@@ -29,8 +29,8 @@
                 </div>
 
                 <!-- Push Active -->
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-50 rounded-md flex items-center justify-center text-purple-600">
                         <BellIcon class="w-6 h-6" />
                     </div>
                     <div>
@@ -40,8 +40,8 @@
                 </div>
 
                 <!-- Digest Status -->
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-md flex items-center justify-center text-emerald-600">
                         <CheckCircleIcon class="w-6 h-6" />
                     </div>
                     <div>
@@ -51,8 +51,8 @@
                 </div>
 
                 <!-- Quiet Hours Status -->
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center text-orange-600">
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-orange-50 rounded-md flex items-center justify-center text-orange-600">
                         <ClockIcon class="w-6 h-6" />
                     </div>
                     <div>
@@ -63,7 +63,7 @@
             </div>
 
             <!-- Email Settings -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <EnvelopeIcon class="w-6 h-6 text-gray-400" />
                     <h2 class="text-xl font-bold text-gray-900">Email Settings</h2>
@@ -74,7 +74,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Notification Email</label>
                     <div class="relative">
                         <input type="email" v-model="email"
-                            class="w-full pl-4 pr-24 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-shadow" />
+                            class="w-full pl-4 pr-24 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-shadow" />
                         <span
                             class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded flex items-center gap-1">
                             <CheckBadgeIcon class="w-3.5 h-3.5" />
@@ -85,7 +85,7 @@
             </div>
 
             <!-- Notification Types -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>
                         <h2 class="text-xl font-bold text-gray-900">Notification Types</h2>
@@ -93,11 +93,11 @@
                     </div>
                     <div class="flex gap-3">
                         <button @click="enableAllEmail"
-                            class="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                            class="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
                             Enable All Email
                         </button>
                         <button @click="disableAll"
-                            class="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                            class="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
                             Disable All
                         </button>
                     </div>
@@ -109,9 +109,9 @@
                         </h3>
                         <div class="space-y-4">
                             <div v-for="item in category.items" :key="item.id"
-                                class="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                                class="flex items-center justify-between p-4 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors">
                                 <div class="flex items-start gap-4">
-                                    <div :class="`p-2 rounded-lg ${item.iconBg}`">
+                                    <div :class="`p-2 rounded-md ${item.iconBg}`">
                                         <component :is="item.icon" :class="`w-5 h-5 ${item.iconColor}`" />
                                     </div>
                                     <div>
@@ -148,7 +148,7 @@
             </div>
 
             <!-- Weekly Digest -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-3">
                         <DocumentTextIcon class="w-6 h-6 text-gray-900" />
@@ -169,7 +169,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
                         <select v-model="digestFrequency"
-                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500">
                             <option>Daily</option>
                             <option>Weekly</option>
                             <option>Monthly</option>
@@ -178,7 +178,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Day of Week</label>
                         <select v-model="digestDay"
-                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500">
+                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500">
                             <option>Monday</option>
                             <option>Tuesday</option>
                             <option>Wednesday</option>
@@ -189,13 +189,13 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
                         <input type="time" v-model="digestTime"
-                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500" />
+                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500" />
                     </div>
                 </div>
             </div>
 
             <!-- Quiet Hours -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-3">
                         <ClockIcon class="w-6 h-6 text-gray-900" />
@@ -216,12 +216,12 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
                         <input type="time" v-model="quietStart"
-                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500" />
+                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">End Time</label>
                         <input type="time" v-model="quietEnd"
-                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500" />
+                            class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-teal-500" />
                     </div>
                 </div>
             </div>
@@ -279,6 +279,30 @@ const digestTime = ref('09:00')
 const quietHoursEnabled = ref(true)
 const quietStart = ref('22:00')
 const quietEnd = ref('08:00')
+
+// Initialize from backend
+onMounted(async () => {
+    if (!authStore.user?.id) return
+    try {
+        const res = await $fetch(`/api/sme/preferences?userId=${authStore.user.id}`) as any
+
+        if (res.email) email.value = res.email
+        if (res.digestEnabled !== undefined) digestEnabled.value = res.digestEnabled
+        if (res.digestFrequency) digestFrequency.value = res.digestFrequency
+        if (res.digestDay) digestDay.value = res.digestDay
+        if (res.digestTime) digestTime.value = res.digestTime
+
+        if (res.quietHoursEnabled !== undefined) quietHoursEnabled.value = res.quietHoursEnabled
+        if (res.quietStart) quietStart.value = res.quietStart
+        if (res.quietEnd) quietEnd.value = res.quietEnd
+
+        if (res.notificationGroups) {
+            notificationGroups.value = res.notificationGroups
+        }
+    } catch (e) {
+        console.error('Failed to load preferences', e)
+    }
+})
 
 // Mock Data for Notifications
 const notificationGroups = ref([
@@ -424,11 +448,31 @@ const disableAll = () => {
 }
 
 const saveChanges = async () => {
+    if (!authStore.user?.id) return
+
     saving.value = true
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    saving.value = false
-    // Show toast or some feedback could be added here
+    try {
+        await $fetch(`/api/sme/preferences?userId=${authStore.user.id}`, {
+            method: 'POST',
+            body: {
+                email: email.value,
+                digestEnabled: digestEnabled.value,
+                digestFrequency: digestFrequency.value,
+                digestDay: digestDay.value,
+                digestTime: digestTime.value,
+                quietHoursEnabled: quietHoursEnabled.value,
+                quietStart: quietStart.value,
+                quietEnd: quietEnd.value,
+                notificationGroups: notificationGroups.value
+            }
+        })
+
+        // Show success somehow if needed
+    } catch (e) {
+        console.error('Failed to save preferences', e)
+    } finally {
+        saving.value = false
+    }
 }
 
 const handleSignOut = async () => {

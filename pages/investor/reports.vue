@@ -334,22 +334,29 @@ definePageMeta({
     middleware: ['auth', 'investor']
 })
 
-import { useAdminStore } from '~/stores/admin.store'
+import { useInvestorStore } from '~/stores/investor.store'
+import { onMounted } from 'vue'
 
 const route = useRoute()
-const adminStore = useAdminStore()
+const investorStore = useInvestorStore()
+
+onMounted(() => {
+    if (investorStore.dealFlow.length === 0) {
+        investorStore.fetchDealFlow()
+    }
+})
 
 // Map store data to local format
 const smes = computed(() => {
-    return adminStore.smes.map(sme => ({
+    return investorStore.dealFlow.map(sme => ({
         id: sme.id,
         name: sme.name,
         sector: sme.industry,
         score: sme.score,
-        risk: sme.riskLevel,
-        date: sme.lastAssessed,
-        programIds: sme.programIds,
-        status: sme.readinessStatus
+        risk: sme.financialRisk,
+        date: sme.lastAssessedDate || sme.lastUpdated,
+        programIds: sme.programIds || [], // Need to ensure dealFlow has programIds or map it correctly
+        status: sme.status
     }))
 })
 

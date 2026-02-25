@@ -33,10 +33,12 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
+      const authCookie = useCookie('irip_auth_user')
       try {
         await authService.logout()
       } finally {
         this.user = null
+        authCookie.value = null
         navigateTo('/')
       }
     },

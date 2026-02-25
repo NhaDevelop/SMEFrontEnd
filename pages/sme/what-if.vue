@@ -9,12 +9,12 @@
                 </div>
                 <div class="flex gap-3">
                     <button @click="resetScenarios"
-                        class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+                        class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
                         <ArrowPathIcon class="w-4 h-4" />
                         Reset
                     </button>
                     <button @click="saveScenario"
-                        class="px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center gap-2">
+                        class="px-4 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition-colors flex items-center gap-2">
                         <bookmark-icon class="w-4 h-4" />
                         Save Scenario
                     </button>
@@ -25,7 +25,7 @@
         <main class="flex-1 overflow-y-auto px-8 py-8">
             <div class="max-w-7xl mx-auto space-y-6">
                 <!-- Score Card -->
-                <div class="bg-teal-50/50 rounded-xl p-8 border border-teal-100">
+                <div class="bg-teal-50/50 rounded-lg p-8 border border-teal-100">
                     <div class="flex items-center justify-around">
                         <div class="text-center">
                             <div class="text-sm text-gray-500 mb-2">Current Score</div>
@@ -61,7 +61,7 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Adjust Pillar Scores -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <div class="flex items-center gap-2 mb-1">
                             <CalculatorIcon class="w-5 h-5 text-gray-400" />
                             <h2 class="text-lg font-bold text-gray-900">Adjust Pillar Scores</h2>
@@ -106,7 +106,7 @@
                     </div>
 
                     <!-- Apply Action Items -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <div class="flex items-center gap-2 mb-1">
                             <LightBulbIcon class="w-5 h-5 text-gray-400" />
                             <h2 class="text-lg font-bold text-gray-900">Apply Action Items</h2>
@@ -116,7 +116,7 @@
 
                         <div class="space-y-4">
                             <div v-for="action in actionItems" :key="action.id"
-                                class="border rounded-xl p-4 transition-all duration-200 cursor-pointer hover:border-teal-200"
+                                class="border rounded-lg p-4 transition-all duration-200 cursor-pointer hover:border-teal-200"
                                 :class="action.selected ? 'bg-teal-50 border-teal-200 ring-1 ring-teal-200' : 'border-gray-200'"
                                 @click="toggleAction(action)">
                                 <div class="flex items-start gap-4">
@@ -149,7 +149,7 @@
                 </div>
 
                 <!-- Save Scenario -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center gap-2 mb-6">
                         <div class="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center">
                             <div class="w-2.5 h-2.5 bg-gray-600 rounded-full"></div>
@@ -160,9 +160,9 @@
                     <div class="flex gap-4">
                         <input ref="scenarioInput" v-model="scenarioName" type="text"
                             placeholder="Enter scenario name (e.g., 'Q2 Improvement Plan')"
-                            class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500" />
+                            class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500" />
                         <button @click="saveScenario"
-                            class="px-6 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm flex items-center gap-2">
+                            class="px-6 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition-colors shadow-sm flex items-center gap-2">
                             <bookmark-icon class="w-4 h-4" />
                             Save Scenario
                         </button>
@@ -206,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
     ArrowPathIcon,
     ArrowLongRightIcon,
@@ -218,6 +218,11 @@ import {
     CheckCircleIcon,
     XMarkIcon
 } from '@heroicons/vue/24/outline'
+import { useDashboardStore } from '~/stores/dashboard.store'
+import { calculateOverallScore } from '~/utils/helpers'
+
+const dashboardStore = useDashboardStore()
+const loading = ref(true)
 
 const scenarioInput = ref<HTMLInputElement | null>(null)
 const showToast = ref(false)
@@ -238,19 +243,18 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
 
 const scenarioName = ref('')
 
-const pillars = ref([
-    { name: 'Team & Leadership', current: 52, projected: 52 },
-    { name: 'Business Model', current: 43, projected: 43 },
-    { name: 'Market & Traction', current: 84, projected: 84 },
-    { name: 'Financial Readiness', current: 80, projected: 80 },
-    { name: 'Operations', current: 75, projected: 75 },
-    { name: 'Legal & Governance', current: 68, projected: 68 },
-    { name: 'Data & Digital Maturity', current: 57, projected: 57 },
-    { name: 'Growth & Scalability', current: 88, projected: 88 }
-])
+interface PillarScenario {
+    id: string | number
+    name: string
+    current: number
+    projected: number
+    weight?: number
+}
 
-interface ActionItem {
-    id: number
+const pillars = ref<PillarScenario[]>([])
+
+interface ActionScenario {
+    id: string | number
     title: string
     pillar: string
     difficulty: string
@@ -258,63 +262,68 @@ interface ActionItem {
     selected: boolean
 }
 
-const actionItems = ref<ActionItem[]>([
-    {
-        id: 1,
-        title: 'Implement leadership development program',
-        pillar: 'Team & Leadership',
-        difficulty: 'medium',
-        points: 6,
-        selected: false
-    },
-    {
-        id: 2,
-        title: 'Document and validate unit economics',
-        pillar: 'Business Model',
-        difficulty: 'medium',
-        points: 19,
-        selected: false
-    },
-    {
-        id: 3,
-        title: 'Ensure IP protection and registration',
-        pillar: 'Legal & Governance',
-        difficulty: 'medium',
-        points: 18,
-        selected: false
-    },
-    {
-        id: 4,
-        title: 'Implement data analytics platform',
-        pillar: 'Data & Digital Maturity',
-        difficulty: 'medium',
-        points: 19,
-        selected: false
+const actionItems = ref<ActionScenario[]>([])
+
+const initializeData = () => {
+    // Initialize pillars from store
+    pillars.value = dashboardStore.pillars.map(p => ({
+        id: p.id,
+        name: p.name,
+        current: p.score,
+        projected: p.score,
+        weight: p.weight
+    }))
+
+    // Initialize action items from store recommendations
+    actionItems.value = dashboardStore.actions
+        .filter(a => a.status !== 'completed')
+        .map(a => ({
+            id: a.id,
+            title: a.title,
+            pillar: a.pillar,
+            difficulty: a.priority || 'medium',
+            points: a.impact || 5,
+            selected: false
+        }))
+}
+
+onMounted(async () => {
+    try {
+        if (dashboardStore.pillars.length === 0) {
+            await dashboardStore.fetchDashboardData()
+        }
+        initializeData()
+    } finally {
+        loading.value = false
     }
-])
+})
+
+// If dashboard data changes, we might want to re-initialize if not already manually edited
+watch(() => dashboardStore.pillars, (newPillars) => {
+    if (newPillars.length > 0 && pillars.value.length === 0) {
+        initializeData()
+    }
+}, { deep: true })
 
 const currentOverallScore = computed(() => {
-    return Math.round(pillars.value.reduce((acc, p) => acc + p.current, 0) / pillars.value.length)
+    if (pillars.value.length === 0) return 0
+    return calculateOverallScore(pillars.value.map(p => ({ score: p.current, weight: p.weight })))
 })
 
 const projectedOverallScore = computed(() => {
-    return Math.round(pillars.value.reduce((acc, p) => acc + p.projected, 0) / pillars.value.length)
+    if (pillars.value.length === 0) return 0
+    return calculateOverallScore(pillars.value.map(p => ({ score: p.projected, weight: p.weight })))
 })
 
 const selectedActionsCount = computed(() => actionItems.value.filter(a => a.selected).length)
 
-const toggleAction = (action: ActionItem) => {
+const toggleAction = (action: ActionScenario) => {
     action.selected = !action.selected
     const pillar = pillars.value.find(p => p.name === action.pillar)
     if (pillar) {
         if (action.selected) {
             pillar.projected = Math.min(100, pillar.projected + action.points)
         } else {
-            // Be careful not to subtract if user manually adjusted? 
-            // For now, simple subtraction, but ensure not below current if only actions moved it? 
-            // actually logic matches "projected" movement.
-            // If user moved slider, we assume that is the base? 
-            // Let's keep simpler logic: +/- points.
             pillar.projected = Math.max(0, pillar.projected - action.points)
         }
     }

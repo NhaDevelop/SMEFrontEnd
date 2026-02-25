@@ -19,10 +19,15 @@ export default defineEventHandler(async (event) => {
     name: body.name,
     description: body.description,
     template: body.template, // Store the template name
-    templateId: body.template, // UI sends 'template' which is the name/ID selection
+    templateId: body.templateId, // Correct template ID from frontend
     status: body.status || 'Active',
     startDate: body.startDate,
     endDate: body.endDate,
+    sector: body.sector,
+    duration: body.duration,
+    deadline: body.deadline,
+    investmentAmount: body.investmentAmount,
+    benefits: body.benefits,
     smesCount: 0,
     avgScore: 0,
     progress: 0

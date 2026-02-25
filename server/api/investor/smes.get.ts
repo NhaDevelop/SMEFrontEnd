@@ -1,5 +1,5 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { filterSMEs } from '~/utils/mock-data'
+import { db } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {
   // Simulate network delay
@@ -7,29 +7,27 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   
-  const filters: any = {}
+  const allSmes = db.smes.findAll()
   
-  if (query.industry) {
-    filters.industry = query.industry as string
-  }
-  
-  if (query.minScore) {
-    filters.minScore = parseInt(query.minScore as string)
-  }
-  
-  if (query.maxScore) {
-    filters.maxScore = parseInt(query.maxScore as string)
-  }
-  
-  if (query.stage) {
-    filters.stage = query.stage as string
-  }
-
-  const smes = filterSMEs(filters)
+  const filteredSmes = allSmes.filter(sme => {
+    if (query.industry && sme.industry !== query.industry) return false
+    if (query.stage && sme.stage !== query.stage) return false
+    
+    if (query.minScore) {
+      const min = Number(query.minScore)
+      if (sme.score < min) return false
+    }
+    
+    if (query.maxScore) {
+        const max = Number(query.maxScore)
+        if (sme.score > max) return false
+    }
+    
+    return true
+  })
 
   return {
-    smes,
-    total: smes.length,
-    filters
+    smes: filteredSmes,
+    total: filteredSmes.length
   }
 })

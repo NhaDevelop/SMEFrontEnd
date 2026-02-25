@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import Dashboard from '~/pages/sme/dashboard/index.vue'
+import Dashboard from '~/pages/sme/dashboard.vue'
 
 definePageMeta({
     layout: 'default',

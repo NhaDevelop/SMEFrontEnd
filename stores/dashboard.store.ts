@@ -6,6 +6,7 @@ interface Pillar {
   id: string | number
   name: string
   score: number
+  weight?: number
   improvementPotential?: number
 }
 
@@ -18,40 +19,48 @@ interface Action {
   id: string | number
   title: string
   status: 'pending' | 'in_progress' | 'completed'
+  priority?: string
+  pillar: string
+  impact: number
 }
 
 interface DashboardState {
+  company: any | null
   pillars: Pillar[]
   progressData: ProgressData[]
   actions: Action[]
+  primaryGoal: any | null
   loading: boolean
   error: string | null
 }
 
 export const useDashboardStore = defineStore('dashboard', {
   state: (): DashboardState => ({
+    company: null,
     pillars: [],
     progressData: [],
     actions: [],
+    primaryGoal: null,
     loading: false,
     error: null
   }),
 
   getters: {
-    overallScore: (state) => calculateOverallScore(state.pillars),
+    overallScore: (state) => state.company?.overallScore ?? calculateOverallScore(state.pillars),
     growthPotential: (state) => calculateGrowthPotential(state.pillars),
-    overallRiskLevel: (state) => {
-      const score = calculateOverallScore(state.pillars)
-      return getRiskLevel(score)
+    overallRiskLevel(): string {
+      return getRiskLevel(this.overallScore)
     },
     latestAssessmentDate: (state) => {
-      const lastItem = state.progressData[state.progressData.length - 1]
+      const data = state.progressData || []
+      const lastItem = data[data.length - 1]
       return lastItem ? lastItem.month : null
     },
     scoreChange: (state) => {
-      if (state.progressData.length < 2) return 0
-      const current = state.progressData[state.progressData.length - 1]
-      const previous = state.progressData[state.progressData.length - 2]
+      const data = state.progressData || []
+      if (data.length < 2) return 0
+      const current = data[data.length - 1]
+      const previous = data[data.length - 2]
       
       const currentScore = current ? current.score : 0
       const previousScore = previous ? previous.score : 0
@@ -68,14 +77,24 @@ export const useDashboardStore = defineStore('dashboard', {
       this.loading = true
       this.error = null
       const dashboardService = new DashboardService()
+      const authStore = useAuthStore()
       
       try {
-        const response = await dashboardService.getDashboardData()
-        const { pillars, progress, actions } = response
+        const smeId = authStore.user?.company?.id || authStore.user?.id || 3
+        const response = await dashboardService.getDashboardData(smeId)
+        const { company, pillars, progress, actions, primaryGoal } = response
         
+        console.log('[Dashboard Store] Fetched data:', {
+          overallScore: company?.overallScore,
+          pillarCount: pillars?.length,
+          lastAssessed: company?.lastAssessed
+        })
+        
+        this.company = company
         this.pillars = pillars
         this.progressData = progress
         this.actions = actions
+        this.primaryGoal = primaryGoal
       } catch (error: any) {
         this.error = error.message
         console.error('Dashboard data fetch error:', error)

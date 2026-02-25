@@ -56,10 +56,10 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
-import StatCard from '~/components/admin/StatCard.vue'
-import ProgramCard from '~/components/admin/ProgramCard.vue'
-import CreateProgramModal from '~/components/admin/CreateProgramModal.vue'
-import ManageSmeEnrollmentModal from '~/components/admin/ManageSmeEnrollmentModal.vue'
+import StatCard from '~/components/AdminStatCard.vue'
+import ProgramCard from '~/components/AdminProgramCard.vue'
+import CreateProgramModal from '~/components/AdminCreateProgramModal.vue'
+import ManageSmeEnrollmentModal from '~/components/AdminManageSmeEnrollmentModal.vue'
 import {
     PlusIcon,
     FolderIcon,

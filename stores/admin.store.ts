@@ -29,6 +29,14 @@ interface Program {
   progress: number
   startDate?: string
   endDate?: string
+  sector?: string
+  duration?: string
+  deadline?: string
+  investmentAmount?: string
+  benefits?: string[]
+  enrolledSMEs?: number[]
+  createdAt?: string
+  createdBy?: string
 }
 
 interface PillarWeight {
@@ -120,6 +128,7 @@ interface Question {
   weight: number // Relative weight within the indicator
   required: boolean
   helperText?: string
+  options?: string[]
 }
 
 interface SmeProfile {
@@ -135,12 +144,14 @@ interface SmeProfile {
   programIds: (number | string)[]
   readinessHistory?: number[]
   status?: string // e.g. 'Invited', 'Enrolled', etc.
+  pillars?: any[]
 }
 
 interface AdminState {
   userStats: UserStats | null
   pendingUsers: any[]
   programStats: ProgramStats | null
+  dashboardStats: any | null
   programs: Program[]
   frameworkSettings: PillarWeight[]
   indicators: Indicator[]
@@ -160,6 +171,7 @@ export const useAdminStore = defineStore('admin', {
   state: (): AdminState => ({
     userStats: null,
     pendingUsers: [],
+    dashboardStats: null,
     users: [
        {
             id: 1,
@@ -203,7 +215,65 @@ export const useAdminStore = defineStore('admin', {
        }
     ],
     programStats: null,
-    programs: [],
+    programs: [
+      {
+        id: 1,
+        name: 'Investment Accelerator 2024',
+        description: 'A comprehensive 12-week program designed to prepare high-potential SMEs for Series A funding.',
+        template: 'Standard Investment Readiness Assessment',
+        templateId: 'temp_001',
+        status: 'Active',
+        sector: 'All Sectors',
+        duration: '12 weeks',
+        deadline: 'March 31, 2024',
+        investmentAmount: 'Up to $500K',
+        benefits: ['1-on-1 mentorship', 'Investor introductions', 'Assessment coaching', 'Pitch preparation'],
+        smesCount: 3,
+        avgScore: 62,
+        progress: 45,
+        enrolledSMEs: [1, 2, 3],
+        createdAt: '2023-12-01',
+        createdBy: 'Admin'
+      },
+      {
+        id: 2,
+        name: 'FinTech Growth Program',
+        description: 'Specialized accelerator for financial technology startups ready to scale their operations.',
+        template: 'Financial Focus Assessment',
+        templateId: 'temp_002',
+        status: 'Active',
+        sector: 'FinTech',
+        duration: '8 weeks',
+        deadline: 'April 15, 2024',
+        investmentAmount: 'Up to $300K',
+        benefits: ['Regulatory guidance', 'Banking partnerships', 'Technical advisory', 'Go-to-market support'],
+        smesCount: 1,
+        avgScore: 75,
+        progress: 60,
+        enrolledSMEs: [3],
+        createdAt: '2024-05-15',
+        createdBy: 'Admin'
+      },
+      {
+        id: 3,
+        name: 'AgriTech Innovation Fund',
+        description: 'Supporting agricultural technology ventures transforming food systems in Southeast Asia.',
+        status: 'Draft',
+        template: 'AgriTech Sustainability Standard',
+        templateId: 'temp_agritech_001',
+        sector: 'AgriTech',
+        duration: '16 weeks',
+        deadline: 'May 1, 2024',
+        investmentAmount: 'Up to $250K',
+        benefits: ['Field pilots', 'Supply chain access', 'Impact measurement', 'Sustainability certification'],
+        smesCount: 1,
+        avgScore: 78,
+        progress: 100,
+        enrolledSMEs: [2],
+        createdAt: '2023-12-15',
+        createdBy: 'Admin'
+      }
+    ],
     frameworkSettings: [
       { id: 'team', name: 'Team & Leadership', weight: 12.5, indicators: ['Organizational Structure', 'Key Management Experience'] },
       { id: 'business', name: 'Business Model', weight: 12.5, indicators: ['Value Proposition', 'Revenue Streams', 'Cost Structure'] },
@@ -220,394 +290,7 @@ export const useAdminStore = defineStore('admin', {
         { id: 'ind_fin_audit', pillarId: 'finance', name: 'Financial Audits', weight: 50 },
         { id: 'ind_fin_perf', pillarId: 'finance', name: 'Financial Performance', weight: 50 }
     ],
-    smes: [
-       {
-            id: 1,
-            name: 'Angkor Tech',
-            industry: 'Technology',
-            location: 'Phnom Penh',
-            lastAssessed: 'Dec 19, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 55,
-            growthPotential: 79,
-            programIds: [1],
-            readinessHistory: [45, 48, 50, 52, 53, 55]
-       },
-       {
-            id: 2,
-            name: 'Mekong Solutions',
-            industry: 'Healthcare',
-            location: 'Siem Reap',
-            lastAssessed: 'Nov 18, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 62,
-            growthPotential: 78,
-            programIds: [3]
-       },
-       {
-            id: 3,
-            name: 'Khmer Innovations',
-            industry: 'FinTech',
-            location: 'Phnom Penh',
-            lastAssessed: 'Jan 25, 2024',
-            riskLevel: 'Low',
-            readinessStatus: 'Investment Ready',
-            score: 70,
-            growthPotential: 88,
-            programIds: [2]
-       },
-       {
-            id: 4,
-            name: 'Bayon Ventures',
-            industry: 'AgriTech',
-            location: 'Battambang',
-            lastAssessed: 'Jul 15, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 49,
-            growthPotential: 82,
-            programIds: [1]
-       },
-       {
-            id: 5,
-            name: 'Tonle Corp',
-            industry: 'E-commerce',
-            location: 'Sihanoukville',
-            lastAssessed: 'May 26, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 65,
-            growthPotential: 65,
-            programIds: [4]
-       },
-       {
-            id: 6,
-            name: 'Green Leaf Farms',
-            industry: 'Agriculture',
-            location: 'Kampot',
-            lastAssessed: 'Mar 1, 2024',
-            riskLevel: 'Low',
-            readinessStatus: 'Investment Ready',
-            score: 78,
-            growthPotential: 85,
-            programIds: [3]
-       },
-       {
-            id: 7,
-            name: 'Cambodia Textiles',
-            industry: 'Manufacturing',
-            location: 'Phnom Penh',
-            lastAssessed: 'Jan 15, 2024',
-            riskLevel: 'High',
-            readinessStatus: 'Pre-investment',
-            score: 42,
-            growthPotential: 60,
-            programIds: [1]
-       },
-       {
-            id: 8,
-            name: 'Siem Reap Logistics',
-            industry: 'Logistics',
-            location: 'Siem Reap',
-            lastAssessed: 'Mar 10, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 58,
-            growthPotential: 72,
-            programIds: [2]
-       },
-       {
-            id: 9,
-            name: 'Digital Khmer',
-            industry: 'Education',
-            location: 'Phnom Penh',
-            lastAssessed: 'Feb 20, 2024',
-            riskLevel: 'Low',
-            readinessStatus: 'Near Ready',
-            score: 68,
-            growthPotential: 90,
-            programIds: [3]
-       },
-       {
-            id: 10,
-            name: 'Kampong Thom Cashew',
-            industry: 'Agriculture',
-            location: 'Kampong Thom',
-            lastAssessed: 'Dec 05, 2023',
-            riskLevel: 'Low',
-            readinessStatus: 'Investment Ready',
-            score: 75,
-            growthPotential: 80,
-            programIds: [3]
-       },
-       {
-            id: 11,
-            name: 'Smart Solutions',
-            industry: 'Technology',
-            location: 'Phnom Penh',
-            lastAssessed: 'Feb 28, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 55,
-            growthPotential: 88,
-            programIds: [2]
-       },
-       {
-            id: 12,
-            name: 'Eco Tourism Cambodia',
-            industry: 'Tourism',
-            location: 'Koh Kong',
-            lastAssessed: 'Jan 30, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Near Ready',
-            score: 63,
-            growthPotential: 75,
-            programIds: [1]
-       },
-       {
-            id: 13,
-            name: 'Phnom Penh Construction',
-            industry: 'Construction',
-            location: 'Phnom Penh',
-            lastAssessed: 'Nov 25, 2023',
-            riskLevel: 'High',
-            readinessStatus: 'Needs Improvement',
-            score: 45,
-            growthPotential: 55,
-            programIds: []
-       },
-       {
-            id: 14,
-            name: 'Battambang Rice Mill',
-            industry: 'Agriculture',
-            location: 'Battambang',
-            lastAssessed: 'Feb 05, 2024',
-            riskLevel: 'Low',
-            readinessStatus: 'Investment Ready',
-            score: 72,
-            growthPotential: 68,
-            programIds: [3]
-       },
-       {
-            id: 15,
-            name: 'Kandal Handicrafts',
-            industry: 'Manufacturing',
-            location: 'Kandal',
-            lastAssessed: 'Mar 12, 2024',
-            riskLevel: 'Medium',
-            readinessStatus: 'Early Stage',
-            score: 50,
-            growthPotential: 70,
-            programIds: [1, 2]
-       },
-       {
-             id: 16,
-             name: 'Sihanoukville Fisheries',
-             industry: 'Agriculture',
-             location: 'Preah Sihanouk',
-             lastAssessed: 'Jan 10, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Near Ready',
-             score: 61,
-             growthPotential: 65,
-             programIds: [3]
-        },
-        {
-             id: 17,
-             name: 'Mondulkiri Coffee',
-             industry: 'Agriculture',
-             location: 'Mondulkiri',
-             lastAssessed: 'Feb 15, 2024',
-             riskLevel: 'Low',
-             readinessStatus: 'Investment Ready',
-             score: 82,
-             growthPotential: 85,
-             programIds: [3]
-        },
-        {
-             id: 18,
-             name: 'Kep Salt',
-             industry: 'Manufacturing',
-             location: 'Kep',
-             lastAssessed: 'Dec 15, 2023',
-             riskLevel: 'Medium',
-             readinessStatus: 'Early Stage',
-             score: 56,
-             growthPotential: 60,
-             programIds: []
-        },
-        {
-             id: 19,
-             name: 'Takeo Silk',
-             industry: 'Textile',
-             location: 'Takeo',
-             lastAssessed: 'Feb 22, 2024',
-             riskLevel: 'Low',
-             readinessStatus: 'Near Ready',
-             score: 66,
-             growthPotential: 74,
-             programIds: [2]
-        },
-        {
-             id: 20,
-             name: 'Prey Veng Aqua',
-             industry: 'Agriculture',
-             location: 'Prey Veng',
-             lastAssessed: 'Mar 05, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Early Stage',
-             score: 59,
-             growthPotential: 79,
-             programIds: [3]
-        },
-        // --- New Mock Data for Program 1 (SME Digitization) ---
-        {
-             id: 21,
-             name: 'AgriTech Solutions',
-             industry: 'Agriculture',
-             location: 'Battambang',
-             lastAssessed: 'Aug 15, 2024',
-             riskLevel: 'Low',
-             readinessStatus: 'Investment Ready',
-             score: 85, // Completed (>80)
-             growthPotential: 92,
-             programIds: [1]
-        },
-        {
-             id: 22,
-             name: 'Urban Retailers',
-             industry: 'Retail',
-             location: 'Phnom Penh',
-             lastAssessed: 'Never',
-             riskLevel: 'High',
-             readinessStatus: 'Early Stage',
-             score: 0, // Invited (0 score, ID 22 % 3 != 0)
-             growthPotential: 45,
-             programIds: [1]
-        },
-        {
-             id: 23,
-             name: 'Kampot Pepper Co',
-             industry: 'Agriculture',
-             location: 'Kampot',
-             lastAssessed: 'Jul 20, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Near Ready',
-             score: 65, // In Progress (>20)
-             growthPotential: 78,
-             programIds: [1]
-        },
-        {
-             id: 24,
-             name: 'Khmer Ceramics',
-             industry: 'Manufacturing',
-             location: 'Siem Reap',
-             lastAssessed: 'Sep 01, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Early Stage',
-             score: 0, // Enrolled (0 score, ID 24 % 3 == 0)
-             growthPotential: 60,
-             programIds: [1]
-        },
-        {
-             id: 25,
-             name: 'Digital Pay',
-             industry: 'FinTech',
-             location: 'Phnom Penh',
-             lastAssessed: 'Aug 28, 2024',
-             riskLevel: 'Low',
-             readinessStatus: 'Investment Ready',
-             score: 92, // Completed
-             growthPotential: 95,
-             programIds: [1]
-        },
-        {
-             id: 26,
-             name: 'EcoEnergy Cambodia',
-             industry: 'Energy',
-             location: 'Phnom Penh',
-             lastAssessed: 'Jun 10, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Early Stage',
-             score: 45, // In Progress
-             growthPotential: 70,
-             programIds: [1]
-        },
-        {
-             id: 27,
-             name: 'Sihanouk Logistics',
-             industry: 'Logistics',
-             location: 'Sihanoukville',
-             lastAssessed: 'Never',
-             riskLevel: 'High',
-             readinessStatus: 'Pre-investment',
-             score: 0, // Enrolled (ID 27 % 3 == 0)
-             growthPotential: 55,
-             programIds: [1]
-        },
-        {
-             id: 28,
-             name: 'Mondulkiri Eco-Resort',
-             industry: 'Tourism',
-             location: 'Mondulkiri',
-             lastAssessed: 'Never',
-             riskLevel: 'Medium',
-             readinessStatus: 'Early Stage',
-             score: 0, // Invited
-             growthPotential: 65,
-             programIds: [1]
-        },
-        {
-             id: 29,
-             name: 'TechStart Cambodia',
-             industry: 'Technology',
-             location: 'Phnom Penh',
-             lastAssessed: 'Aug 05, 2024',
-             riskLevel: 'Low',
-             readinessStatus: 'Investment Ready',
-             score: 88, // Completed
-             growthPotential: 89,
-             programIds: [1]
-        },
-        {
-             id: 30,
-             name: 'Organic Farms',
-             industry: 'Agriculture',
-             location: 'Kandal',
-             lastAssessed: 'Sep 10, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Near Ready',
-             score: 0, // Enrolled (ID 30 % 3 == 0)
-             growthPotential: 75,
-             programIds: [1]
-        },
-        {
-             id: 31,
-             name: 'Creative Design Studio',
-             industry: 'Services',
-             location: 'Phnom Penh',
-             lastAssessed: 'Jul 05, 2024',
-             riskLevel: 'Medium',
-             readinessStatus: 'Early Stage',
-             score: 35, // In Progress
-             growthPotential: 82,
-             programIds: [1]
-        },
-         {
-             id: 32,
-             name: 'Future EdTech',
-             industry: 'Education',
-             location: 'Battambang',
-             lastAssessed: 'Aug 22, 2024',
-             riskLevel: 'Low',
-             readinessStatus: 'Near Ready',
-             score: 75, // In Progress
-             growthPotential: 88,
-             programIds: [1]
-        }
-    ],
+    smes: [],
     verificationRequests: [
       {
         id: 101,
@@ -635,32 +318,7 @@ export const useAdminStore = defineStore('admin', {
         evidenceLink: 'cert_export.pdf'
       }
     ],
-    auditLogs: [
-      {
-        id: 1,
-        admin: 'Sokha Chan',
-        action: 'Updated Framework',
-        target: 'Pillar Weights',
-        timestamp: '2024-03-14 10:30 AM',
-        details: 'Changed Team & Leadership from 10% to 12.5%'
-      },
-      {
-        id: 2,
-        admin: 'Sokha Chan',
-        action: 'Created Program',
-        target: 'FinTech Growth 2024',
-        timestamp: '2024-03-13 02:15 PM',
-        details: 'launched new accelerator program'
-      },
-      {
-        id: 3,
-        admin: 'System',
-        action: 'Auto-Flagged',
-        target: 'GreenTech Solutions',
-        timestamp: '2024-03-13 09:00 AM',
-        details: 'Discrepancy in reported revenue vs uploaded audit.'
-      }
-    ],
+    auditLogs: [],
     templates: [
       {
         id: 'temp_001',
@@ -673,6 +331,18 @@ export const useAdminStore = defineStore('admin', {
         status: 'Active',
         updatedAt: 'Jan 29, 2026',
         updatedBy: 'System Admin'
+      },
+      {
+        id: 'temp_agritech_001',
+        name: 'AgriTech Sustainability Standard',
+        version: 'v2.1',
+        pillarCount: 8,
+        questionCount: 42,
+        usageCount: 5,
+        description: 'Specialized assessment for AgriTech startups with focus on sustainability and ESG.',
+        status: 'Active',
+        updatedAt: 'Feb 10, 2026',
+        updatedBy: 'Agri Expert'
       },
       {
         id: 'temp_002',
@@ -780,14 +450,32 @@ export const useAdminStore = defineStore('admin', {
        { id: 'q1', pillarId: 'team', templateId: 'temp_001', text: 'Does your company have a dedicated CEO?', type: 'Yes/No', weight: 15, required: true },
        { id: 'q2', pillarId: 'team', templateId: 'temp_001', text: 'Do you have a CFO?', type: 'Yes/No', weight: 15, required: true },
        { id: 'q3', pillarId: 'team', templateId: 'temp_001', text: 'Do you have an advisory board?', type: 'Yes/No', weight: 10, required: false },
-       { id: 'q4', pillarId: 'team', templateId: 'temp_001', text: 'Years of industry experience in leadership?', type: 'Dropdown Select', weight: 20, required: true },
+       { 
+         id: 'q4', 
+         pillarId: 'team', 
+         templateId: 'temp_001', 
+         text: 'Years of industry experience in leadership?', 
+         type: 'Dropdown Select', 
+         weight: 20, 
+         required: true,
+         options: ['10+ years', '6-10 years', '3-5 years', '0-2 years'] 
+       },
        { id: 'q5', pillarId: 'team', templateId: 'temp_001', text: 'Rate team execution ability', type: 'Scale (1-10)', weight: 20, required: true },
        { id: 'q23', pillarId: 'team', templateId: 'temp_001', text: 'Do you have a clear organizational chart?', type: 'Yes/No', weight: 20, required: true },
        
        // Business (5)
        { id: 'q8', pillarId: 'business', templateId: 'temp_001', text: 'Is your value proposition clearly defined?', type: 'Yes/No', weight: 20, required: true },
        { id: 'q9', pillarId: 'business', templateId: 'temp_001', text: 'Do you have a scalable business model?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q10', pillarId: 'business', templateId: 'temp_001', text: 'Primary revenue stream?', type: 'Dropdown Select', weight: 20, required: true },
+       { 
+         id: 'q10', 
+         pillarId: 'business', 
+         templateId: 'temp_001', 
+         text: 'Primary revenue stream?', 
+         type: 'Dropdown Select', 
+         weight: 20, 
+         required: true,
+         options: ['Recurring / Subscription', 'One-time Sales', 'Service Fees', 'Licensing', 'Advertising'] 
+       },
        { id: 'q24', pillarId: 'business', templateId: 'temp_001', text: 'Customer acquisition strategy defined?', type: 'Yes/No', weight: 20, required: true },
        { id: 'q25', pillarId: 'business', templateId: 'temp_001', text: 'Partnership strategy in place?', type: 'Yes/No', weight: 20, required: false },
 
@@ -822,14 +510,22 @@ export const useAdminStore = defineStore('admin', {
        // Data (5)
        { id: 'q20', pillarId: 'data', templateId: 'temp_001', text: 'Do you collect customer data?', type: 'Yes/No', weight: 30, required: true },
        { id: 'q21', pillarId: 'data', templateId: 'temp_001', text: 'Are you compliant with data privacy laws?', type: 'Yes/No', weight: 70, required: true },
-       { id: 'q36', pillarId: 'data', templateId: 'temp_001', text: 'Data backup frequency?', type: 'Dropdown Select', weight: 30, required: true },
+       { 
+         id: 'q36', 
+         pillarId: 'data', 
+         templateId: 'temp_001', 
+         text: 'Data backup frequency?', 
+         type: 'Dropdown Select', 
+         weight: 30, 
+         required: true,
+         options: ['Daily', 'Weekly', 'Monthly', 'Never']
+       },
        { id: 'q37', pillarId: 'data', templateId: 'temp_001', text: 'Cybersecurity measures in place?', type: 'Yes/No', weight: 40, required: true },
        { id: 'q38', pillarId: 'data', templateId: 'temp_001', text: 'Analytics tools used?', type: 'Text', weight: 30, required: false },
 
-
        // Growth (5)
        { id: 'q22', pillarId: 'growth', templateId: 'temp_001', text: 'Do you have a clear expansion plan?', type: 'Yes/No', weight: 50, required: true },
-       { id: 'q39', pillarId: 'growth', templateId: 'temp_001', text: 'International markets identified?', type: 'Yes/No', weight: 25, required: false },
+       { id: 'q39', pillarId: 'growth', templateId: 'temp_001', text: 'International markets identified?', type: 'Yes/No', weight: 25, required: true },
        { id: 'q40', pillarId: 'growth', templateId: 'temp_001', text: 'Product roadmap for next 12 months?', type: 'Yes/No', weight: 25, required: true },
        { id: 'q41', pillarId: 'growth', templateId: 'temp_001', text: 'Hiring plan for next 12 months?', type: 'Yes/No', weight: 25, required: true },
        { id: 'q42', pillarId: 'growth', templateId: 'temp_001', text: 'Marketing budget allocated?', type: 'Yes/No', weight: 25, required: true },
@@ -867,8 +563,14 @@ export const useAdminStore = defineStore('admin', {
        // --- Quick Assessment (temp_004) - ~21 questions ---
        { id: 'q4_t1', pillarId: 'team', templateId: 'temp_004', text: 'Founder Full Time?', type: 'Yes/No', weight: 50, required: true },
        { id: 'q4_b1', pillarId: 'business', templateId: 'temp_004', text: 'Product is Live?', type: 'Yes/No', weight: 50, required: true },
-       { id: 'q4_m1', pillarId: 'market', templateId: 'temp_004', text: 'Market Growing?', type: 'Yes/No', weight: 50, required: true },
-       { id: 'q4_f1', pillarId: 'finance', templateId: 'temp_004', text: 'Generated Revenue?', type: 'Yes/No', weight: 50, required: true }
+        { id: 'q4_m1', pillarId: 'market', templateId: 'temp_004', text: 'Market Growing?', type: 'Yes/No', weight: 50, required: true },
+        { id: 'q4_f1', pillarId: 'finance', templateId: 'temp_004', text: 'Generated Revenue?', type: 'Yes/No', weight: 50, required: true },
+
+        // --- AgriTech Sustainability Standard (temp_agritech_001) ---
+        { id: 'qa_t1', pillarId: 'team', templateId: 'temp_agritech_001', text: 'Does your team have agricultural expertise?', type: 'Yes/No', weight: 50, required: true },
+        { id: 'qa_b1', pillarId: 'business', templateId: 'temp_agritech_001', text: 'Is your solution sustainable?', type: 'Yes/No', weight: 100, required: true },
+        { id: 'qa_o1', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you have a stable supply chain?', type: 'Yes/No', weight: 50, required: true },
+        { id: 'qa_o2', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you measure your carbon footprint?', type: 'Yes/No', weight: 50, required: true, helperText: 'Custom ESG metric for AgriTech' }
     ],
     loading: false,
     error: null
@@ -894,32 +596,47 @@ export const useAdminStore = defineStore('admin', {
   },
 
   actions: {
+    async fetchDashboardStats() {
+      this.loading = true
+      this.error = null
+      const service = new AdminService()
+      try {
+        const response = await service.getDashboardData() as any
+        if (response) {
+          this.dashboardStats = response
+        }
+      } catch (err: any) {
+        this.error = err.message
+        console.error('Failed to fetch dashboard stats', err)
+      } finally {
+        this.loading = false
+      }
+    },
+
     async fetchUsersData() {
       this.loading = true
       this.error = null
       const service = new AdminService()
       try {
-        const response = await service.getUsersData()
-        
-        // Assuming response structure, or mapping directly if the service returns what we need.
-        // Based on service definition, it returns repo.getUsersData().
-        // If repo returns list, we map it. If it returns object with stats, we use it.
-        // Let's assume for now it returns the list as previously mocked or similar.
-        // Actually, looking at the previous mock logic, it was using 'db'. 
-        // The USER wants their service back. 
-        // Since I can't see the User Repository content, I will assume the service returns the data needed.
-        
-        // If API returns data, use it. Otherwise keep the mock data from initial state.
-        if (response && response.length > 0) {
-          this.users = response
-        } 
-        // Logic to calculate stats if not provided by backend
-         this.userStats = {
+        const response = await service.getUsersData() as any
+
+        // API returns { users: [], stats: {}, pendingUsers: [] }
+        const userList = response?.users || []
+        if (userList.length > 0) {
+          this.users = userList
+        }
+
+        // Use stats from API if available, otherwise compute from users list
+        if (response?.stats) {
+          this.userStats = response.stats
+        } else {
+          this.userStats = {
             total: this.users.length,
             pending: this.users.filter((u: any) => u.status === 'pending').length,
             smes: this.users.filter((u: any) => u.role === 'sme').length,
             investors: this.users.filter((u: any) => u.role === 'investor').length,
             admins: this.users.filter((u: any) => u.role === 'admin').length
+          }
         }
         this.pendingUsers = this.users.filter((u: any) => u.status === 'pending')
 
@@ -1014,6 +731,50 @@ export const useAdminStore = defineStore('admin', {
       } finally {
         this.loading = false
       }
+    },
+    async fetchTemplatesData() {
+      this.loading = true
+      this.error = null
+      const service = new AdminService()
+      try {
+        const templates = await service.getTemplatesData()
+        this.templates = templates
+        console.log(`[Admin Store] Fetched ${templates?.length} templates`)
+        
+        // Also fetch questions whenever templates are fetched to stay in sync
+        await this.fetchQuestionsData()
+      } catch (err: any) {
+        this.error = err.message
+        console.error('Failed to fetch admin templates data', err)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchQuestionsData() {
+        const service = new AdminService()
+        try {
+            const response = await service.getQuestionsData()
+            if (response && response.length > 0) {
+                this.questions = response
+            }
+            console.log(`[Admin Store] Fetched ${this.questions.length} questions`)
+        } catch (err: any) {
+            console.error('Failed to fetch questions', err)
+        }
+    },
+
+    async fetchSmesData() {
+        const service = new AdminService()
+        try {
+            const response = await service.getSMEsData()
+            if (response) {
+                this.smes = response
+            }
+            console.log(`[Admin Store] Fetched ${this.smes.length} SMEs`)
+        } catch (err: any) {
+            console.error('Failed to fetch SMEs', err)
+        }
     },
 
     async updateFrameworkSettings(settings: PillarWeight[]) {
@@ -1230,11 +991,13 @@ export const useAdminStore = defineStore('admin', {
     async addQuestion(question: any) {
         this.loading = true
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
+            const service = new AdminService()
             const newQuestion = { 
                 ...question, 
                 id: question.id || `q_${Date.now()}` // Ensure ID
             }
+            
+            await service.saveQuestion(newQuestion)
             this.questions.push(newQuestion)
 
             // Update template question count
@@ -1242,9 +1005,6 @@ export const useAdminStore = defineStore('admin', {
                 const template = this.templates.find(t => t.id === question.templateId)
                 if (template) {
                     template.questionCount = (template.questionCount || 0) + 1
-                    
-                    // Update pillar count logic if needed (simple check if pillar exists in questions for this template)
-                    // For now simplest is increment question count.
                 }
             }
             
@@ -1264,7 +1024,9 @@ export const useAdminStore = defineStore('admin', {
     async updateQuestion(question: any) {
         this.loading = true
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
+            const service = new AdminService()
+            await service.saveQuestion(question)
+            
             const index = this.questions.findIndex(q => q.id === question.id)
             if (index !== -1) {
                 this.questions[index] = { ...question }
@@ -1286,7 +1048,9 @@ export const useAdminStore = defineStore('admin', {
     async deleteQuestion(id: string) {
         this.loading = true
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
+            const service = new AdminService()
+            await service.deleteQuestion(id)
+            
             const question = this.questions.find(q => q.id === id)
             this.questions = this.questions.filter(q => q.id !== id)
             
@@ -1430,6 +1194,10 @@ export const useAdminStore = defineStore('admin', {
                 }
             }
 
+            // Save to server first
+            const service = new AdminService()
+            await service.createTemplate(newTemplate)
+
             this.templates.unshift(newTemplate as any)
             
             this.auditLogs.unshift({
@@ -1537,7 +1305,8 @@ export const useAdminStore = defineStore('admin', {
     async enrollSmesToProgram(programId: number | string, smeIds: (number | string)[]) {
         this.loading = true
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
+            const service = new AdminService()
+            await service.enrollSmesToProgram(programId, smeIds)
             
             const pId = Number(programId)
 
@@ -1647,6 +1416,35 @@ export const useAdminStore = defineStore('admin', {
                     details: `Updated status to ${status}`
                 })
             }
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async updatePillarWeights(newWeights: PillarWeight[]) {
+        this.loading = true
+        try {
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // Validate total weight equals 100
+            const total = newWeights.reduce((sum, p) => sum + p.weight, 0)
+            if (Math.abs(total - 100) > 0.1) {
+                this.error = 'Total weight must equal 100%'
+                return
+            }
+
+            this.frameworkSettings = newWeights
+            this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: 'Updated Framework',
+                target: 'Pillar Weights',
+                timestamp: new Date().toLocaleString(),
+                details: 'Updated pillar weight distribution'
+            })
+        } catch (err: any) {
+            this.error = err.message
         } finally {
             this.loading = false
         }

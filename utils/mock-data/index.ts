@@ -15,17 +15,25 @@ import { mockAdminAuditLogs, mockNotifications } from './admin-notifications'
 /**
  * Get complete SME data including user, profile, latest assessment, goals, etc.
  */
-export function getSMEData(smeId: number) {
+export function getSMEData(smeId: number, adminQuestions?: any[], overrideAssessments?: any[], overrideResponses?: any[]) {
   const profile = mockSMEProfiles.find(p => p.id === smeId)
   if (!profile) return null
   
   const user = mockUsers.find(u => u.id === profile.user_id)
-  const assessments = mockAssessments
+  const assessments = (overrideAssessments || mockAssessments)
     .filter(a => a.sme_id === smeId && a.status === 'COMPLETED')
-    .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
+    .sort((a, b) => {
+      const dateA = a.completed_at ? new Date(a.completed_at).getTime() : 0
+      const dateB = b.completed_at ? new Date(b.completed_at).getTime() : 0
+      return dateB - dateA
+    })
   
+  console.log(`[getSMEData] SME: ${smeId}, Assessments found: ${assessments.length}`)
   const latestAssessment = assessments[0]
-  const pillarScores = latestAssessment ? getPillarScores(latestAssessment.id) : []
+
+  if (latestAssessment) {
+      console.log(`[getSMEData] Latest Assessment ID: ${latestAssessment.id}, Score: ${latestAssessment.total_score}`)
+  }
   
   const goals = mockGoals.filter(g => g.sme_id === smeId)
   const enrollments = mockProgramEnrollments.filter(e => e.sme_id === smeId)
@@ -33,11 +41,24 @@ export function getSMEData(smeId: number) {
   const documents = mockDocuments.filter(d => d.sme_id === smeId)
   const interests = mockInvestorInterests.filter(i => i.sme_id === smeId)
   
+  // CRITICAL FIX: Ensure we use the REAL calculated pillar scores from the assessment if available
+  // Fallback to the random generator ONLY if no assessment exists
+  let finalPillarScores: any[] = []
+  
+  if (latestAssessment) {
+      // Pass adminQuestions to getPillarScores to calculate correctly for admin-created templates
+      finalPillarScores = getPillarScores(latestAssessment.id, adminQuestions, overrideResponses, assessments)
+      console.log(`[getSMEData] Pillar Scores calculated: ${finalPillarScores.length}`)
+  } else {
+      // No assessment? Return empty scores so dashboard shows 0
+      finalPillarScores = [] 
+  }
+
   return {
     user,
     profile,
     latestAssessment,
-    pillarScores,
+    pillarScores: finalPillarScores,
     assessmentHistory: assessments,
     goals,
     programs,

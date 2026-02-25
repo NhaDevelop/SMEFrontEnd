@@ -67,6 +67,7 @@ export const mockSMEProfiles = [
     team_size: 25,
     location: 'Phnom Penh, Cambodia',
     website_url: 'https://angkortech.com',
+    description: 'A leading technology company providing innovative software solutions for the Cambodian market.',
     verified_by_user_id: 1,
     verification_date: '2024-02-02T10:00:00Z'
   },
@@ -80,6 +81,7 @@ export const mockSMEProfiles = [
     team_size: 8,
     location: 'Siem Reap, Cambodia',
     website_url: 'https://greendata.com',
+    description: 'Empowering farmers with data-driven insights to improve crop yields and sustainability.',
     verified_by_user_id: 1,
     verification_date: '2024-02-16T09:00:00Z'
   },
@@ -93,6 +95,7 @@ export const mockSMEProfiles = [
     team_size: 5,
     location: 'Phnom Penh, Cambodia',
     website_url: 'https://fintech-solutions.com',
+    description: 'Revolutionizing financial access for underserved communities through mobile technology.',
     verified_by_user_id: null,
     verification_date: null
   }
