@@ -100,6 +100,8 @@ erDiagram
     PROGRAMS {
         int id PK
         string name
+        int template_id FK "(Optional)"
+        string status "Active | Draft"
         date start_date
         date end_date
     }
@@ -159,3 +161,27 @@ erDiagram
 
     SME_PROFILES ||--|{ DOCUMENTS : "uploads"
     DOCUMENTS ||--o| VERIFICATION_REQUESTS : "requires"
+
+    %% ==========================================
+    %% 7. ADMIN & SYSTEM
+    %% ==========================================
+    NOTIFICATION_TEMPLATES {
+        int id PK
+        string name
+        string type
+        string trigger_event
+        string subject
+        string body
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+
+    REPORT_LOGS {
+        string id PK
+        string type "PDF | CSV"
+        string name 
+        string company
+        int sme_id FK "(Optional)"
+        datetime created_at
+    }

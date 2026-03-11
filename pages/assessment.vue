@@ -290,40 +290,80 @@
 
               <!-- Question Loop -->
               <div class="space-y-8">
-                <div v-for="(q, idx) in currentSectionData.questions" :key="q.id">
+                <div v-for="(q, idx) in currentSectionData.questions" :key="q.id" :id="`question-${q.id}`">
                   <label class="block text-sm font-medium text-gray-900 mb-3">
                     <span class="text-gray-500 font-normal block mb-1">Question {{ idx + 1 }}</span>
                     {{ q.text }} <span v-if="q.required" class="text-red-500">*</span>
                   </label>
 
                   <!-- YES/NO or BOOLEAN (Yes/No Questions) -->
-                  <div v-if="q.type === 'Yes/No' || q.type === 'BOOLEAN'" class="flex gap-6">
-                    <!-- If question has options (BOOLEAN type from mock data) -->
-                    <template v-if="q.options && q.options.length > 0">
-                      <label v-for="option in q.options" :key="option.value"
-                        class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" v-model="answers[q.id]" :value="option.value"
-                          class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
-                        <span class="text-sm text-gray-700">{{ option.label }}</span>
+                  <div v-if="q.type === 'Yes/No' || q.type === 'BOOLEAN'" class="flex flex-col gap-4">
+                    <div class="flex gap-6">
+                      <!-- If question has options (BOOLEAN type from mock data) -->
+                      <template v-if="q.options && q.options.length > 0">
+                        <label v-for="option in q.options" :key="option.value"
+                          class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" v-model="answers[q.id]" :value="option.value"
+                            class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
+                          <span class="text-sm text-gray-700">{{ option.label }}</span>
+                        </label>
+                      </template>
+                      <!-- Default Yes/No (admin store type) -->
+                      <template v-else>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" v-model="answers[q.id]" :value="true"
+                            class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
+                          <span class="text-sm text-gray-700">Yes</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" v-model="answers[q.id]" :value="false"
+                            class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
+                          <span class="text-sm text-gray-700">No</span>
+                        </label>
+                      </template>
+                    </div>
+
+                    <!-- Proof File Upload — only shown when answer is Yes -->
+                    <div v-if="answers[q.id] === true"
+                      :class="proofValidationErrors.includes(q.id) ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'"
+                      class="max-w-md mt-1 p-4 rounded-lg border transition-colors">
+                      <label class="block text-sm font-medium mb-2"
+                        :class="proofValidationErrors.includes(q.id) ? 'text-red-600' : 'text-gray-700'">
+                        Upload Proof <span class="text-red-500">*</span>
+                        <span v-if="proofValidationErrors.includes(q.id)" class="ml-2 font-normal text-xs text-red-500">
+                          ⚠ Proof document required before proceeding
+                        </span>
                       </label>
-                    </template>
-                    <!-- Default Yes/No (admin store type) -->
-                    <template v-else>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" v-model="answers[q.id]" :value="true"
-                          class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
-                        <span class="text-sm text-gray-700">Yes</span>
+                      <label
+                        :class="proofValidationErrors.includes(q.id) ? 'border-red-300 hover:border-red-400 hover:bg-red-50' : 'border-gray-300 hover:bg-teal-50 hover:border-teal-300'"
+                        class="flex flex-col items-center px-4 py-4 bg-white border-2 border-dashed rounded-lg cursor-pointer transition-colors">
+                        <svg class="w-6 h-6 mb-2"
+                          :class="proofValidationErrors.includes(q.id) ? 'text-red-400' : 'text-gray-400'" fill="none"
+                          stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                          </path>
+                        </svg>
+                        <span class="text-sm text-gray-600"><span class="font-semibold text-teal-600">Click to upload
+                            proof</span>
+                          document</span>
+                        <input type="file" class="hidden"
+                          @change="(e) => { handleFileUpload(e, q.id + '_proof'); proofValidationErrors = proofValidationErrors.filter(id => id !== q.id) }"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                       </label>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" v-model="answers[q.id]" :value="false"
-                          class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
-                        <span class="text-sm text-gray-700">No</span>
-                      </label>
-                    </template>
+                      <!-- Show selected file name -->
+                      <div v-if="answers[q.id + '_proof']"
+                        class="mt-3 text-sm text-gray-700 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
+                        <CheckCircleIcon class="w-5 h-5 text-teal-600" />
+                        <span class="truncate font-medium">{{ answers[q.id + '_proof']?.name || 'Proof file attached'
+                        }}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <!-- CHOICE (Multiple Choice with options) -->
-                  <div v-else-if="q.type === 'CHOICE'" class="space-y-3">
+                  <!-- CHOICE (Single Choice or Multiple Choice with options) -->
+                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Multiple Choice' || q.type === 'Single Choice'"
+                    class="space-y-3">
                     <template v-if="q.options && q.options.length > 0">
                       <!-- Handle both object format {label, value, points} and simple string array -->
                       <label v-for="(option, idx) in q.options" :key="idx"
@@ -355,11 +395,6 @@
                       class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
 
-                  <!-- NUMBER -->
-                  <div v-else-if="q.type === 'Number' || q.type === 'NUMBER'">
-                    <input type="number" v-model.number="answers[q.id]" placeholder="Enter a number"
-                      class="w-full max-w-md px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 outline-none text-sm">
-                  </div>
 
                   <!-- TEXT -->
                   <div v-else-if="q.type === 'Text' || q.type === 'TEXT'">
@@ -446,7 +481,7 @@
             Previous
           </button>
 
-          <button v-if="currentSection < sections.length - 1" @click="nextSection"
+          <button v-if="currentSection < sections.length - 1" @click="validateAndNext"
             class="px-6 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 shadow-md hover:shadow-lg transition-all flex items-center gap-2">
             Next
             <ChevronRightIcon class="w-4 h-4" />
@@ -717,10 +752,10 @@ const finalScore = computed(() => {
         questionScore = answer === true ? weight : 0
       }
       // For CHOICE questions with options
-      else if (question.type === 'CHOICE' && question.options) {
+      else if ((question.type === 'CHOICE' || question.type === 'Multiple Choice' || question.type === 'Single Choice') && question.options) {
         // Check if options are objects with points or simple strings
         const selectedOption = (question.options as any[]).find(opt => {
-          const optValue = typeof opt === 'object' && opt !== null && 'value' in opt ? opt.value : opt
+          const optValue = typeof opt === 'object' && opt !== null && ('value' in opt ? opt.value : opt.label) ? (opt.value || opt.label) : opt
           return optValue === answer
         })
 
@@ -778,6 +813,41 @@ const finalScore = computed(() => {
 })
 
 const isSubmitted = ref(false)
+
+// Tracks question IDs with missing proof (Yes/No answered Yes but no file)
+const proofValidationErrors = ref<string[]>([])
+
+// Validates proof uploads for Yes/No questions in the current section before proceeding
+const validateAndNext = () => {
+  const section = currentSectionData.value
+  if (!section?.questions) {
+    currentSection.value++
+    return
+  }
+
+  const missing: string[] = []
+  section.questions.forEach((q: any) => {
+    const isYesNo = q.type === 'Yes/No' || q.type === 'BOOLEAN'
+    const answeredYes = answers.value[q.id] === true
+    const hasProof = !!answers.value[q.id + '_proof']
+    if (isYesNo && answeredYes && !hasProof) {
+      missing.push(q.id)
+    }
+  })
+
+  proofValidationErrors.value = missing
+
+  if (missing.length > 0) {
+    // Scroll to first error question
+    const firstErrorEl = document.getElementById(`question-${missing[0]}`)
+    if (firstErrorEl) firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return // Block navigation
+  }
+
+  // All good — clear errors and advance
+  proofValidationErrors.value = []
+  currentSection.value++
+}
 
 const submitAssessment = async () => {
   console.log('[Assessment] Submit button clicked')

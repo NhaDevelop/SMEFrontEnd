@@ -24,13 +24,25 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Map through assessments to attach real names instead of database IDs
+  const mappedSmeData = { ...smeData }
+  if (mappedSmeData.assessments && Array.isArray(mappedSmeData.assessments)) {
+     mappedSmeData.assessments = mappedSmeData.assessments.map((a: any) => {
+         const t = db.templates.findById(a.templateId || a.template_id)
+         return {
+             ...a,
+             templateName: t ? t.name : 'Standard Readiness Assessment'
+         }
+     })
+  }
+
   return {
-    ...smeData,
+    ...mappedSmeData,
     // Add computed fields for UI
-    readinessLevel: smeData.assessments && smeData.assessments[0]?.score 
-      ? smeData.assessments[0].score >= 70 
+    readinessLevel: mappedSmeData.assessments && mappedSmeData.assessments[0]?.score 
+      ? mappedSmeData.assessments[0].score >= 70 
         ? 'Investment Ready' 
-        : smeData.assessments[0].score >= 50 
+        : mappedSmeData.assessments[0].score >= 50 
           ? 'Developing' 
           : 'Needs Improvement'
       : 'Not Assessed'

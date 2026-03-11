@@ -81,12 +81,27 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="pillar in pillars" :key="pillar.name">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ pillar.name
-                                }}</td>
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                    <div class="flex flex-col gap-1">
+                                        <span>{{ pillar.name }}</span>
+                                        <div v-if="pillar.score < 50"
+                                            class="flex items-start gap-1 text-xs text-rose-600 font-normal max-w-xs leading-relaxed mt-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" class="w-3.5 h-3.5 mt-0.5 shrink-0">
+                                                <path fill-rule="evenodd"
+                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                            Recommendation: Focus on strengthening readiness here to improve overall
+                                            score.
+                                        </div>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap align-middle">
                                     <div class="flex items-center gap-3">
                                         <div class="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                            <div class="h-full rounded-full" :class="getPillarColor(pillar.score)"
+                                            <div class="h-full rounded-full"
+                                                :class="getPillarColor(pillar.score, thresholds)"
                                                 :style="{ width: pillar.score + '%' }"></div>
                                         </div>
                                         <span class="text-sm text-gray-900 font-bold">{{ pillar.score }}</span>
@@ -94,10 +109,10 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span
-                                        :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium', getRiskBadgeStyles(getRiskFromScore(pillar.score))]">
+                                        :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium', getRiskBadgeStyles(getRiskFromScore(pillar.score, thresholds))]">
                                         <span
-                                            :class="['w-1.5 h-1.5 rounded-full', getRiskDotStyles(getRiskFromScore(pillar.score))]"></span>
-                                        {{ getRiskFromScore(pillar.score) }} Risk
+                                            :class="['w-1.5 h-1.5 rounded-full', getRiskDotStyles(getRiskFromScore(pillar.score, thresholds))]"></span>
+                                        {{ getRiskFromScore(pillar.score, thresholds) }} Risk
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">
@@ -136,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
     XMarkIcon,
@@ -162,6 +177,13 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'create-goal'])
 const router = useRouter()
+
+const thresholds = ref<any[]>([])
+
+onMounted(async () => {
+    const settings = await $fetch<any>('/api/admin/settings').catch(() => null)
+    if (settings && settings.thresholds) thresholds.value = settings.thresholds
+})
 
 const growthPotential = computed(() => {
     const val = props.sme.growthPotential || props.sme.growthRate || 75

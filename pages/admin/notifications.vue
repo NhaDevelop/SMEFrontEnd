@@ -268,54 +268,34 @@ const triggerEvents = [
     'Registration Rejected'
 ]
 
-// ── Default templates ──────────────────────────────────────────────────────────
-const templates = ref<NotificationTemplate[]>([
-    {
-        id: 'ntpl_1',
-        name: 'Assessment Completed',
-        type: 'email',
-        trigger: 'Assessment Completed',
-        subject: 'Your Assessment Has Been Completed',
-        body: `Dear {{sme_name}},\n\nYour investment readiness assessment has been completed. Your overall score is {{score}}.\n\nView your full report at {{report_link}}.\n\nBest regards,\nIRIP Team`,
-        active: true
-    },
-    {
-        id: 'ntpl_2',
-        name: 'New Action Assigned',
-        type: 'in-app',
-        trigger: 'Action Assigned',
-        subject: 'New Action Item Assigned',
-        body: `You have been assigned a new action item: {{action_description}}. Log in to view details and take action.`,
-        active: true
-    },
-    {
-        id: 'ntpl_3',
-        name: 'Score Threshold Alert',
-        type: 'email',
-        trigger: 'Score Threshold Crossed',
-        subject: 'SME Score Alert',
-        body: `Dear Admin,\n\nAn SME ({{sme_name}}) has crossed a score threshold. Current score: {{score}}.\n\nPlease review their profile on the platform.\n\nIRIP System`,
-        active: true
-    },
-    {
-        id: 'ntpl_4',
-        name: 'Registration Approved',
-        type: 'email',
-        trigger: 'Registration Approved',
-        subject: 'Your Registration Has Been Approved',
-        body: `Dear {{user_name}},\n\nWe are pleased to inform you that your registration on the IRIP platform has been approved!\n\nYou can now log in and access all platform features.\n\nBest regards,\nIRIP Team`,
-        active: true
-    }
-])
+// ── Fetch templates ──────────────────────────────────────────────────────────
+const { data: templatesData, refresh: refreshTemplates } = await useFetch<NotificationTemplate[]>('/api/admin/notification-templates')
+const templates = computed(() => templatesData.value || [])
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 const previewTpl = ref<NotificationTemplate | null>(null)
 const openPreview = (tpl: NotificationTemplate) => { previewTpl.value = tpl }
 
 // ── Toggle active ─────────────────────────────────────────────────────────────
-const toggleActive = (tpl: NotificationTemplate) => {
-    tpl.active = !tpl.active
-    showToast(`Template "${tpl.name}" ${tpl.active ? 'activated' : 'deactivated'}`)
+const toggleActive = async (tpl: NotificationTemplate) => {
+    try {
+        const newStatus = !tpl.active
+        // Optimistic UI update
+        tpl.active = newStatus
+
+        await $fetch(`/api/admin/notification-templates/${tpl.id}`, {
+            method: 'PUT',
+            body: {
+                is_active: newStatus
+            }
+        })
+        showToast(`Template "${tpl.name}" ${newStatus ? 'activated' : 'deactivated'}`)
+    } catch (error) {
+        // Revert on failure
+        tpl.active = !tpl.active
+        console.error('Failed to update template status', error)
+        alert('Failed to update template status. Please try again.')
+    }
 }
 
 // ── Edit / Add modal ──────────────────────────────────────────────────────────
@@ -347,29 +327,61 @@ const openEdit = (tpl: NotificationTemplate) => {
 
 const closeModal = () => { editModal.open = false }
 
-const saveTemplate = () => {
+const saveTemplate = async () => {
     if (!editModal.form.name || !editModal.form.body) {
         alert('Please fill in all required fields.')
         return
     }
-    if (editModal.isNew) {
-        templates.value.unshift({
-            id: 'ntpl_' + Date.now(),
-            ...editModal.form
-        })
-        showToast('Template created successfully!')
-    } else {
-        const idx = templates.value.findIndex(t => t.id === editModal.editingId)
-        if (idx !== -1) templates.value[idx] = { id: editModal.editingId, ...editModal.form }
-        showToast('Template updated successfully!')
+
+    try {
+        if (editModal.isNew) {
+            await $fetch('/api/admin/notification-templates', {
+                method: 'POST',
+                body: {
+                    name: editModal.form.name,
+                    type: editModal.form.type,
+                    trigger_event: editModal.form.trigger,
+                    subject: editModal.form.subject,
+                    body: editModal.form.body,
+                    is_active: editModal.form.active
+                }
+            })
+            showToast('Template created successfully!')
+        } else {
+            await $fetch(`/api/admin/notification-templates/${editModal.editingId}`, {
+                method: 'PUT',
+                body: {
+                    name: editModal.form.name,
+                    type: editModal.form.type,
+                    trigger_event: editModal.form.trigger,
+                    subject: editModal.form.subject,
+                    body: editModal.form.body,
+                    is_active: editModal.form.active
+                }
+            })
+            showToast('Template updated successfully!')
+        }
+        await refreshTemplates()
+        closeModal()
+    } catch (error) {
+        console.error('Failed to save template', error)
+        alert('An error occurred while saving the template. Please check the log.')
     }
-    closeModal()
 }
 
-const deleteTemplate = (id: string) => {
+const deleteTemplate = async (id: string) => {
     if (!confirm('Delete this notification template?')) return
-    templates.value = templates.value.filter(t => t.id !== id)
-    showToast('Template deleted.')
+
+    try {
+        await $fetch(`/api/admin/notification-templates/${id}`, {
+            method: 'DELETE'
+        })
+        await refreshTemplates()
+        showToast('Template deleted.')
+    } catch (error) {
+        console.error('Failed to delete template', error)
+        alert('An error occurred while deleting the template. Please try again.')
+    }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

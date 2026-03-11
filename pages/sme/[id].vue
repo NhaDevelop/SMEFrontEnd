@@ -132,6 +132,10 @@
                             :class="[activeTab === 'actions' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
                             <ClipboardDocumentCheckIcon class="w-4 h-4" /> Actions ({{ actions.length }})
                         </button>
+                        <button @click="activeTab = 'documents'"
+                            :class="[activeTab === 'documents' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
+                            <DocumentIcon class="w-4 h-4" /> Documents
+                        </button>
                         <button @click="activeTab = 'notes'"
                             :class="[activeTab === 'notes' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
                             <DocumentTextIcon class="w-4 h-4" /> Notes
@@ -205,13 +209,72 @@
                     :assessmentCount="assessmentCount" :actionCount="actions.length" />
                 <SmePillarDetails v-if="activeTab === 'pillars'" :pillars="pillars" />
                 <SmeActions v-if="activeTab === 'actions'" :actions="actions" />
+                <div v-if="activeTab === 'documents'" class="mt-6">
+                    <SmeDocuments :sme-id="smeId || ''" />
+                </div>
                 <SmeNotes v-if="activeTab === 'notes'" :smeName="smeData.name" />
 
                 <div v-if="activeTab === 'history'"
-                    class="bg-white p-12 text-center rounded-xl border border-gray-200 text-gray-500 mt-6 shadow-sm">
-                    <ClockIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 class="text-lg font-medium text-gray-900">Assessment History</h3>
-                    <p class="mt-1">View past assessment results and compare progress.</p>
+                    class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6">
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Assessment History</h3>
+                            <p class="text-sm text-gray-500 mt-1">Review past assessment results and track progress over
+                                time.</p>
+                        </div>
+                    </div>
+
+                    <div v-if="!smeData.assessments || smeData.assessments.length === 0"
+                        class="p-12 text-center text-gray-500">
+                        <ClockIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <h3 class="text-lg font-medium text-gray-900">No History Available</h3>
+                        <p class="mt-1">This SME has not completed any assessments yet.</p>
+                    </div>
+
+                    <table v-else class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Date completed</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Total Score</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Status</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Template Name</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="assessment in smeData.assessments" :key="assessment.id"
+                                class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ new Date(assessment.completedAt || assessment.completed_at).toLocaleDateString()
+                                    }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-gray-900">{{ assessment.score ||
+                                            assessment.total_score }}</span>
+                                        <span class="text-xs text-gray-500">/ 100</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                        class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                        {{ assessment.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ assessment.templateName || assessment.template_name || assessment.templateId ||
+                                        assessment.template_id || 'Standard Readiness Assessment' }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
             </div>
@@ -232,6 +295,7 @@ import {
     ListBulletIcon,
     ClipboardDocumentCheckIcon,
     DocumentTextIcon,
+    DocumentIcon,
     ClockIcon,
     ArrowLongRightIcon
 } from '@heroicons/vue/24/outline'
@@ -240,7 +304,8 @@ import ProgressChart from '~/components/DashboardProgressChart.vue'
 import SmeCompInfo from '~/components/SmeCompInfo.vue'
 import SmePillarDetails from '~/components/SmePillarDetails.vue'
 import SmeActions from '~/components/SmeActions.vue'
-import SmeNotes from '~/components/SmeNotes.vue'
+import SmeDocuments from '~/components/SmeDocuments.vue'
+
 
 import { useInvestorStore } from '~/stores/investor.store'
 import {
@@ -255,9 +320,17 @@ const isDownloading = ref(false)
 
 const handleDownloadReport = async () => {
     isDownloading.value = true
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    isDownloading.value = false
-    alert(`Report for ${smeData.value.name} has been downloaded.`)
+    try {
+        const url = `/api/reports/export?smeId=${smeId.value}`
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `sme_${smeId.value}_assessment_export.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+    } finally {
+        isDownloading.value = false
+    }
 }
 
 const activeTab = ref('overview')
@@ -265,8 +338,37 @@ const activeTab = ref('overview')
 // Get SME ID from route
 const smeId = computed(() => Array.isArray(route.params.id) ? route.params.id[0] : route.params.id)
 
-// Fetch SME from store
+// Local state for the full, database-hydrated SME object
+const apiSmeData = ref<any>(null)
+
+// Fetch SME from API to ensure we have the full `assessments` array and history
+const fetchSmeDetails = async () => {
+    if (!smeId.value) return
+    try {
+        const res: any = await $fetch(`/api/sme/${smeId.value}`)
+        if (res) {
+            apiSmeData.value = res
+        }
+    } catch (e) {
+        console.error('Failed to fetch SME details:', e)
+    }
+}
+
+onMounted(() => {
+    fetchSmeDetails()
+    fetchRealActions()
+})
+
+watch(() => smeId.value, () => {
+    fetchSmeDetails()
+    fetchRealActions()
+})
+
+// Fetch SME from store (Fallback for synchronous loading state while API completes)
 const smeData = computed(() => {
+    // If the API call finished, use that definitive object
+    if (apiSmeData.value) return apiSmeData.value
+
     const id = smeId.value || ''
 
     // Try Admin Store first
@@ -295,7 +397,7 @@ const smeData = computed(() => {
     // Fallback if not found (or while loading)
     return {
         id: id,
-        name: 'Unknown SME',
+        name: 'Loading SME...',
         industry: '-',
         location: '-',
         lastAssessed: '-',
@@ -412,14 +514,7 @@ const fetchRealActions = async () => {
     }
 }
 
-onMounted(() => {
-    // Fetch real actions to match SME portal exactly
-    fetchRealActions()
-})
-
-watch(() => smeId.value, () => {
-    fetchRealActions()
-})
+// NOTE: onMounted and watch for fetchRealActions were moved up to index next to fetchSmeDetails.
 
 // Dynamically set layout based on user role
 const authStore = useAuthStore()

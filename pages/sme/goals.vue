@@ -65,129 +65,181 @@
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="flex gap-2 mb-6">
-            <button v-for="tab in filters" :key="tab" @click="activeFilter = tab" :class="[
-                'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
-                activeFilter === tab
-                    ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                    : 'text-gray-500 hover:text-gray-700'
-            ]">
-                {{ tab }}
-            </button>
+        <!-- Filters -->
+        <div class="flex flex-wrap items-center gap-4 mb-6 pb-2 border-b border-gray-100">
+            <!-- Status Tabs -->
+            <div class="flex bg-gray-100 p-1 rounded-lg">
+                <button v-for="tab in filters" :key="tab" @click="activeFilter = tab" :class="[
+                    'px-4 py-1.5 rounded-md text-sm font-medium transition-all',
+                    activeFilter === tab
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                ]">
+                    {{ tab }}
+                </button>
+            </div>
+
+            <div class="h-6 w-px bg-gray-200 hidden sm:block"></div>
+
+            <!-- Creator Tabs -->
+            <div class="flex gap-2">
+                <button v-for="tab in creatorFilters" :key="tab" @click="activeCreatorFilter = tab" :class="[
+                    'px-4 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                    activeCreatorFilter === tab
+                        ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                ]">
+                    {{ tab }}
+                </button>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Goals List -->
             <div class="lg:col-span-2 space-y-4">
-                <div v-for="goal in filteredGoals" :key="goal.id" @click="selectedGoal = goal" :class="[
-                    'bg-white rounded-lg p-6 border transition-all cursor-pointer',
-                    selectedGoal?.id === goal.id ? 'border-teal-500 ring-1 ring-teal-500 shadow-md' : 'border-gray-200 hover:border-gray-300 shadow-sm'
-                ]">
-                    <div class="flex items-start justify-between mb-2">
-                        <div class="flex items-center gap-3">
-                            <h3 class="text-lg font-bold text-gray-900">{{ goal.title }}</h3>
-                            <span :class="[
-                                'px-2 py-0.5 text-xs font-semibold rounded-full border',
-                                goal.status === 'Active' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                    goal.status === 'Achieved' ? 'bg-green-50 text-green-700 border-green-100' :
-                                        'bg-orange-50 text-orange-700 border-orange-100'
-                            ]">{{ goal.status }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <Menu as="div" class="relative inline-block text-left">
-                                <MenuButton @click.stop
-                                    class="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
-                                    <EllipsisHorizontalIcon class="w-6 h-6" />
-                                </MenuButton>
-
-                                <transition enter-active-class="transition duration-100 ease-out"
-                                    enter-from-class="transform scale-95 opacity-0"
-                                    enter-to-class="transform scale-100 opacity-100"
-                                    leave-active-class="transition duration-75 ease-in"
-                                    leave-from-class="transform scale-100 opacity-100"
-                                    leave-to-class="transform scale-95 opacity-0">
-                                    <MenuItems
-                                        class="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
-                                        <div class="px-1 py-1">
-                                            <MenuItem v-slot="{ active }">
-                                            <button @click.stop="markGoalAsAchieved(goal.id)" :class="[
-                                                active ? 'bg-teal-50 text-teal-700' : 'text-gray-700',
-                                                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
-                                            ]">
-                                                <CheckCircleIcon class="mr-2 h-4 w-4" />
-                                                Mark as Achieved
-                                            </button>
-                                            </MenuItem>
-                                            <MenuItem v-slot="{ active }">
-                                            <button @click.stop="pauseGoal(goal.id, goal.status)" :class="[
-                                                active ? 'bg-orange-50 text-orange-700' : 'text-gray-700',
-                                                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
-                                            ]">
-                                                <ClockIcon class="mr-2 h-4 w-4" />
-                                                {{ goal.status === 'Paused' ? 'Resume Goal' : 'Pause Goal' }}
-                                            </button>
-                                            </MenuItem>
-                                        </div>
-                                        <div class="px-1 py-1">
-                                            <MenuItem v-slot="{ active }">
-                                            <button @click.stop="deleteGoal(goal.id)" :class="[
-                                                active ? 'bg-red-50 text-red-700' : 'text-red-600',
-                                                'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
-                                            ]" class="text-red-500">
-                                                <TrashIcon class="mr-2 h-4 w-4" />
-                                                Delete Goal
-                                            </button>
-                                            </MenuItem>
-                                        </div>
-                                    </MenuItems>
-                                </transition>
-                            </Menu>
-                        </div>
+                <!-- Empty State -->
+                <div v-if="filteredGoals.length === 0"
+                    class="bg-white rounded-lg p-12 border border-gray-200 shadow-sm flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <FlagIcon class="w-8 h-8 text-gray-400" />
                     </div>
-                    <p class="text-sm text-gray-500 mb-4">{{ goal.description }}</p>
-
-                    <div class="flex items-center gap-6 text-sm text-gray-600 mb-4">
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
-                            </svg>
-                            Target: <span class="font-semibold">{{ goal.targetScore }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                            </svg>
-                            {{ goal.deadline }}
-                        </div>
-                        <div v-if="goal.overdue" class="flex items-center gap-1 text-red-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="w-4 h-4">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {{ goal.overdue }} days overdue
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="font-medium text-gray-700">Progress to target</span>
-                            <span class="font-bold text-gray-900">{{ goal.progress }}%</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 mb-1">
-                            <div class="bg-teal-600 h-2 rounded-full" :style="{ width: `${goal.progress}%` }"></div>
-                        </div>
-                        <div class="flex justify-between text-xs text-gray-500">
-                            <span>Current: {{ goal.currentScore }}</span>
-                            <span>Target: {{ goal.targetScore }}</span>
-                        </div>
-                    </div>
+                    <h3 class="text-lg font-bold text-gray-900">No goals found</h3>
+                    <p class="text-sm text-gray-500 max-w-sm mt-2 mb-6">There are no goals matching your current
+                        filters. Create a new goal or adjust your filters.</p>
+                    <button @click="showCreateGoalModal = true"
+                        class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Create Goal
+                    </button>
                 </div>
+
+                <template v-else>
+                    <div v-for="goal in filteredGoals" :key="goal.id" @click="selectedGoal = goal" :class="[
+                        'rounded-lg p-6 border transition-all cursor-pointer',
+                        goal.status === 'Achieved' ? 'bg-emerald-50 border-emerald-200' :
+                            goal.overdue ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm',
+                        selectedGoal?.id === goal.id ? 'ring-2 ring-teal-500 shadow-md' : ''
+                    ]">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-3">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ goal.title }}</h3>
+                                    <span :class="[
+                                        'px-2 py-0.5 text-xs font-semibold rounded-full border',
+                                        goal.status === 'Active' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                            goal.status === 'Achieved' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                'bg-orange-50 text-orange-700 border-orange-100'
+                                    ]">{{ goal.status }}</span>
+                                </div>
+                                <div v-if="goal.createdBy === 'investor' && goal.investorName"
+                                    class="flex items-center gap-1.5 text-xs text-indigo-700 font-medium bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100 w-fit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        class="w-3.5 h-3.5">
+                                        <path
+                                            d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+                                    </svg>
+                                    Assigned by {{ goal.investorName }} <span v-if="goal.investorCompany"
+                                        class="text-indigo-500 font-normal">at {{ goal.investorCompany }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Menu as="div" class="relative inline-block text-left">
+                                    <MenuButton @click.stop
+                                        class="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
+                                        <EllipsisHorizontalIcon class="w-6 h-6" />
+                                    </MenuButton>
+
+                                    <transition enter-active-class="transition duration-100 ease-out"
+                                        enter-from-class="transform scale-95 opacity-0"
+                                        enter-to-class="transform scale-100 opacity-100"
+                                        leave-active-class="transition duration-75 ease-in"
+                                        leave-from-class="transform scale-100 opacity-100"
+                                        leave-to-class="transform scale-95 opacity-0">
+                                        <MenuItems
+                                            class="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
+                                            <div class="px-1 py-1">
+                                                <MenuItem v-slot="{ active }">
+                                                <button @click.stop="openProofModal(goal.id)" :class="[
+                                                    active ? 'bg-teal-50 text-teal-700' : 'text-gray-700',
+                                                    'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                                                ]">
+                                                    <CheckCircleIcon class="mr-2 h-4 w-4" />
+                                                    Mark as Achieved
+                                                </button>
+                                                </MenuItem>
+                                                <MenuItem v-slot="{ active }">
+                                                <button @click.stop="pauseGoal(goal.id, goal.status)" :class="[
+                                                    active ? 'bg-orange-50 text-orange-700' : 'text-gray-700',
+                                                    'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                                                ]">
+                                                    <ClockIcon class="mr-2 h-4 w-4" />
+                                                    {{ goal.status === 'Paused' ? 'Resume Goal' : 'Pause Goal' }}
+                                                </button>
+                                                </MenuItem>
+                                            </div>
+                                            <div class="px-1 py-1">
+                                                <MenuItem v-slot="{ active }">
+                                                <button @click.stop="deleteGoal(goal.id)" :class="[
+                                                    active ? 'bg-red-50 text-red-700' : 'text-red-600',
+                                                    'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                                                ]" class="text-red-500">
+                                                    <TrashIcon class="mr-2 h-4 w-4" />
+                                                    Delete Goal
+                                                </button>
+                                                </MenuItem>
+                                            </div>
+                                        </MenuItems>
+                                    </transition>
+                                </Menu>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">{{ goal.description }}</p>
+
+                        <div class="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+                                </svg>
+                                Target: <span class="font-semibold">{{ goal.targetScore }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                                {{ goal.deadline }}
+                            </div>
+                            <div v-if="goal.overdue" class="flex items-center gap-1 text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {{ goal.overdue }} days overdue
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-medium text-gray-700">Progress to target</span>
+                                <span class="font-bold text-gray-900">{{ goal.progress }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 mb-1">
+                                <div class="bg-teal-600 h-2 rounded-full" :style="{ width: `${goal.progress}%` }"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Current: {{ goal.currentScore }}</span>
+                                <span>Target: {{ goal.targetScore }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
 
             <!-- Details Sidebar -->
@@ -213,7 +265,7 @@
                         <div v-if="selectedGoal.status !== 'Achieved'" class="space-y-4">
                             <p class="text-sm text-gray-500">Ready to finalize this goal? Ensure all priority actions
                                 are complete and proof is uploaded.</p>
-                            <button @click="markGoalAsAchieved(selectedGoal.id)" :disabled="loading"
+                            <button @click="openProofModal(selectedGoal.id)" :disabled="loading"
                                 class="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50">
                                 <BoltIcon class="w-5 h-5" />
                                 <span>Mark as Achieved</span>
@@ -291,10 +343,14 @@
                                                     class="font-semibold text-gray-900 mb-1.5 border-b border-gray-50 pb-1">
                                                     {{ pillar.name }}</div>
                                                 <div class="flex flex-col gap-1">
-                                                    <span class="text-blue-600 font-medium">current : {{ pillar.score
+                                                    <span class="text-blue-600 font-medium whitespace-nowrap">current :
+                                                        {{ pillar.score
                                                         }}</span>
-                                                    <span class="text-gray-300">gap : {{ pillar.target - pillar.score
-                                                        }}</span>
+                                                    <span class="text-blue-800 font-medium whitespace-nowrap">target :
+                                                        {{ pillar.target }}</span>
+                                                    <span class="text-gray-400 whitespace-nowrap">gap : {{ Math.max(0,
+                                                        pillar.target - pillar.score)
+                                                    }}</span>
                                                 </div>
                                             </div>
                                             <!-- Arrow -->
@@ -361,6 +417,9 @@
         </div>
         <CreateGoalModal :is-open="showCreateGoalModal" @close="showCreateGoalModal = false"
             @create="handleCreateGoal" />
+
+        <SmeGoalProofModal :is-open="showProofModal" :goal-id="goalIdToComplete" @close="showProofModal = false"
+            @confirm="submitProofAndAchieve" />
     </div>
 </template>
 
@@ -370,6 +429,7 @@ import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { FlagIcon, BoltIcon, EllipsisHorizontalIcon, CheckCircleIcon, ClockIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import ComparisonRadarChart from '~/components/DashboardComparisonRadarChart.vue'
 import CreateGoalModal from '~/components/SmeCreateGoalModal.vue'
+import SmeGoalProofModal from '~/components/SmeGoalProofModal.vue'
 import { useAuthStore } from '~/stores/auth.store'
 
 interface Pillar {
@@ -401,6 +461,9 @@ interface Goal {
     pillars: Pillar[]
     gaps: Gap[]
     actions: Action[]
+    createdBy: string
+    investorName?: string
+    investorCompany?: string
 }
 
 definePageMeta({
@@ -410,9 +473,13 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const activeFilter = ref('Active (0)')
-const filters = ref(['Active (0)', 'Achieved (0)', 'All (0)'])
+const filters = ref(['Active (0)', 'Achieved (0)'])
+const creatorFilters = ref(['All Goals', 'Assigned by Investor', 'Self-Created'])
+const activeCreatorFilter = ref('All Goals')
 const selectedGoal = ref<Goal | null>(null)
 const showCreateGoalModal = ref(false)
+const showProofModal = ref(false)
+const goalIdToComplete = ref<number | string>('')
 const goals = ref<Goal[]>([])
 const loading = ref(false)
 
@@ -441,18 +508,15 @@ const fetchGoals = async () => {
 }
 
 const updateFilterCounts = () => {
-    const active = goals.value.filter(g => g.status === 'Active').length
-    const achieved = goals.value.filter(g => g.status === 'Achieved').length
-    const all = goals.value.length
+    const active = goals.value.filter(g => g.status === 'Active' || g.status === 'PAUSED' || g.status === 'Paused' || g.status === 'ACTIVE').length
+    const achieved = goals.value.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED').length
 
     filters.value[0] = `Active (${active})`
     filters.value[1] = `Achieved (${achieved})`
-    filters.value[2] = `All (${all})`
 
     // Maintain active filter if possible
     if (activeFilter.value.startsWith('Active')) activeFilter.value = filters.value[0]
-    else if (activeFilter.value.startsWith('Achieved')) activeFilter.value = filters.value[1]
-    else activeFilter.value = filters.value[2]
+    else activeFilter.value = filters.value[1]
 }
 
 const handleCreateGoal = async (goalData: any) => {
@@ -476,21 +540,28 @@ const handleCreateGoal = async (goalData: any) => {
     }
 }
 
-const markGoalAsAchieved = async (id: number) => {
+const openProofModal = (id: number) => {
+    goalIdToComplete.value = id
+    showProofModal.value = true
+}
+
+const submitProofAndAchieve = async (payload: { id: number, proofNote: string, proofDocument: string }) => {
     loading.value = true
     try {
         const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
             method: 'PATCH',
             body: {
-                id,
-                status: 'COMPLETED'
+                id: payload.id,
+                status: 'COMPLETED',
+                proofNote: payload.proofNote,
+                proofDocument: payload.proofDocument
             }
         })
 
         if (result.success) {
             await fetchGoals()
-            // Keep the same goal selected
-            selectedGoal.value = (goals.value.find(g => g.id === id) as Goal) || null
+            selectedGoal.value = (goals.value.find(g => g.id === payload.id) as Goal) || null
+            showProofModal.value = false
         }
     } catch (e) {
         console.error('Failed to update goal', e)
@@ -553,9 +624,23 @@ onMounted(() => {
 })
 
 const filteredGoals = computed(() => {
-    if (activeFilter.value.startsWith('Active')) return goals.value.filter(g => g.status === 'Active')
-    if (activeFilter.value.startsWith('Achieved')) return goals.value.filter(g => g.status === 'Achieved')
-    return goals.value
+    let result = goals.value
+
+    // 1. Status Filter
+    if (activeFilter.value.startsWith('Active')) {
+        result = result.filter(g => g.status === 'Active' || g.status === 'ACTIVE' || g.status === 'Paused' || g.status === 'PAUSED')
+    } else if (activeFilter.value.startsWith('Achieved')) {
+        result = result.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED')
+    }
+
+    // 2. Creator Filter
+    if (activeCreatorFilter.value === 'Assigned by Investor') {
+        result = result.filter(g => g.createdBy === 'investor')
+    } else if (activeCreatorFilter.value === 'Self-Created') {
+        result = result.filter(g => g.createdBy === 'sme')
+    }
+
+    return result
 })
 
 const avgProgress = computed(() => {

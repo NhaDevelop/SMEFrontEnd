@@ -34,6 +34,7 @@
                   <label class="block text-sm font-medium text-gray-700">Template</label>
                   <select v-model="form.templateId"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm">
+                    <option value="">-- No Template Assigned (Draft Mode) --</option>
                     <option v-for="t in templates" :key="t.id" :value="t.id">
                       {{ t.name }} ({{ t.version }})
                     </option>
@@ -57,9 +58,13 @@
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Sector</label>
-                    <input v-model="form.sector" type="text"
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                      placeholder="e.g. AgriTech" />
+                    <select v-model="form.sector"
+                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm bg-white">
+                      <option value="">-- Select Sector --</option>
+                      <option v-for="sector in sectors" :key="sector.id" :value="sector.name">
+                        {{ sector.name }}
+                      </option>
+                    </select>
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Duration</label>
@@ -110,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch, computed, onMounted } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
 
 const props = defineProps<{
@@ -123,6 +128,16 @@ const emit = defineEmits(['close', 'create', 'update'])
 const adminStore = useAdminStore()
 
 const templates = computed(() => adminStore.templates.filter(t => t.status !== 'Archived'))
+
+const sectors = ref<any[]>([])
+
+onMounted(async () => {
+  try {
+    sectors.value = await $fetch<any[]>('/api/admin/sectors')
+  } catch (e) {
+    console.error('Failed to load sectors', e)
+  }
+})
 
 const form = reactive({
   id: undefined as number | string | undefined,
@@ -146,7 +161,7 @@ watch(() => props.initialData, (newData) => {
     form.id = newData.id
     form.name = newData.name
     form.description = newData.description
-    form.templateId = newData.templateId || templates.value[0]?.id
+    form.templateId = newData.templateId || ''
     form.startDate = newData.startDate || ''
     form.endDate = newData.endDate || ''
     form.sector = newData.sector || ''
@@ -159,7 +174,7 @@ watch(() => props.initialData, (newData) => {
     form.id = undefined
     form.name = ''
     form.description = ''
-    form.templateId = templates.value[0]?.id || ''
+    form.templateId = ''
     form.startDate = ''
     form.endDate = ''
     form.sector = ''
@@ -181,7 +196,7 @@ const handleSubmit = () => {
   const payload = {
     ...form,
     benefits,
-    template: selectedTemplate?.name || 'Unknown Template'
+    template: selectedTemplate ? selectedTemplate.name : undefined
   }
 
   if (isEditMode.value) {

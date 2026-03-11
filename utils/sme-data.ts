@@ -200,7 +200,13 @@ export const getRiskColors = (risk: string) => {
 /**
  * Get readiness level from score
  */
-export const getReadinessLevel = (score: number): keyof typeof READINESS_COLORS => {
+export const getReadinessLevel = (score: number, thresholds?: any[]): string => {
+  if (thresholds && thresholds.length > 0) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    for (const t of sorted) {
+      if (score >= t.min) return t.label
+    }
+  }
   if (score >= 70) return 'Investment Ready'
   if (score >= 60) return 'Near Ready'
   if (score >= 40) return 'Early Stage'
@@ -210,9 +216,20 @@ export const getReadinessLevel = (score: number): keyof typeof READINESS_COLORS 
 /**
  * Get readiness color classes
  */
-export const getReadinessColors = (score: number) => {
-  const level = getReadinessLevel(score)
-  return READINESS_COLORS[level]
+export const getReadinessColors = (score: number, thresholds?: any[]) => {
+  const level = getReadinessLevel(score, thresholds)
+  
+  if (READINESS_COLORS[level as keyof typeof READINESS_COLORS]) {
+    return READINESS_COLORS[level as keyof typeof READINESS_COLORS]
+  }
+
+  // Fallbacks for common mismatches (e.g., "Investor Ready" vs "Investment Ready")
+  const lowerLevel = level.toLowerCase()
+  if (lowerLevel.includes('invest')) return READINESS_COLORS['Investment Ready']
+  if (lowerLevel.includes('near')) return READINESS_COLORS['Near Ready']
+  if (lowerLevel.includes('early')) return READINESS_COLORS['Early Stage']
+  
+  return READINESS_COLORS['Pre-Investment']
 }
 
 /**
@@ -232,7 +249,14 @@ export const getPriorityColors = (priority: string) => {
 /**
  * Get pillar color based on score
  */
-export const getPillarChartColor = (score: number): string => {
+export const getPillarChartColor = (score: number, thresholds?: any[]): string => {
+  if (thresholds && thresholds.length > 0) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    if (score >= sorted[0]?.min) return CHART_COLORS.pillar.excellent
+    if (sorted.length > 1 && score >= sorted[1]?.min) return CHART_COLORS.pillar.good
+    if (sorted.length > 2 && score >= sorted[2]?.min) return CHART_COLORS.pillar.fair
+    return CHART_COLORS.pillar.poor
+  }
   if (score >= 70) return CHART_COLORS.pillar.excellent
   if (score >= 60) return CHART_COLORS.pillar.good
   if (score >= 40) return CHART_COLORS.pillar.fair
@@ -341,17 +365,31 @@ export const generateProgressData = (
 /**
  * Get risk level from score
  */
-export const getRiskFromScore = (score: number): string => {
+export const getRiskFromScore = (score: number, thresholds?: any[]): string => {
+  if (thresholds && thresholds.length > 0) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    if (score >= sorted[0]?.min) return 'Low'
+    if (sorted.length >= 3 && score >= sorted[sorted.length - 2]?.min) return 'Medium'
+    return 'High'
+  }
   if (score >= 70) return 'Low'
-  if (score >= 60) return 'Medium'
+  if (score >= 50) return 'Medium'
   return 'High'
 }
 
 /**
  * Get pillar color class based on score (for progress bars)
  */
-export const getPillarColor = (score: number): string => {
-  const colors = getReadinessColors(score)
+export const getPillarColor = (score: number, thresholds?: any[]): string => {
+  if (thresholds && thresholds.length > 0) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    const matched = sorted.find(t => score >= t.min)
+    if (matched && matched.colorBg) {
+      return matched.colorBg
+    }
+  }
+
+  const colors = getReadinessColors(score, thresholds)
   return colors.progress || 'bg-gray-500'
 }
 

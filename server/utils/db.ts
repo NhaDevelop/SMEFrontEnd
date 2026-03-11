@@ -1,6 +1,6 @@
 import { storage } from './storage'
 import { generatePillarScores, generateProgressData, getRiskFromScore } from '~/utils/sme-data'
-import { getPillarScores } from '~/utils/mock-data/assessments'
+import { getPillarScores } from './scoring'
 
 const PILLAR_DISPLAY_NAMES: Record<string, string> = {
   'TEAM': 'Team & Leadership',
@@ -81,6 +81,18 @@ const templates = [
     status: 'Active',
     updatedAt: 'Feb 10, 2026',
     updatedBy: 'Agri Expert'
+  },
+  {
+    id: 'temp_it_001',
+    name: 'IT & Software Standard',
+    version: 'v1.0',
+    pillarCount: 8,
+    questionCount: 24,
+    usageCount: 0,
+    description: 'Specialized assessment for IT & Software SMEs focusing on scalable architecture and data.',
+    status: 'Active',
+    updatedAt: 'Mar 7, 2026',
+    updatedBy: 'IT Expert'
   }
 ]
 
@@ -150,6 +162,24 @@ const programs = [
     enrolledSMEs: [2],
     createdAt: '2024-02-15',
     createdBy: 'Admin'
+  },
+  {
+    id: 4,
+    name: 'Tech Innovators Accelerator',
+    description: 'A focused accelerator for IT and Software SMEs. We look for strong technical architecture and scalable business models.',
+    templateId: 'temp_it_001',
+    status: 'Draft',
+    sector: 'Information Technology',
+    duration: '10 weeks',
+    deadline: 'June 1, 2026',
+    investmentAmount: 'Up to $400K',
+    benefits: ['Cloud credits', 'Technical architecture review', 'Security audit', 'Venture capital intros'],
+    smesCount: 0,
+    avgScore: 0,
+    progress: 0,
+    enrolledSMEs: [],
+    createdAt: '2026-03-07',
+    createdBy: 'Admin'
   }
 ]
 
@@ -205,7 +235,7 @@ try {
     console.error('[DB] Failed to load persisted questions', e)
 }
 
-import { mockSMEProfiles } from '~/utils/mock-data/users'
+
 
 export const seedUsers = [
   { id: 1, name: 'la', email: 'la@gmail.com', role: 'sme', status: 'active', registered: 'Jan 30, 2026' },
@@ -263,16 +293,23 @@ export const db = {
         const latest = smeAssessments[0]
 
         const score = latest ? latest.total_score : profile.score || 0
+        const liveThresholds = db.settings.get().thresholds || []
 
         // Use real pillar scores if assessment exists, otherwise fallback to deterministic mock
         let realPillars = []
         if (latest) {
           const rawPillars = getPillarScores(latest.id, latest.questions || templateQuestions, storageData.responses || [], assessments)
+          const livePillars = db.settings.get().pillars || []
+          
           realPillars = rawPillars.map((p: any) => {
-            const normalizedName = p.pillar_name.toUpperCase()
+            const normalizedName = p.pillar_name ? p.pillar_name.toUpperCase() : ''
+            // Attempt to derive genuine name from global settings if it's a number, otherwise use dict fallback
+            const settingsMatch = livePillars.find((lp: any) => String(lp.id) === String(p.pillar_id))
+            const definitiveName = settingsMatch ? settingsMatch.name : (PILLAR_DISPLAY_NAMES[normalizedName] || PILLAR_DISPLAY_NAMES[p.pillar_name] || p.pillar_name)
+            
             return {
               id: p.pillar_id,
-              name: PILLAR_DISPLAY_NAMES[normalizedName] || PILLAR_DISPLAY_NAMES[p.pillar_name] || p.pillar_name,
+              name: definitiveName,
               score: p.score,
               potential: Math.round((100 - p.score) * 0.4) // Standard fallback potential
             }
@@ -312,18 +349,33 @@ export const db = {
           lastAssessed: latest ? latest.completed_at : profile.lastAssessed || null,
           assessments: assessments
             .filter((a: any) => a.sme_id == profile.id)
-            .map((a: any) => ({
-              id: a.id,
-              templateId: a.template_id,
-              score: a.total_score,
-              status: a.status,
-              completedAt: a.completed_at
-            })),
+            .map((a: any) => {
+               // Calculate the true score dynamically to ensure the Admin dashboard perfectly matches 
+               // the recalculated history shown on the SME portal, rather than relying on stale snapshots.
+               let trueScore = a.total_score
+               try {
+                  const pScores = getPillarScores(a.id, a.questions || templateQuestions, storageData.responses || [], assessments)
+                  const calcScore = pScores.reduce((acc: number, p: any) => {
+                      const weight = (p.weight || 0) / 100
+                      return acc + (p.score * weight)
+                  }, 0)
+                  if (!isNaN(calcScore)) trueScore = Math.round(calcScore)
+               } catch(e) {}
+
+               return {
+                 id: a.id,
+                 templateId: a.template_id,
+                 score: trueScore,
+                 status: a.status,
+                 completedAt: a.completed_at || a.started_at
+               }
+            }),
           score: score,
           status: latest ? 'Completed' : 'Enrolled', 
           pillars: realPillars,
           readinessHistory: generateProgressData(profile.id, score, smeAssessments.map((a: any) => a.total_score).reverse()).map((p: any) => p.score),
-          financialRisk: getRiskFromScore(score),
+          financialRisk: getRiskFromScore(score, liveThresholds),
+          riskLevel: getRiskFromScore(score, liveThresholds),
           growthRate: actualGrowthPotential,
           growthPotential: actualGrowthPotential,
           fundingNeeded: profile.fundingNeeded || 50000,
@@ -363,6 +415,7 @@ export const db = {
       const newProgram = {
         id: programs.length + 1,
         ...data,
+        status: data.templateId ? (data.status || 'Active') : 'Draft',
         smesCount: data.smesCount || 0,
         avgScore: data.avgScore || 0,
         progress: data.progress || 0,
@@ -375,7 +428,11 @@ export const db = {
     update: (id: number, data: any) => {
         const index = programs.findIndex(p => p.id === id)
         if (index !== -1) {
-            programs[index] = { ...programs[index], ...data }
+            const updated = { ...programs[index], ...data }
+            if (!updated.templateId) {
+                updated.status = 'Draft'
+            }
+            programs[index] = updated
             storage.save({ programs })
             return programs[index]
         }
@@ -455,6 +512,52 @@ export const db = {
       return false
     }
   },
+  audit_logs: {
+    findAll: () => {
+      const data = storage.get()
+      return data.audit_logs || []
+    },
+    create: (data: any) => {
+      const storeData = storage.get()
+      if (!storeData.audit_logs) storeData.audit_logs = []
+      
+      const newLog = {
+        id: `log_${Date.now()}`,
+        ...data,
+        timestamp: data.timestamp || new Date().toISOString()
+      }
+      
+      storeData.audit_logs.unshift(newLog) // newest first
+      storage.save({ audit_logs: storeData.audit_logs })
+      return newLog
+    }
+  },
+  notifications: {
+    findAll: () => {
+      const data = storage.get()
+      return data.notifications || []
+    },
+    findByUserId: (userId: number | string) => {
+      const data = storage.get()
+      const notifications = data.notifications || []
+      return notifications.filter((n: any) => String(n.user_id) === String(userId))
+    },
+    create: (data: any) => {
+      const storeData = storage.get()
+      if (!storeData.notifications) storeData.notifications = []
+      
+      const newNotif = {
+        id: `notif_${Date.now()}`,
+        is_read: false,
+        created_at: new Date().toISOString(),
+        ...data
+      }
+      
+      storeData.notifications.unshift(newNotif)
+      storage.save({ notifications: storeData.notifications })
+      return newNotif
+    }
+  },
   messages: {
     findAll: () => {
       const data = storage.get()
@@ -496,6 +599,56 @@ export const db = {
         storage.save({ messages: storeData.messages })
       }
       return count
+    }
+  },
+  settings: {
+    get: () => {
+      const data = storage.get()
+      return data.settings || {
+        pillars: [
+          { id: 'team', name: 'Team & Leadership', weight: 15 },
+          { id: 'business_model', name: 'Business Model', weight: 15 },
+          { id: 'market', name: 'Market & Traction', weight: 15 },
+          { id: 'financials', name: 'Financial Readiness', weight: 20 },
+          { id: 'operations', name: 'Operations', weight: 10 },
+          { id: 'legal', name: 'Legal & Governance', weight: 10 },
+          { id: 'data', name: 'Data & Digital Maturity', weight: 5 },
+          { id: 'growth', name: 'Growth & Scalability', weight: 10 }
+        ],
+        thresholds: [
+          { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
+          { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
+          { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
+          { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' }
+        ]
+      }
+    },
+    update: (newSettings: any) => {
+      storage.save({ settings: newSettings })
+      return newSettings
+    }
+  },
+  reportLogs: {
+    findAll: () => {
+      const data = storage.get() as any
+      return data.reportLogs || []
+    },
+    create: (logInfo: any) => {
+      const storeData = storage.get() as any
+      if (!storeData.reportLogs) storeData.reportLogs = []
+      
+      const newLog = {
+        id: `log_${Date.now()}`,
+        created_at: new Date().toISOString(),
+        ...logInfo
+      }
+      
+      storeData.reportLogs.unshift(newLog)
+      if (storeData.reportLogs.length > 50) {
+        storeData.reportLogs = storeData.reportLogs.slice(0, 50)
+      }
+      storage.save({ reportLogs: storeData.reportLogs } as any)
+      return newLog
     }
   }
 }

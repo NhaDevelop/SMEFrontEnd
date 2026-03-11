@@ -1,19 +1,21 @@
 <template>
   <div class="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2 py-2">
-    <div v-for="action in actions" :key="action.id" :class="[getBorderColor(action.priority)]"
-      class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md hover:border-teal-100 transition-all duration-300 cursor-pointer group"
-      @click="navigateTo('/sme/goals')">
+    <div v-for="action in actions" :key="action.id" :class="getCardClasses(action.pillarRisk || action.priority)"
+      class="border-l-4 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group"
+      @click="action.type === 'onboarding' ? navigateTo('/sme/assessment') : navigateTo('/sme/goals')">
 
       <div class="flex items-start justify-between mb-3">
         <div class="flex items-center gap-2">
-          <div :class="getIconBg(action.priority)" class="p-1.5 rounded-md">
-            <ExclamationTriangleIcon :class="getIconColor(action.priority)" class="w-4 h-4" />
+          <div :class="getIconBg(action.pillarRisk || action.priority)" class="p-1.5 rounded-md">
+            <ExclamationTriangleIcon :class="getIconColor(action.pillarRisk || action.priority)" class="w-4 h-4" />
           </div>
-          <span :class="getTextColor(action.priority)" class="text-[10px] font-bold uppercase tracking-wider">
-            {{ action.priority }} Priority
+          <span :class="getTextColor(action.pillarRisk || action.priority)"
+            class="text-[10px] font-bold uppercase tracking-wider">
+            {{ action.pillarRisk || action.priority }} Priority
           </span>
         </div>
-        <div class="flex items-center gap-1 text-teal-600 font-bold text-xs bg-teal-50 px-2 py-1 rounded-full">
+        <div :class="getImpactBadge(action.pillarRisk || action.priority)"
+          class="flex items-center gap-1 font-bold text-xs px-2 py-1 rounded-full">
           <ArrowTrendingUpIcon class="w-3.5 h-3.5" />
           +{{ action.impact }}
         </div>
@@ -26,11 +28,18 @@
         {{ action.description }}
       </p>
 
-      <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-        <span class="text-[10px] font-medium text-gray-400 uppercase tracking-wide bg-gray-50 px-2 py-0.5 rounded">
+      <div :class="getDividerColor(action.pillarRisk || action.priority)"
+        class="flex items-center justify-between pt-3 border-t">
+        <span v-if="action.pillar && action.pillar.toLowerCase() !== 'general'"
+          :class="getPillarTagClasses(action.pillarRisk || action.priority)"
+          class="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded">
           {{ action.pillar }}
         </span>
-        <span class="text-[10px] font-bold text-teal-600 group-hover:underline">
+        <span v-else></span>
+        <span v-if="action.type === 'onboarding'" class="text-[10px] font-bold text-teal-600 group-hover:underline">
+          Enroll &amp; Start &rarr;
+        </span>
+        <span v-else class="text-[10px] font-bold text-teal-600 group-hover:underline">
           Create Goal &rarr;
         </span>
       </div>
@@ -46,7 +55,6 @@
 </template>
 
 <script>
-import PriorityBadge from '~/components/BasePriorityBadge.vue'
 import {
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
@@ -56,7 +64,6 @@ import {
 export default {
   name: 'RecommendedActions',
   components: {
-    PriorityBadge,
     ExclamationTriangleIcon,
     ArrowTrendingUpIcon,
     CheckCircleIcon
@@ -68,37 +75,31 @@ export default {
     }
   },
   methods: {
-    getBorderColor(priority) {
-      const colors = {
-        high: 'border-l-rose-500',
-        medium: 'border-l-orange-500',
-        low: 'border-l-yellow-400'
+    getCardClasses(priority) {
+      const map = {
+        high: 'bg-rose-50 border-l-rose-500 border border-rose-100',
+        medium: 'bg-orange-50 border-l-orange-400 border border-orange-100',
+        low: 'bg-emerald-50 border-l-emerald-500 border border-emerald-100'
       }
-      return colors[priority] || 'border-l-gray-300'
+      return map[priority] || 'bg-white border-l-gray-300 border border-gray-100'
     },
     getIconBg(priority) {
-      const colors = {
-        high: 'bg-rose-50',
-        medium: 'bg-orange-50',
-        low: 'bg-yellow-50'
-      }
-      return colors[priority] || 'bg-gray-50'
+      return { high: 'bg-rose-100', medium: 'bg-orange-100', low: 'bg-emerald-100' }[priority] || 'bg-gray-100'
     },
     getIconColor(priority) {
-      const colors = {
-        high: 'text-rose-600',
-        medium: 'text-orange-600',
-        low: 'text-yellow-600'
-      }
-      return colors[priority] || 'text-gray-600'
+      return { high: 'text-rose-600', medium: 'text-orange-600', low: 'text-emerald-600' }[priority] || 'text-gray-600'
     },
     getTextColor(priority) {
-      const colors = {
-        high: 'text-rose-600',
-        medium: 'text-orange-600',
-        low: 'text-yellow-600'
-      }
-      return colors[priority] || 'text-gray-600'
+      return { high: 'text-rose-600', medium: 'text-orange-600', low: 'text-emerald-600' }[priority] || 'text-gray-600'
+    },
+    getImpactBadge(priority) {
+      return { high: 'bg-rose-100 text-rose-700', medium: 'bg-orange-100 text-orange-700', low: 'bg-emerald-100 text-emerald-700' }[priority] || 'bg-gray-100 text-gray-700'
+    },
+    getDividerColor(priority) {
+      return { high: 'border-rose-100', medium: 'border-orange-100', low: 'border-emerald-100' }[priority] || 'border-gray-100'
+    },
+    getPillarTagClasses(priority) {
+      return { high: 'bg-rose-100 text-rose-600', medium: 'bg-orange-100 text-orange-600', low: 'bg-emerald-100 text-emerald-600' }[priority] || 'bg-gray-100 text-gray-500'
     }
   }
 }

@@ -41,11 +41,7 @@
             <select v-model="form.industry"
               class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-shadow bg-white">
               <option value="General">General (All Sectors)</option>
-              <option value="AgriTech">AgriTech</option>
-              <option value="FinTech">FinTech</option>
-              <option value="Manufacturing">Manufacturing</option>
-              <option value="Service">Service</option>
-              <option value="Retail">Retail</option>
+              <option v-for="sector in sectors" :key="sector.id" :value="sector.name">{{ sector.name }}</option>
             </select>
           </div>
 
@@ -103,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { XMarkIcon, PlusIcon } from '@heroicons/vue/24/outline'
 import { useAdminStore } from '~/stores/admin.store'
 
@@ -111,6 +107,16 @@ const emit = defineEmits(['cancel', 'save'])
 const adminStore = useAdminStore()
 
 const existingTemplates = computed(() => adminStore.templates)
+
+const sectors = ref<any[]>([])
+
+onMounted(async () => {
+  try {
+    sectors.value = await $fetch<any[]>('/api/admin/sectors')
+  } catch (e) {
+    console.error('Failed to load sectors', e)
+  }
+})
 
 const form = ref({
   name: '',

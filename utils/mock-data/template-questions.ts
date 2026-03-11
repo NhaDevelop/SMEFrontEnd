@@ -105,5 +105,46 @@ export const templateQuestions = [
   { id: 'qa_t1', pillarId: 'team', templateId: 'temp_agritech_001', text: 'Does your team have agricultural expertise?', type: 'Yes/No', weight: 50, required: true },
   { id: 'qa_b1', pillarId: 'business', templateId: 'temp_agritech_001', text: 'Is your solution sustainable?', type: 'Yes/No', weight: 100, required: true },
   { id: 'qa_o1', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you have a stable supply chain?', type: 'Yes/No', weight: 50, required: true },
-  { id: 'qa_o2', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you measure your carbon footprint?', type: 'Yes/No', weight: 50, required: true, helperText: 'Custom ESG metric for AgriTech' }
+  { id: 'qa_o2', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you measure your carbon footprint?', type: 'Yes/No', weight: 50, required: true, helperText: 'Custom ESG metric for AgriTech' },
+
+  // --- IT & Software Assessment Standard (temp_it_001) ---
+  // Team
+  { id: 'q_it_1', pillarId: 'team', templateId: 'temp_it_001', text: 'Do you have an in-house CTO or Lead Engineer?', type: 'Yes/No', weight: 40, required: true },
+  { id: 'q_it_1b', pillarId: 'team', templateId: 'temp_it_001', text: 'Does the founding team have prior exit or startup experience?', type: 'Yes/No', weight: 30, required: true },
+  { id: 'q_it_1c', pillarId: 'team', templateId: 'temp_it_001', text: 'Size of your internal engineering/development team?', type: 'Number', weight: 30, required: true },
+  
+  // Business Model
+  { id: 'q_it_2', pillarId: 'business', templateId: 'temp_it_001', text: 'Is your software offered as a SaaS (Software as a Service)?', type: 'Yes/No', weight: 40, required: true },
+  { id: 'q_it_2b', pillarId: 'business', templateId: 'temp_it_001', text: 'Do you have a clear pricing/tiering strategy?', type: 'Yes/No', weight: 30, required: true },
+  { id: 'q_it_2c', pillarId: 'business', templateId: 'temp_it_001', text: 'What is your average Customer Acquisition Cost (CAC) in USD?', type: 'Number', weight: 30, required: true },
+
+  // Market
+  { id: 'q_it_3', pillarId: 'market', templateId: 'temp_it_001', text: 'Have you identified your early tech adopters?', type: 'Yes/No', weight: 40, required: true },
+  { id: 'q_it_3b', pillarId: 'market', templateId: 'temp_it_001', text: 'Total Addressable Market (TAM) for your software ($M)?', type: 'Number', weight: 30, required: true },
+  { id: 'q_it_3c', pillarId: 'market', templateId: 'temp_it_001', text: 'Do you have active B2B enterprise pilots running?', type: 'Yes/No', weight: 30, required: false },
+
+  // Finance
+  { id: 'q_it_4', pillarId: 'finance', templateId: 'temp_it_001', text: 'What is your Monthly Recurring Revenue (MRR) in USD?', type: 'Number', weight: 40, required: true },
+  { id: 'q_it_4b', pillarId: 'finance', templateId: 'temp_it_001', text: 'What is your current monthly burn rate (USD)?', type: 'Number', weight: 30, required: true },
+  { id: 'q_it_4c', pillarId: 'finance', templateId: 'temp_it_001', text: 'How many months of runway do you currently have?', type: 'Number', weight: 30, required: true },
+
+  // Operations / Product
+  { id: 'q_it_5', pillarId: 'ops', templateId: 'temp_it_001', text: 'Do you use sprint/agile methodologies for development?', type: 'Yes/No', weight: 40, required: true },
+  { id: 'q_it_5b', pillarId: 'ops', templateId: 'temp_it_001', text: 'Do you have an automated CI/CD pipeline set up?', type: 'Yes/No', weight: 30, required: true },
+  { id: 'q_it_5c', pillarId: 'ops', templateId: 'temp_it_001', text: 'Is your code repository managed securely (e.g. GitHub/GitLab)?', type: 'Yes/No', weight: 30, required: true },
+
+  // Legal
+  { id: 'q_it_6', pillarId: 'legal', templateId: 'temp_it_001', text: 'Are your software licenses and open-source dependencies compliant?', type: 'Yes/No', weight: 50, required: true },
+  { id: 'q_it_6b', pillarId: 'legal', templateId: 'temp_it_001', text: 'Do you own the IP for your core product or algorithms?', type: 'Yes/No', weight: 30, required: true },
+  { id: 'q_it_6c', pillarId: 'legal', templateId: 'temp_it_001', text: 'Do you have standard Terms of Service and Privacy Policy?', type: 'Yes/No', weight: 20, required: true },
+
+  // Data & Security
+  { id: 'q_it_7', pillarId: 'data', templateId: 'temp_it_001', text: 'Is your data hosted on a secure cloud provider (AWS/GCP/Azure)?', type: 'Yes/No', weight: 40, required: true },
+  { id: 'q_it_7b', pillarId: 'data', templateId: 'temp_it_001', text: 'Is customer data encrypted both at rest and in transit?', type: 'Yes/No', weight: 30, required: true },
+  { id: 'q_it_7c', pillarId: 'data', templateId: 'temp_it_001', text: 'Have you undergone a third-party security audit or penetration test?', type: 'Yes/No', weight: 30, required: false },
+
+  // Growth & Scalability
+  { id: 'q_it_8', pillarId: 'growth', templateId: 'temp_it_001', text: 'Can your database architecture scale to 10x current users?', type: 'Yes/No', weight: 40, required: true },
+  { id: 'q_it_8b', pillarId: 'growth', templateId: 'temp_it_001', text: 'Is your application built on a microservices or modular architecture?', type: 'Yes/No', weight: 30, required: true },
+  { id: 'q_it_8c', pillarId: 'growth', templateId: 'temp_it_001', text: 'Do you have a clear feature roadmap for the next 12 months?', type: 'Yes/No', weight: 30, required: true }
 ]

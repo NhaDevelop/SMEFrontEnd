@@ -162,7 +162,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="flex flex-col">
                                                         <span class="text-sm font-semibold text-gray-900">{{ sme.name
-                                                        }}</span>
+                                                            }}</span>
                                                         <span class="text-xs text-gray-500 mt-0.5">{{ sme.industry }} •
                                                             {{
                                                                 sme.location }}</span>
@@ -390,7 +390,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <span class="text-sm font-semibold text-gray-900">{{ sme.name
-                                                    }}</span>
+                                                        }}</span>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <span

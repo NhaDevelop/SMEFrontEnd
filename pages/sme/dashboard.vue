@@ -53,9 +53,7 @@
               <div class="mt-3 flex items-center gap-2">
                 <span :class="[
                   'px-3 py-1 text-sm font-medium rounded-full',
-                  overallScore >= 70 ? 'bg-green-50 text-green-700' :
-                    overallScore >= 50 ? 'bg-blue-50 text-blue-700' :
-                      'bg-red-50 text-red-700'
+                  readinessColorClass
                 ]">
                   {{ readinessStatus }}
                 </span>
@@ -204,7 +202,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '~/stores/auth.store'
 import { useDashboardStore } from '~/stores/dashboard.store'
@@ -263,7 +261,7 @@ export default {
     const loading = ref(true)
 
     const isAdmin = computed(() => authStore.userRole === 'ADMIN')
-
+    const thresholds = ref < any[] > ([])
     onMounted(async () => {
       // Redirect investors to their own dashboard
       if (authStore.userRole === 'INVESTOR') {
@@ -271,6 +269,9 @@ export default {
       }
 
       try {
+        const settings = await $fetch < any > ('/api/admin/settings').catch(() => null)
+        if (settings && settings.thresholds) thresholds.value = settings.thresholds
+
         if (!isAdmin.value && dashboardStore.pillars.length === 0) {
           await dashboardStore.fetchDashboardData()
         }
@@ -292,9 +293,19 @@ export default {
 
     const readinessStatus = computed(() => {
       const score = overallScore.value
-      if (score >= 70) return 'Investment Ready'
-      if (score >= 50) return 'Developing'
-      return 'Needs Improvement'
+      const matched = thresholds.value.find(t => score >= t.min && score <= t.max)
+      return matched ? matched.label : (score >= 70 ? 'Investment Ready' : score >= 50 ? 'Developing' : 'Needs Improvement')
+    })
+
+    const readinessColorClass = computed(() => {
+      const score = overallScore.value
+      const matched = thresholds.value.find(t => score >= t.min && score <= t.max)
+      if (matched) {
+        if (matched.id === 'investor' || matched.id === 'near') return 'bg-green-50 text-green-700'
+        if (matched.id === 'early') return 'bg-blue-50 text-blue-700'
+        return 'bg-red-50 text-red-700'
+      }
+      return score >= 70 ? 'bg-green-50 text-green-700' : score >= 50 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'
     })
 
     return {
@@ -311,6 +322,7 @@ export default {
       recommendedActions,
       primaryGoal, // Added to return
       readinessStatus,
+      readinessColorClass,
       goToGoals: () => navigateTo('/sme/goals')
     }
   }

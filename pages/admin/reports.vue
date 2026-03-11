@@ -96,7 +96,7 @@
                             </select>
                         </div>
                         <button
-                            @click="generateReport(selectedReportType, selectedReportSmeId ? smes.find(s => s.id === selectedReportSmeId)?.name : 'All SMEs')"
+                            @click="generateReport(selectedReportType, selectedReportSmeId ? smes.find(s => s.id === selectedReportSmeId)?.name : 'All SMEs', selectedReportSmeId || null)"
                             :disabled="isGenerating"
                             class="w-full md:w-1/3 px-4 py-2.5 bg-[#198754] text-white rounded-lg font-medium hover:bg-[#157347] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
                             <ArrowDownTrayIcon class="w-5 h-5 text-white" />
@@ -175,7 +175,16 @@
                                         {{ sme.name }}
                                     </button>
                                 </td>
-                                <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.sector }}</td>
+                                <td class="px-8 py-5 whitespace-nowrap">
+                                    <span v-if="sme.sector"
+                                        :style="`${getSectorStyle(sme.sector).bg}; ${getSectorStyle(sme.sector).text}; ${getSectorStyle(sme.sector).border}`"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border">
+                                        <span :style="getSectorStyle(sme.sector).dot"
+                                            class="w-1.5 h-1.5 rounded-full"></span>
+                                        {{ sme.sector }}
+                                    </span>
+                                    <span v-else class="text-sm text-gray-400">Not Assigned</span>
+                                </td>
                                 <td class="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">{{ sme.score }}
                                 </td>
                                 <td class="px-8 py-5 whitespace-nowrap">
@@ -188,11 +197,11 @@
                                 <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.date }}</td>
                                 <td class="px-8 py-5 whitespace-nowrap text-right text-sm">
                                     <div class="flex justify-end gap-2">
-                                        <button @click="generateReport('PDF Report', sme.name)"
+                                        <button @click="generateReport('PDF Report', sme.name, sme.id)"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
                                             <DocumentTextIcon class="w-3.5 h-3.5" /> PDF
                                         </button>
-                                        <button @click="generateReport('CSV Export', sme.name)"
+                                        <button @click="generateReport('CSV Export', sme.name, sme.id)"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
                                             <TableCellsIcon class="w-3.5 h-3.5" /> CSV
                                         </button>
@@ -232,8 +241,18 @@
                                 <span
                                     class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded uppercase tracking-wide">{{
                                         report.type }}</span>
-                                <button @click="generateReport('Download', report.name)"
-                                    class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                                <button
+                                    v-if="report.type === 'PDF' && report.name === 'Investment Readiness Report' && report.smeId"
+                                    @click="generateReport('PDF', report.company, report.smeId)"
+                                    class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                                    title="Regenerate">
+                                    <ArrowDownTrayIcon class="w-5 h-5" />
+                                </button>
+                                <button
+                                    v-else-if="report.type === 'CSV' && report.name === 'Raw Scores Export' && report.smeId"
+                                    @click="generateReport('CSV', report.company, report.smeId)"
+                                    class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                                    title="Regenerate">
                                     <ArrowDownTrayIcon class="w-5 h-5" />
                                 </button>
                             </div>
@@ -268,9 +287,50 @@ import { useAdminStore } from '~/stores/admin.store'
 const route = useRoute()
 const adminStore = useAdminStore()
 
+const recentReports = ref<any[]>([])
+const sectorsList = ref<any[]>([])
+
 onMounted(async () => {
     await adminStore.fetchSmesData()
+    await loadReportLogs()
+    try {
+        sectorsList.value = await $fetch<any[]>('/api/admin/sectors')
+    } catch (e) { console.error('Failed to load sectors', e) }
 })
+
+const getSectorStyle = (sectorName: string) => {
+    const sector = sectorsList.value.find(s => s.name === sectorName)
+    if (sector && sector.color) {
+        return {
+            bg: `background-color: ${sector.color}15`,
+            text: `color: ${sector.color}`,
+            border: `border-color: ${sector.color}30`,
+            dot: `background-color: ${sector.color}`
+        }
+    }
+    return {
+        bg: 'background-color: #f3f4f6',
+        text: 'color: #4b5563',
+        border: 'border-color: #e5e7eb',
+        dot: 'background-color: #9ca3af'
+    }
+}
+
+const loadReportLogs = async () => {
+    try {
+        const logs = await $fetch<any[]>('/api/reports/logs')
+        recentReports.value = logs.map(log => ({
+            id: log.id,
+            name: log.name,
+            company: log.company || 'All SMEs',
+            date: new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            type: log.type,
+            smeId: log.smeId
+        }))
+    } catch (e) {
+        console.error('Failed to load report logs:', e)
+    }
+}
 
 // Map store data to local format
 const smes = computed(() => {
@@ -280,17 +340,14 @@ const smes = computed(() => {
         sector: sme.industry,
         score: sme.score,
         risk: sme.riskLevel,
-        date: sme.lastAssessed,
+        date: sme.lastAssessed
+            ? new Date(sme.lastAssessed).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '—',
         programIds: sme.programIds
     }))
 })
 
-const recentReports = [
-    { id: 1, name: 'Investment Readiness Report', company: 'Angkor Tech', date: '2024-12-10', type: 'PDF' },
-    { id: 2, name: 'Portfolio Comparison', company: '', date: '2024-12-08', type: 'PDF' },
-    { id: 3, name: 'Raw Scores Export', company: '', date: '2024-12-05', type: 'CSV' },
-    { id: 4, name: 'Q3 Progress Report', company: 'Mekong Solutions', date: '2024-10-01', type: 'PDF' },
-]
+
 
 const filteredSMEs = computed(() => {
     let result = smes.value
@@ -359,11 +416,36 @@ const getRiskDotStyles = (risk: string) => {
 }
 const isGenerating = ref(false)
 
-const generateReport = async (type: string, subject: string = '') => {
+const generateReport = async (type: string, subject: string = '', smeId?: number | string | null) => {
     isGenerating.value = true
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    isGenerating.value = false
-    alert(`Successfully generated ${type}${subject ? ` for ${subject}` : ''}`)
+    try {
+        if (type === 'Raw Scores Export' || type === 'CSV Export' || type === 'CSV') {
+            // Real CSV export — triggers browser download
+            const url = `/api/reports/export${smeId ? `?smeId=${smeId}` : ''}`
+            const a = document.createElement('a')
+            a.href = url
+            a.download = smeId ? `sme_${smeId}_assessment_export.csv` : `all_smes_assessment_export.csv`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+        } else if (type === 'Investment Readiness Report' || type === 'PDF Report' || type === 'PDF') {
+            // Real PDF — opens printable HTML report in new tab
+            const url = `/api/reports/readiness${smeId ? `?smeId=${smeId}` : ''}`
+            window.open(url, '_blank')
+        } else if (type === 'Portfolio Comparison' || type === 'Portfolio') {
+            // Real Portfolio Comparison — opens printable HTML report in new tab
+            window.open('/api/reports/portfolio', '_blank')
+        } else {
+            // Fallback for custom report types
+            const url = `/api/reports/readiness${smeId ? `?smeId=${smeId}` : ''}`
+            window.open(url, '_blank')
+        }
+
+        // Refresh the audit logs to show the newly generated report
+        await loadReportLogs()
+    } finally {
+        isGenerating.value = false
+    }
 }
 
 const navigateTo = (path: string) => {

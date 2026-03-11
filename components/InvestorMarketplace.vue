@@ -122,7 +122,16 @@
                             class="group hover:bg-gray-50/50 transition-colors cursor-pointer"
                             @click="openQuickView(sme)">
                             <td class="px-6 py-4 font-medium text-gray-900">{{ sme.name }}</td>
-                            <td class="px-6 py-4 text-gray-600">{{ sme.industry }}</td>
+                            <td class="px-6 py-4">
+                                <span v-if="sme.industry"
+                                    :style="`${getSectorStyle(sme.industry).bg}; ${getSectorStyle(sme.industry).text}; ${getSectorStyle(sme.industry).border}`"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border">
+                                    <span :style="getSectorStyle(sme.industry).dot"
+                                        class="w-1.5 h-1.5 rounded-full"></span>
+                                    {{ sme.industry }}
+                                </span>
+                                <span v-else class="text-sm text-gray-400">Not Assigned</span>
+                            </td>
                             <td class="px-6 py-4 text-gray-600">{{ sme.location }}</td>
                             <td class="px-6 py-4 font-bold" :class="getScoreTextClass(sme.score)">
                                 {{ sme.score }}
@@ -184,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
     MagnifyingGlassIcon,
@@ -212,6 +221,32 @@ const router = useRouter()
 const store = useInvestorStore()
 
 const emit = defineEmits(['sme-click'])
+
+const sectorsList = ref<any[]>([])
+
+onMounted(async () => {
+    try {
+        sectorsList.value = await $fetch<any[]>('/api/admin/sectors')
+    } catch (e) { console.error('Failed to fetch sectors', e) }
+})
+
+const getSectorStyle = (sectorName: string) => {
+    const sector = sectorsList.value.find((s: any) => s.name === sectorName)
+    if (sector && sector.color) {
+        return {
+            bg: `background-color: ${sector.color}15`,
+            text: `color: ${sector.color}`,
+            border: `border-color: ${sector.color}30`,
+            dot: `background-color: ${sector.color}`
+        }
+    }
+    return {
+        bg: 'background-color: #f3f4f6',
+        text: 'color: #4b5563',
+        border: 'border-color: #e5e7eb',
+        dot: 'background-color: #9ca3af'
+    }
+}
 
 const filters = ref({
     search: store.filters.search,

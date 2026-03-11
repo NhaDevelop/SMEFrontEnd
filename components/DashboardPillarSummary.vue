@@ -63,8 +63,26 @@ export default {
       required: true
     }
   },
+  data() {
+    return {
+      thresholds: []
+    }
+  },
+  async mounted() {
+    try {
+      const settings = await $fetch('/api/admin/settings')
+      if (settings && settings.thresholds) {
+        this.thresholds = settings.thresholds
+      }
+    } catch (e) {
+      // Slient fallback
+    }
+  },
   methods: {
     getScoreColor(score) {
+      const matched = this.thresholds.find(t => score >= t.min && score <= t.max)
+      if (matched) return matched.colorBg || 'bg-emerald-500'
+
       if (score >= 70) return 'bg-emerald-500'
       if (score >= 40) return 'bg-amber-500'
       return 'bg-rose-500'

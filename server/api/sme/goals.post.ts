@@ -4,12 +4,12 @@ import { calculateOverallScore } from '~/utils/helpers.js'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { smeId, title, description, targetScore, deadline, pillars } = body
+  const { smeId, title, description, targetScore, deadline, pillars, createdBy, investorName, investorCompany } = body
   
-  if (!smeId || !title) {
+  if (!smeId || !title || !deadline) {
     throw createError({
       statusCode: 400,
-      message: 'smeId and title are required'
+      message: 'smeId, title, and target date are required'
     })
   }
 
@@ -17,13 +17,16 @@ export default defineEventHandler(async (event) => {
   const initialScore = calculateOverallScore(pillars || [])
 
   const newGoal = db.goals.create({
-    sme_id: Number(smeId),
+    sme_id: smeId,
     title,
     description,
     target_score: targetScore,
     current_score: initialScore,
     due_date: deadline,
     pillars: pillars || [],
+    created_by: createdBy || 'sme',
+    investor_name: investorName,
+    investor_company: investorCompany,
     status: 'ACTIVE',
     progress_percentage: 0
   })

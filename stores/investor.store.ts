@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useAuthStore } from '~/stores/auth.store'
 
 export interface SME {
   id: string | number
@@ -47,6 +48,11 @@ export interface Goal {
   overdueDays?: string
   daysLeft?: string
   dueDate: string
+  profilePillars?: any[]
+  goalPillars?: any[]
+  readinessHistory?: number[]
+  proofNote?: string
+  proofDocument?: string
 }
 
 interface FilterState {
@@ -156,6 +162,7 @@ export const useInvestorStore = defineStore('investor', {
     },
 
     async createGoal(goalData: any) {
+      const authStore = useAuthStore()
       try {
         await $fetch('/api/sme/goals', {
           method: 'POST',
@@ -165,7 +172,10 @@ export const useInvestorStore = defineStore('investor', {
             description: goalData.description,
             targetScore: goalData.targetScore,
             deadline: goalData.dueDate || goalData.targetDate,
-            pillars: []
+            pillars: goalData.pillarTargets || [],
+            createdBy: 'investor',
+            investorName: authStore.user?.name,
+            investorCompany: authStore.user?.company?.name
           }
         })
         await this.fetchDealFlow()
@@ -201,6 +211,17 @@ export const useInvestorStore = defineStore('investor', {
         await this.fetchDealFlow()
       } catch (error) {
         console.error('Failed to update goal status:', error)
+      }
+    },
+
+    async deleteGoal(id: number) {
+      try {
+        await $fetch(`/api/sme/goals?id=${id}`, {
+          method: 'DELETE'
+        })
+        await this.fetchDealFlow()
+      } catch (error) {
+        console.error('Failed to delete goal:', error)
       }
     }
   }

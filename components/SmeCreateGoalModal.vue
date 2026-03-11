@@ -56,22 +56,23 @@
                 <!-- Pillar Targets -->
                 <div>
                     <h3 class="text-base font-semibold text-gray-900 mb-4">Pillar Targets</h3>
-                    <div class="space-y-5">
-                        <div v-for="(pillar, index) in form.pillars" :key="index"
-                            class="grid grid-cols-12 gap-4 items-center">
-                            <div class="col-span-4 sm:col-span-3">
-                                <label class="text-sm font-medium text-gray-700">{{ pillar.name }}</label>
+                    <p class="text-sm text-gray-500 mb-4">Set individual targets for each pillar. Current scores are
+                        shown for reference.</p>
+                    <div class="space-y-4">
+                        <div v-for="pillar in form.pillars" :key="pillar.name" class="space-y-1">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium text-gray-900">{{ pillar.name }}</span>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="text-gray-500">{{ pillar.score }}</span>
+                                    <span class="text-gray-300">→</span>
+                                    <span class="text-teal-600 font-semibold">{{ pillar.target }}</span>
+                                    <span v-if="pillar.target > pillar.score" class="text-orange-500 font-medium">
+                                        (+{{ pillar.target - pillar.score }})
+                                    </span>
+                                </div>
                             </div>
-                            <div class="col-span-6 sm:col-span-7">
-                                <input type="range" min="0" max="100" v-model.number="pillar.target"
-                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600" />
-                            </div>
-                            <div class="col-span-2 text-right flex items-center justify-end gap-2 text-xs sm:text-sm">
-                                <span class="text-gray-400 hover:text-gray-600 cursor-help" title="Current Score">{{
-                                    pillar.score }}</span>
-                                <span class="text-gray-300">→</span>
-                                <span class="font-semibold text-teal-600">{{ pillar.target }}</span>
-                            </div>
+                            <input type="range" v-model.number="pillar.target" min="0" max="100" step="1"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600" />
                         </div>
                     </div>
                 </div>
@@ -134,6 +135,34 @@ const initializePillars = () => {
         form.targetScore = Math.min(Math.round(avgScore + 10), 100)
     }
 }
+
+let isSyncing = false
+
+watch(() => form.targetScore, (newVal) => {
+    if (isSyncing || form.pillars.length === 0) return
+    isSyncing = true
+
+    const currentAvg = form.pillars.reduce((sum, p) => sum + p.target, 0) / form.pillars.length
+    const diff = newVal - currentAvg
+
+    if (Math.abs(diff) >= 0.5) {
+        form.pillars.forEach(p => {
+            p.target = Math.round(Math.min(100, Math.max(0, p.target + diff)))
+        })
+    }
+
+    setTimeout(() => { isSyncing = false }, 10)
+})
+
+watch(() => form.pillars, (newPillars) => {
+    if (isSyncing || newPillars.length === 0) return
+    isSyncing = true
+
+    const avg = newPillars.reduce((sum, p) => sum + p.target, 0) / newPillars.length
+    form.targetScore = Math.round(avg)
+
+    setTimeout(() => { isSyncing = false }, 10)
+}, { deep: true })
 
 // Watch for modal opening to refresh data
 watch(() => props.isOpen, async (newValue) => {

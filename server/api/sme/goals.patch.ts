@@ -3,7 +3,7 @@ import { db } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { id, status } = body
+  const { id, status, proofNote, proofDocument } = body
   
   if (!id) {
     throw createError({
@@ -18,7 +18,9 @@ export default defineEventHandler(async (event) => {
   const updateData: any = {
     status: status || 'COMPLETED',
     completed_at: status === 'COMPLETED' ? new Date().toISOString() : null,
-    progress_percentage: status === 'COMPLETED' ? 100 : undefined
+    progress_percentage: status === 'COMPLETED' ? 100 : undefined,
+    proof_note: proofNote,
+    proof_document: proofDocument
   }
 
   // If marking as completed, set current scores to target scores

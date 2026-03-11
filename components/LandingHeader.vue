@@ -5,11 +5,8 @@
             <div class="flex justify-between items-center">
                 <!-- Logo -->
                 <NuxtLink to="/" class="flex items-center gap-2 cursor-pointer group">
-                    <div
-                        class="w-9 h-9 bg-teal-600 rounded-md flex items-center justify-center shadow-lg shadow-teal-600/20 group-hover:rotate-6 transition-all duration-300">
-                        <ChartBarIcon class="w-5 h-5 text-white" />
-                    </div>
-                    <span class="text-xl font-semibold text-gray-900 tracking-tight">IRIP</span>
+                    <img src="/logo.png" alt="CAM INVESTMENT"
+                        class="h-24 w-24 object-cover rounded-full shadow-lg shadow-teal-600/20 group-hover:rotate-6 transition-all duration-300" />
                 </NuxtLink>
 
                 <nav

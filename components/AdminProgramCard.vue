@@ -36,7 +36,7 @@
                 View Details
               </button>
               </MenuItem>
-              <MenuItem v-slot="{ active }">
+              <MenuItem v-slot="{ active }" v-if="!isInvestor">
               <button :class="[
                 active ? 'bg-gray-50' : '',
                 'group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900'
@@ -45,7 +45,7 @@
                 Edit
               </button>
               </MenuItem>
-              <MenuItem v-slot="{ active }">
+              <MenuItem v-slot="{ active }" v-if="!isInvestor">
               <button :class="[
                 active ? 'bg-gray-50' : '',
                 'group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900'
@@ -55,7 +55,7 @@
               </button>
               </MenuItem>
             </div>
-            <div class="px-1 py-1">
+            <div class="px-1 py-1" v-if="!isInvestor">
               <MenuItem v-slot="{ active }">
               <button :class="[
                 active ? 'bg-red-50' : '',
@@ -71,8 +71,16 @@
       </Menu>
     </div>
 
-    <!-- Template Badge -->
-    <div
+    <div v-if="!program.template"
+      class="flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg text-xs font-medium text-orange-700 mb-6 border border-orange-100">
+      <DocumentTextIcon class="w-4 h-4" />
+      <span>No template assigned</span>
+      <button v-if="!isInvestor" @click="$emit('edit', program)"
+        class="ml-1 text-orange-800 hover:text-orange-900 font-semibold hover:underline">
+        Assign now
+      </button>
+    </div>
+    <div v-else
       class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100 text-xs font-medium text-gray-600 mb-6">
       <DocumentDuplicateIcon class="w-3.5 h-3.5" />
       Template: <span class="text-gray-900">{{ program.template }}</span>
@@ -118,11 +126,18 @@
         No dates set
       </div>
 
-      <NuxtLink :to="`${reportsPath}?programId=${program.id}`"
-        class="font-medium text-cyan-600 hover:text-cyan-700 flex items-center gap-1">
-        View Report
-        <ArrowLongRightIcon class="w-4 h-4" />
-      </NuxtLink>
+      <div class="flex items-center gap-3">
+        <button @click="$emit('discuss', program)"
+          class="font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1">
+          <ChatBubbleLeftRightIcon class="w-4 h-4" />
+          Discussion
+        </button>
+        <NuxtLink :to="`${reportsPath}?programId=${program.id}`"
+          class="font-medium text-cyan-600 hover:text-cyan-700 flex items-center gap-1">
+          View Report
+          <ArrowLongRightIcon class="w-4 h-4" />
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
@@ -138,7 +153,9 @@ import {
   PencilSquareIcon,
   TrashIcon,
   EyeIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  DocumentTextIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/vue/24/outline'
 
 defineProps<{
@@ -159,12 +176,15 @@ defineProps<{
   }
 }>()
 
-const emit = defineEmits(['edit', 'delete', 'view', 'manage-smes'])
+const emit = defineEmits(['edit', 'delete', 'view', 'manage-smes', 'discuss'])
 
-// Get user role to determine correct reports path
+// Get user role to determine correct reports path and actions visibility
 const authStore = useAuthStore()
+const isInvestor = computed(() => {
+  return authStore.user?.role === 'INVESTOR'
+})
+
 const reportsPath = computed(() => {
-  const role = authStore.user?.role
-  return role === 'INVESTOR' ? '/investor/reports' : '/admin/reports'
+  return isInvestor.value ? '/investor/reports' : '/admin/reports'
 })
 </script>

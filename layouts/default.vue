@@ -3,17 +3,13 @@
     <!-- Sidebar -->
     <aside :class="sidebarClasses" class="bg-[#1a3a3a] text-white flex flex-col transition-all duration-300">
       <!-- Logo & Toggle -->
-      <div class="p-4 flex items-center justify-between border-b border-gray-700">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-cyan-500 rounded-md flex items-center justify-center flex-shrink-0">
-            <ChartBarSquareIcon class="w-6 h-6 text-white" />
-          </div>
-          <div v-if="!isCollapsed">
-            <h1 class="text-lg font-semibold text-white tracking-wide">IRIP</h1>
-          </div>
+      <div class="p-6 border-b border-gray-700 relative">
+        <div class="flex flex-col items-center justify-center gap-3">
+          <img src="/logo.png" alt="CAM INVESTMENT" :class="isCollapsed ? 'h-16 w-16' : 'h-24 w-24'"
+            class="object-cover rounded-full shadow-lg transition-all duration-300 flex-shrink-0" />
         </div>
         <button @click="toggleSidebar"
-          class="p-1.5 rounded-md transition-colors lg:block hidden text-gray-400 hover:text-white hover:bg-gray-700">
+          class="absolute top-4 right-4 p-1.5 rounded-md transition-colors lg:block hidden text-gray-400 hover:text-white hover:bg-gray-700">
           <ChevronLeftIcon v-if="!isCollapsed" class="w-5 h-5" />
           <ChevronRightIcon v-else class="w-5 h-5" />
         </button>
@@ -32,12 +28,12 @@
           <!-- Link Item -->
           <NuxtLink v-else :to="item.path" v-slot="{ isActive }" custom>
             <a @click="navigateTo(item.path)" :class="[
-              'flex items-center gap-3 px-4 py-3 rounded-md transition-smooth cursor-pointer group',
-              isActive ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              'flex items-center gap-3 px-4 py-2 mt-1 rounded-lg transition-colors cursor-pointer group',
+              isActive ? 'text-teal-400 bg-gray-700/50 font-medium' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             ]">
               <component :is="item.icon"
-                :class="['w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'group-hover:text-white text-gray-400']" />
-              <span v-if="!isCollapsed" class="font-medium text-sm">{{ item.label }}</span>
+                :class="['w-5 h-5 flex-shrink-0', isActive ? 'text-teal-400' : 'group-hover:text-teal-400']" />
+              <span v-if="!isCollapsed" class="text-sm">{{ item.label }}</span>
             </a>
           </NuxtLink>
         </template>
@@ -159,7 +155,7 @@ export default {
           },
           { header: 'SETTINGS' },
           {
-            path: '/settings', // Note: This might need to be investor settings in future
+            path: '/investor/settings',
             label: 'Settings',
             icon: Cog6ToothIcon
           }
@@ -188,7 +184,7 @@ export default {
 
           { header: 'FRAMEWORK' },
           {
-            path: '/admin/settings',
+            path: '/admin/framework-settings',
             label: 'Framework Settings',
             icon: ShieldCheckIcon
           },
@@ -263,8 +259,8 @@ export default {
           },
           { header: 'SETTINGS' },
           {
-            path: '/sme/preferences',
-            label: 'Preferences',
+            path: '/sme/settings',
+            label: 'Settings',
             icon: Cog6ToothIcon
           }
         ]

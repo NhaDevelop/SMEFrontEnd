@@ -1,8 +1,6 @@
 <template>
-  <span 
-    :class="badgeClasses"
-    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"
-  >
+  <span :class="badgeClasses"
+    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide">
     {{ label }}
   </span>
 </template>

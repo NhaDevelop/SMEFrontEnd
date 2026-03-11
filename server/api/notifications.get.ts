@@ -1,5 +1,5 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { getUserNotifications } from '~/utils/mock-data'
+import { db } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {
   // Simulate network delay
@@ -12,8 +12,12 @@ export default defineEventHandler(async (event) => {
   const userId = query.userId ? parseInt(query.userId as string) : 1
   const unreadOnly = query.unreadOnly === 'true'
 
-  const notifications = getUserNotifications(userId, unreadOnly)
-  const unreadCount = notifications.filter(n => !n.is_read).length
+  let notifications = db.notifications.findByUserId(userId)
+  if (unreadOnly) {
+    notifications = notifications.filter((n: any) => !n.is_read)
+  }
+  
+  const unreadCount = notifications.filter((n: any) => !n.is_read).length
 
   return {
     notifications,

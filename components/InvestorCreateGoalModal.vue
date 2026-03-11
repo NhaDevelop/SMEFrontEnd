@@ -98,10 +98,12 @@
                                                 *</label>
                                             <div class="relative">
                                                 <input type="date" v-model="form.targetDate"
-                                                    class="w-full rounded-lg border-gray-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2.5 pl-3 text-gray-900 icon-right" />
+                                                    :class="['w-full rounded-lg shadow-sm sm:text-sm py-2.5 pl-3 text-gray-900 icon-right', errors.targetDate ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-teal-500 focus:ring-teal-500']" />
                                                 <CalendarIcon
                                                     class="w-5 h-5 text-gray-400 absolute right-3 top-2.5 pointer-events-none" />
                                             </div>
+                                            <p v-if="errors.targetDate" class="text-xs text-red-500 mt-1">Target date is
+                                                required</p>
                                         </div>
 
                                         <!-- Score Slider Section -->
@@ -148,49 +150,26 @@
                                     <p class="text-sm text-gray-500">Set individual targets for each pillar. Current
                                         scores are shown for reference.</p>
 
-                                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                                        <div v-for="pillar in pillarTargets" :key="pillar.name"
-                                            class="bg-gray-50 rounded-lg p-4 space-y-3">
+                                    <div class="space-y-4 pt-2">
+                                        <div v-for="pillar in pillarTargets" :key="pillar.name" class="space-y-2">
                                             <div class="flex items-center justify-between">
-                                                <h4 class="text-sm font-bold text-gray-900">{{ pillar.name }}</h4>
-                                                <div class="flex items-center gap-3 text-xs">
-                                                    <span class="text-gray-500">
-                                                        Current: <span class="font-bold text-gray-900">{{
-                                                            pillar.currentScore }}</span>
-                                                    </span>
-                                                    <span class="text-gray-400">→</span>
-                                                    <span class="text-teal-600">
-                                                        Target: <span class="font-bold">{{ pillar.targetScore }}</span>
-                                                    </span>
+                                                <span class="text-sm font-bold text-gray-900">{{ pillar.name }}</span>
+                                                <div class="flex items-center gap-2 text-xs">
+                                                    <span class="text-gray-500 font-medium">{{ pillar.currentScore
+                                                    }}</span>
+                                                    <span class="text-gray-300">→</span>
+                                                    <span class="text-[#0F766E] font-bold">{{ pillar.targetScore
+                                                    }}</span>
                                                     <span v-if="pillar.targetScore > pillar.currentScore"
-                                                        class="text-emerald-600 font-medium">
+                                                        class="text-orange-500 font-medium">
                                                         (+{{ pillar.targetScore - pillar.currentScore }})
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            <!-- Current Score Bar (Read-only) -->
-                                            <div class="space-y-1">
-                                                <div class="flex justify-between text-xs text-gray-500">
-                                                    <span>Current Score</span>
-                                                    <span>{{ pillar.currentScore }}</span>
-                                                </div>
-                                                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-gray-400 rounded-full transition-all"
-                                                        :style="{ width: pillar.currentScore + '%' }"></div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Target Score Slider -->
-                                            <div class="space-y-1">
-                                                <div class="flex justify-between text-xs text-gray-700 font-medium">
-                                                    <span>Target Score</span>
-                                                    <span class="text-teal-600">{{ pillar.targetScore }}</span>
-                                                </div>
-                                                <input type="range" v-model="pillar.targetScore" min="0" max="100"
-                                                    step="1"
-                                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600" />
-                                            </div>
+                                            <input type="range" v-model.number="pillar.targetScore" min="0" max="100"
+                                                step="1"
+                                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0F766E]" />
                                         </div>
                                     </div>
                                 </div>
@@ -220,7 +199,6 @@
 import { ref, watch, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { ArrowLongRightIcon, XMarkIcon, CalendarIcon } from '@heroicons/vue/24/outline'
-import { generatePillarScores } from '~/utils/sme-data'
 
 const props = defineProps<{
     isOpen: boolean
@@ -292,15 +270,14 @@ const pillarTargets = ref<Array<{
     targetScore: number
 }>>([])
 
-// Helper to update pillars based on an SME object
 const updatePillarsForSme = (sme: any) => {
-    const pillars = sme.pillars || generatePillarScores(sme.id, sme.score ?? 0)
+    const pillars = Array.isArray(sme.pillars) && sme.pillars.length > 0 ? sme.pillars : []
     pillarTargets.value = pillars.map((p: any) => {
         // Set target score to be at least 15 points higher, capped at 100
-        const targetScore = Math.min(100, p.score + 15)
+        const targetScore = Math.min(100, (p.score || 0) + 15)
         return {
-            name: p.name,
-            currentScore: p.score,
+            name: p.name || p.pillar_name,
+            currentScore: p.score || 0,
             targetScore
         }
     })
@@ -346,6 +323,35 @@ watch(() => form.value.smeId, (newId) => {
     }
 })
 
+// Add two-way syncing between overall target and pillar targets
+let isSyncing = false
+
+watch(() => form.value.targetScore, (newVal) => {
+    if (isSyncing || pillarTargets.value.length === 0) return
+    isSyncing = true
+
+    const currentAvg = pillarTargets.value.reduce((sum, p) => sum + p.targetScore, 0) / pillarTargets.value.length
+    const diff = newVal - currentAvg
+
+    if (Math.abs(diff) >= 0.5) {
+        pillarTargets.value.forEach(p => {
+            p.targetScore = Math.round(Math.min(100, Math.max(0, p.targetScore + diff)))
+        })
+    }
+
+    setTimeout(() => { isSyncing = false }, 10)
+})
+
+watch(pillarTargets, (newPillars) => {
+    if (isSyncing || newPillars.length === 0) return
+    isSyncing = true
+
+    const avg = newPillars.reduce((sum, p) => sum + p.targetScore, 0) / newPillars.length
+    form.value.targetScore = Math.round(avg)
+
+    setTimeout(() => { isSyncing = false }, 10)
+}, { deep: true })
+
 const applyTemplate = (template: any) => {
     const sme = props.smeList?.find(s => s.id === form.value.smeId)
     const smeName = sme?.name || 'SME'
@@ -354,11 +360,27 @@ const applyTemplate = (template: any) => {
     form.value.targetScore = template.targetScore
 }
 
+const errors = ref({
+    smeId: false,
+    name: false,
+    targetDate: false
+})
+
 const closeModal = () => {
     emit('close')
 }
 
 const createGoal = () => {
+    // Basic validation
+    errors.value.smeId = !form.value.smeId
+    errors.value.name = !form.value.name
+    errors.value.targetDate = !form.value.targetDate
+
+    if (errors.value.smeId || errors.value.name || errors.value.targetDate) {
+        activeTab.value = 'basic'
+        return
+    }
+
     // Validate and emit with pillar targets
     emit('create', {
         ...form.value,

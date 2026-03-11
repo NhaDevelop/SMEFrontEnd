@@ -1,8 +1,8 @@
 import { defineEventHandler, readBody } from 'h3'
-import { mockPillars } from '~/utils/mock-data'
 import { storage } from '~/server/utils/storage'
-import { templateQuestions as staticTemplateQuestions } from '~/utils/mock-data/template-questions'
+import { db } from '~/server/utils/db'
 import { calculateOverallScore } from '~/utils/helpers.js'
+import { getPillarScores } from '~/server/utils/scoring'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -19,9 +19,10 @@ export default defineEventHandler(async (event) => {
     questions = body.questions
     console.log(`[Assessment Submit] Using ${questions.length} questions from request body (admin-created template)`)
   } else {
-    // Static template: filter from static questions file
+    // Static template: filter from database questions
+    const staticTemplateQuestions = db.questions.findAll()
     questions = staticTemplateQuestions.filter((q: any) => q.templateId === templateId)
-    console.log(`[Assessment Submit] Using ${questions.length} questions from static file (template: ${templateId})`)
+    console.log(`[Assessment Submit] Using ${questions.length} questions from database (template: ${templateId})`)
   }
   
   if (questions.length === 0) {
@@ -52,10 +53,10 @@ export default defineEventHandler(async (event) => {
       if (question.type === 'BOOLEAN' || question.type === 'Yes/No') {
         points = rawAnswer === true ? 10 : 0
       }
-      else if (question.type === 'CHOICE' && question.options) {
+      else if ((question.type === 'CHOICE' || question.type === 'Multiple Choice' || question.type === 'Single Choice') && question.options) {
         // Handle both object format {value, label, points} and simple string array
         const selectedOption: any = question.options.find((opt: any) => {
-          const optValue = typeof opt === 'object' && opt !== null && 'value' in opt ? opt.value : opt
+          const optValue = typeof opt === 'object' && opt !== null && ('value' in opt ? opt.value : opt.label) ? (opt.value || opt.label) : opt
           return optValue === rawAnswer
         })
         
@@ -69,22 +70,26 @@ export default defineEventHandler(async (event) => {
           }
         }
       }
-      else if (question.type === 'NUMBER' || question.type === 'Number') {
-        // Normalize number to 0-10 scale
-        const num = Number(rawAnswer)
-        if (!isNaN(num) && num > 0) {
-          // Simple linear mapping: assume 100 = max, caps at 10
-          points = Math.min(10, (num / 100) * 10)
-        }
-      }
       else if (question.type === 'SCALE' || question.type === 'Scale (1-10)') {
         const scaleValue = typeof rawAnswer === 'number' ? rawAnswer : parseInt(rawAnswer)
         if (!isNaN(scaleValue)) {
           points = scaleValue // Already on 1-10 scale
         }
       }
+      else if ((question.type === 'Dropdown Select' || question.type === 'Dropdown') && question.options) {
+        // Look up the selected option's points — same logic as Single Choice
+        const selectedOption: any = question.options.find((opt: any) => {
+          const optValue = typeof opt === 'object' && opt !== null ? (opt.value || opt.label) : opt
+          return optValue === rawAnswer
+        })
+        if (selectedOption && typeof selectedOption === 'object' && 'points' in selectedOption) {
+          points = selectedOption.points
+        } else {
+          points = 10 // fallback if no points configured
+        }
+      }
       else {
-        // For TEXT, Dropdown, File Upload - give full credit (10 points)
+        // For TEXT, File Upload - give full credit (10 points)
         points = 10
       }
     }
@@ -102,47 +107,10 @@ export default defineEventHandler(async (event) => {
     })
   })
 
-  // 3. Calculate Total Score using weighted pillar model
-  const pillarScores: Record<string, { total: number, max: number }> = {}
-  
-  newResponses.forEach(response => {
-    const question = questions.find(q => q.id === response.question_id)
-    if (question) {
-      const pillarId = question.pillarId || question.pillar_id
-      if (!pillarScores[pillarId]) {
-        pillarScores[pillarId] = { total: 0, max: 0 }
-      }
-      
-      const weight = question.weight || 10
-      pillarScores[pillarId].total += response.score_awarded * weight
-      pillarScores[pillarId].max += 10 * weight
-    }
-  })
-
-  // Convert to format for calculateOverallScore
-  const pillarsForCalculation = Object.entries(pillarScores).map(([pillarId, stats]) => {
-    // Try to find weight from mockPillars (or default to 1)
-    // Map string IDs to numeric if needed
-    const pillarMap: Record<string, number> = {
-        'team': 1, 'business': 2, 'market': 3, 'finance': 4,
-        'ops': 5, 'legal': 6, 'data': 7, 'growth': 8
-    }
-    const cleanId = typeof pillarId === 'string' ? pillarId.toLowerCase() : pillarId
-    const numericId = typeof cleanId === 'string' ? pillarMap[cleanId] : cleanId
-    
-    // Fallback names for exact string matches
-    const mockPillar = mockPillars.find(mp => 
-      mp.id === numericId || 
-      (typeof pillarId === 'string' && mp.name.toLowerCase() === pillarId.toLowerCase())
-    )
-    
-    return {
-      score: stats.max > 0 ? (stats.total / stats.max) * 100 : 0,
-      weight: mockPillar ? mockPillar.weight : 1
-    }
-  })
-
-  const finalTotalScore = calculateOverallScore(pillarsForCalculation)
+  // 3. Calculate Total Score using unified weighted pillar model
+  const mockAssessment = { id: newAssessmentId, questions: questions }
+  const pillarScores = getPillarScores(newAssessmentId, questions, newResponses, [mockAssessment])
+  const finalTotalScore = calculateOverallScore(pillarScores)
 
   const newAssessment = {
     id: newAssessmentId,

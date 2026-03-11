@@ -154,6 +154,7 @@ interface AdminState {
   dashboardStats: any | null
   programs: Program[]
   frameworkSettings: PillarWeight[]
+  frameworkThresholds: any[]
   indicators: Indicator[]
   smes: SmeProfile[]
   users: User[]
@@ -172,6 +173,7 @@ export const useAdminStore = defineStore('admin', {
     userStats: null,
     pendingUsers: [],
     dashboardStats: null,
+    frameworkThresholds: [],
     users: [
        {
             id: 1,
@@ -776,24 +778,58 @@ export const useAdminStore = defineStore('admin', {
             console.error('Failed to fetch SMEs', err)
         }
     },
-
-    async updateFrameworkSettings(settings: PillarWeight[]) {
-      // Simulate API call
+    async fetchFrameworkSettings() {
       this.loading = true
-      await new Promise(resolve => setTimeout(resolve, 500))
-      this.frameworkSettings = settings
-      
-      // Log this action
-      this.auditLogs.unshift({
-          id: Date.now(),
-          admin: 'Current Admin', // Should get from AuthStore in real app
-          action: 'Updated Framework',
-          target: 'Pillar Weights',
-          timestamp: new Date().toLocaleString(),
-          details: 'Updated pillar weight distribution'
-      })
+      try {
+        const settings = await $fetch<any>('/api/admin/settings')
+        if (settings && settings.pillars) {
+           this.frameworkSettings = settings.pillars
+           if(settings.thresholds) {
+              this.frameworkThresholds = settings.thresholds
+           }
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch Framework Settings:', err)
+      } finally {
+        this.loading = false
+      }
+    },
 
-      this.loading = false
+    async updateFrameworkSettings(payloadData: { pillars: PillarWeight[], thresholds?: any[] }) {
+      this.loading = true
+      try {
+        const currentData = await $fetch<any>('/api/admin/settings').catch(() => null)
+        const payload = {
+            pillars: payloadData.pillars,
+            thresholds: payloadData.thresholds || currentData?.thresholds || []
+        }
+        
+        const response = await $fetch<any>('/api/admin/settings', {
+            method: 'POST',
+            body: payload
+        })
+        
+        if (response && response.success) {
+            this.frameworkSettings = response.settings.pillars
+            if(response.settings.thresholds) {
+                this.frameworkThresholds = response.settings.thresholds
+            }
+            
+            // Log this action
+            this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Super Admin',
+                action: 'Updated Framework',
+                target: 'Pillar Weights',
+                timestamp: new Date().toLocaleString(),
+                details: 'Updated pillar weight distribution'
+            })
+        }
+      } catch(err) {
+         console.error('Failed to update framework settings', err)
+      } finally {
+         this.loading = false
+      }
     },
 
     async fetchSmes() {

@@ -35,10 +35,9 @@
                         <select v-model="form.type"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
                             <option value="Yes/No">Yes/No</option>
+                            <option value="Single Choice">Single Choice</option>
                             <option value="Multiple Choice">Multiple Choice</option>
                             <option value="Scale (1-10)">Scale (1-10)</option>
-                            <option value="Text Input">Text Input</option>
-                            <option value="Number Input">Number Input</option>
                             <option value="Dropdown Select">Dropdown Select</option>
                             <option value="File Upload">File Upload</option>
                         </select>
@@ -62,6 +61,47 @@
                         </div>
                         <span class="ml-3 text-sm font-medium text-gray-700">Required question</span>
                     </label>
+                </div>
+
+                <!-- Dynamic Options for Multiple Choice and Dropdown -->
+                <div v-if="form.type === 'Single Choice' || form.type === 'Multiple Choice' || form.type === 'Dropdown Select'"
+                    class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-gray-700">Answer Options *</label>
+                        <button type="button" @click="addOption"
+                            class="text-xs font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1">
+                            <PlusIcon class="w-3.5 h-3.5" />
+                            Add Option
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div v-for="(option, idx) in form.options" :key="idx"
+                            class="flex gap-3 items-start bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                            <div class="flex-1 space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Option Text</label>
+                                    <input v-model="option.label" type="text"
+                                        class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                        :placeholder="`Option ${idx + 1}`" required />
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <label class="block text-xs font-medium text-gray-500 w-20">Points (0-10):</label>
+                                    <input type="range" v-model.number="option.points" min="0" max="10" step="1"
+                                        class="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600">
+                                    <span class="text-sm font-semibold text-teal-700 w-6 text-center">{{ option.points
+                                        }}</span>
+                                </div>
+                            </div>
+                            <button type="button" @click="removeOption(idx)"
+                                class="mt-6 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                :disabled="form.options.length <= 1">
+                                <TrashIcon class="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                    <p v-if="form.options.length === 0" class="text-xs text-gray-500 italic mt-3">Click "Add Option" to
+                        create choices for this question.</p>
                 </div>
 
                 <!-- Helper Text -->
@@ -88,6 +128,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
     isOpen: boolean
@@ -107,13 +148,22 @@ const form = ref({
     type: 'Yes/No',
     weight: 10,
     required: true,
-    helperText: ''
+    helperText: '',
+    options: [{ label: 'Option 1', points: 10 }]
 })
 
 watch(() => props.isOpen, (newVal) => {
     if (newVal) {
         if (props.initialData) {
-            form.value = { ...props.initialData }
+            const mappedOptions = props.initialData.options ? props.initialData.options.map((opt: any) => {
+                if (typeof opt === 'string') return { label: opt, points: 10 }
+                return { label: opt.label || '', points: typeof opt.points === 'number' ? opt.points : 10 }
+            }) : [{ label: 'Option 1', points: 10 }]
+
+            form.value = {
+                ...props.initialData,
+                options: mappedOptions
+            }
         } else {
             // Reset default
             form.value = {
@@ -124,11 +174,22 @@ watch(() => props.isOpen, (newVal) => {
                 type: 'Yes/No',
                 weight: 10,
                 required: true,
-                helperText: ''
+                helperText: '',
+                options: [{ label: 'Option 1', points: 10 }]
             }
         }
     }
 })
+
+const addOption = () => {
+    form.value.options.push({ label: `Option ${form.value.options.length + 1}`, points: 10 })
+}
+
+const removeOption = (index: number) => {
+    if (form.value.options.length > 1) {
+        form.value.options.splice(index, 1)
+    }
+}
 
 const handleSubmit = () => {
     emit('save', { ...form.value })

@@ -1,6 +1,12 @@
 import { RISK_LEVELS, RISK_THRESHOLDS } from './constants.js'
 
-export const getRiskLevel = (score) => {
+export const getRiskLevel = (score, thresholds) => {
+  if (thresholds && thresholds.length > 0) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    if (score >= sorted[0]?.min) return RISK_LEVELS.LOW
+    if (sorted.length >= 3 && score >= sorted[sorted.length - 2]?.min) return RISK_LEVELS.MEDIUM
+    return RISK_LEVELS.HIGH
+  }
   if (score >= RISK_THRESHOLDS.LOW) return RISK_LEVELS.LOW
   if (score >= RISK_THRESHOLDS.MEDIUM) return RISK_LEVELS.MEDIUM
   return RISK_LEVELS.HIGH
@@ -43,7 +49,13 @@ export const calculateGrowthPotential = (pillars) => {
   return total
 }
 
-export const getReadinessStatus = (score) => {
+export const getReadinessStatus = (score, thresholds) => {
+  if (thresholds && thresholds.length > 0) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    for (const t of sorted) {
+      if (score >= t.min) return t.label
+    }
+  }
   if (score >= 70) return 'Investment Ready'
   if (score >= 50) return 'Developing'
   return 'Needs Improvement'

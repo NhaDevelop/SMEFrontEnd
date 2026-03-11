@@ -128,17 +128,9 @@
                                 class="text-red-500">*</span></label>
                         <select v-model="form.industry" required v-bind:class="fieldCls">
                             <option value="" disabled>Select industry</option>
-                            <option>Agriculture &amp; Food</option>
-                            <option>Construction &amp; Real Estate</option>
-                            <option>Education &amp; Training</option>
-                            <option>Energy &amp; Utilities</option>
-                            <option>Financial Services</option>
-                            <option>Healthcare &amp; Pharmaceuticals</option>
-                            <option>Information Technology</option>
-                            <option>Manufacturing</option>
-                            <option>Retail &amp; E-commerce</option>
-                            <option>Transportation &amp; Logistics</option>
-                            <option>Tourism &amp; Hospitality</option>
+                            <option v-for="sector in sectors" :key="sector.id" :value="sector.name">
+                                {{ sector.name }}
+                            </option>
                         </select>
                     </div>
                     <!-- Number of Employees -->
@@ -291,6 +283,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue'
 import {
     ArrowLeftIcon,
     ChartBarIcon,
@@ -306,6 +299,16 @@ import {
 } from '@heroicons/vue/24/outline'
 
 definePageMeta({ layout: false })
+
+const sectors = ref<any[]>([])
+
+onMounted(async () => {
+    try {
+        sectors.value = await $fetch<any[]>('/api/admin/sectors')
+    } catch (e) {
+        console.error('Failed to load sectors', e)
+    }
+})
 
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition'
 

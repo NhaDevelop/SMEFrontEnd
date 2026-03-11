@@ -1,286 +1,295 @@
 <template>
-    <div class="h-full flex flex-col bg-gray-50">
-        <!-- Header -->
-        <header class="bg-white border-b border-gray-200 px-8 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Framework Settings</h1>
-                    <p class="text-gray-500 mt-1">Configure assessment pillars, weights, and score thresholds</p>
+    <div class="h-full flex flex-col bg-gray-50 overflow-auto overflow-x-hidden">
+        <div class="max-w-5xl mx-auto w-full p-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
+            <p class="text-sm text-gray-500 mb-6">Manage your account settings and preferences</p>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-6">
+                <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                    class="px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors" :class="currentTab === tab.id
+                        ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'">
+                    <component :is="tab.icon" class="w-4 h-4" />
+                    {{ tab.label }}
+                </button>
+            </div>
+
+            <!-- Profile Tab -->
+            <div v-if="currentTab === 'profile'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Profile Information</h2>
+                <p class="text-sm text-gray-500 mb-6">Update your personal information</p>
+
+                <div class="flex border-b border-gray-100 pb-6 mb-6">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-16 h-16 rounded-full bg-[#115e59] text-white flex items-center justify-center text-2xl font-bold">
+                            {{ form.name.charAt(0).toUpperCase() }}
+                        </div>
+                        <button
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            Change Photo
+                        </button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button @click="handleReset"
-                        class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
-                        <ArrowPathIcon class="w-4 h-4" />
-                        Reset
-                    </button>
-                    <button @click="handleSave" :disabled="isSaving || !isTotalValid"
-                        class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        <CloudArrowUpIcon class="w-4 h-4" />
-                        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" v-model="form.name"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" v-model="form.email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="text" v-model="form.phone"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Company / Organization</label>
+                        <input type="text" v-model="form.company"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-gray-100">
+                    <button @click="saveProfile"
+                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                        <BookmarkIcon class="w-4 h-4" />
+                        Save Changes
                     </button>
                 </div>
             </div>
-        </header>
 
-        <main class="flex-1 overflow-y-auto p-8">
-            <div class="max-w-5xl mx-auto space-y-6">
+            <!-- Notifications Tab -->
+            <div v-if="currentTab === 'notifications'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Notification Preferences</h2>
+                <p class="text-sm text-gray-500 mb-6">Choose what notifications you receive</p>
 
-                <!-- Tabs -->
-                <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
-                    <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
-                        :class="['px-4 py-2 rounded-md text-sm font-medium transition-all', activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700']">
-                        {{ tab.label }}
+                <div class="divide-y divide-gray-100 mb-8 border-b border-gray-100">
+                    <div class="py-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Email Notifications</h3>
+                            <p class="text-sm text-gray-500">Receive notifications via email</p>
+                        </div>
+                        <Switch v-model="notifications.email"
+                            :class="notifications.email ? 'bg-emerald-600' : 'bg-gray-200'"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+                            <span :class="notifications.email ? 'translate-x-6' : 'translate-x-1'"
+                                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                        </Switch>
+                    </div>
+                    <div class="py-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Assessment Reminders</h3>
+                            <p class="text-sm text-gray-500">Get reminded about pending assessments</p>
+                        </div>
+                        <Switch v-model="notifications.assessments"
+                            :class="notifications.assessments ? 'bg-emerald-600' : 'bg-gray-200'"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+                            <span :class="notifications.assessments ? 'translate-x-6' : 'translate-x-1'"
+                                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                        </Switch>
+                    </div>
+                    <div class="py-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Weekly Digest</h3>
+                            <p class="text-sm text-gray-500">Receive a weekly summary of portfolio activity</p>
+                        </div>
+                        <Switch v-model="notifications.digest"
+                            :class="notifications.digest ? 'bg-emerald-600' : 'bg-gray-200'"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+                            <span :class="notifications.digest ? 'translate-x-6' : 'translate-x-1'"
+                                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                        </Switch>
+                    </div>
+                    <div class="py-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Score Updates</h3>
+                            <p class="text-sm text-gray-500">Get notified when readiness scores change</p>
+                        </div>
+                        <Switch v-model="notifications.scores"
+                            :class="notifications.scores ? 'bg-emerald-600' : 'bg-gray-200'"
+                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+                            <span :class="notifications.scores ? 'translate-x-6' : 'translate-x-1'"
+                                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                        </Switch>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button @click="savePreferences"
+                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                        <DocumentCheckIcon class="w-4 h-4" />
+                        Save Preferences
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preferences Tab -->
+            <div v-if="currentTab === 'preferences'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Regional Preferences</h2>
+                <p class="text-sm text-gray-500 mb-6">Set your language and regional settings</p>
+
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                        <select v-model="preferences.language"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                            <option value="en">English</option>
+                            <option value="km">Khmer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                        <select v-model="preferences.timezone"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                            <option value="Asia/Phnom_Penh">Asia/Phnom_Penh (UTC+7)</option>
+                            <option value="America/New_York">America/New_York (UTC-5)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                        <select v-model="preferences.dateFormat"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-gray-100">
+                    <button @click="savePreferences"
+                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+                        <DocumentCheckIcon class="w-4 h-4" />
+                        Save Preferences
+                    </button>
+                </div>
+            </div>
+
+            <!-- Security Tab -->
+            <div v-if="currentTab === 'security'" class="space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Change Password</h2>
+                    <p class="text-sm text-gray-500 mb-6">Update your account password</p>
+
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                            <input type="password" v-model="security.currentPassword"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                            <input type="password" v-model="security.newPassword"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                            <input type="password" v-model="security.confirmPassword"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        </div>
+                    </div>
+
+                    <button @click="updatePassword"
+                        class="px-4 py-2 bg-[#2D7A6B] text-white text-sm font-medium rounded-lg hover:bg-[#205e52] transition-colors">
+                        Update Password
                     </button>
                 </div>
 
-                <!-- Tab Content -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-h-[500px]">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Two-Factor Authentication</h2>
+                    <p class="text-sm text-gray-500 mb-6">Add an extra layer of security to your account</p>
 
-                    <!-- Pillar Weights Tab -->
-                    <div v-if="activeTab === 'weights'" class="p-8">
-                        <div class="flex items-center justify-between mb-8">
-                            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                Pillar Weight Distribution
-                                <InformationCircleIcon class="w-5 h-5 text-gray-400" />
-                            </h3>
-                            <div class="flex items-center gap-3">
-
-                                <span
-                                    :class="['text-sm font-medium px-3 py-1 rounded-full', isTotalValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
-                                    Total Weight: {{ totalWeight.toFixed(1) }}%
-                                </span>
-                            </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">2FA is currently disabled</p>
+                            <p class="text-sm text-gray-500">Enable two-factor authentication for enhanced security</p>
                         </div>
-
-                        <div class="space-y-8">
-                            <div v-for="(pillar, index) in pillars" :key="index" class="space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <!-- Toggle -->
-                                        <button @click="pillar.enabled = !pillar.enabled"
-                                            :class="pillar.enabled ? 'bg-emerald-600' : 'bg-gray-200'"
-                                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none">
-                                            <span :class="pillar.enabled ? 'translate-x-6' : 'translate-x-1'"
-                                                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
-                                        </button>
-                                        <span class="text-sm font-medium text-gray-700">{{ pillar.name }}</span>
-                                    </div>
-                                    <span class="text-sm font-bold text-gray-900">{{ pillar.weight }}%</span>
-                                </div>
-                                <input type="range" v-model.number="pillar.weight" min="0" max="100" step="0.1"
-                                    :disabled="!pillar.enabled"
-                                    class="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-emerald-600 disabled:accent-gray-300">
-                            </div>
-                        </div>
-
-                        <!-- Preview Bar -->
-                        <div class="mt-12 pt-8 border-t border-gray-100">
-                            <h4 class="font-semibold text-gray-900 mb-4">Weight Distribution Preview</h4>
-                            <div class="h-8 w-full rounded-lg overflow-hidden flex">
-                                <div v-for="(pillar, idx) in pillars" :key="idx"
-                                    :style="{ width: pillar.weight + '%', backgroundColor: getColor(Number(idx)) }"
-                                    class="h-full transition-all duration-300 relative group">
-                                    <div
-                                        class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 text-white text-xs font-bold transition-opacity">
-                                        {{ pillar.weight }}%
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-4 flex flex-wrap gap-4">
-                                <div v-for="(pillar, idx) in pillars" :key="idx" class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full"
-                                        :style="{ backgroundColor: getColor(Number(idx)) }"></div>
-                                    <span class="text-xs text-gray-500">{{ pillar.name }}</span>
-                                </div>
-                            </div>
-                        </div>
+                        <button
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Enable 2FA
+                        </button>
                     </div>
-
-                    <!-- Score Thresholds Tab -->
-                    <div v-if="activeTab === 'thresholds'" class="p-8">
-                        <div class="mb-8">
-                            <h3 class="text-lg font-bold text-gray-900">Readiness Level Thresholds</h3>
-                            <p class="text-sm text-gray-500 mt-1">Define score ranges for each readiness level</p>
-                        </div>
-
-                        <div class="space-y-6 max-w-3xl">
-                            <div v-for="level in thresholds" :key="level.id" class="flex items-center gap-6">
-                                <div class="w-4 h-4 rounded-md flex-shrink-0" :class="level.colorBg"></div>
-                                <span class="text-sm font-medium text-gray-900 w-40">{{ level.label }}</span>
-
-                                <div class="flex items-center gap-3">
-                                    <input type="number" v-model="level.min"
-                                        class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                    <span class="text-gray-400 text-sm">to</span>
-                                    <input type="number" v-model="level.max"
-                                        class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-12 pt-8 border-t border-gray-100" v-if="thresholds.length >= 4">
-                            <h4 class="font-semibold text-gray-900 mb-6">Score Scale Preview</h4>
-                            <div
-                                class="relative h-12 w-full flex rounded-lg overflow-hidden font-medium text-white text-xs">
-                                <div class="bg-red-500 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[3]) }">
-                                    0 - {{ thresholds[3]?.max }}
-                                </div>
-                                <div class="bg-teal-500 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[2]) }">
-                                    {{ thresholds[2]?.min }} - {{ thresholds[2]?.max }}
-                                </div>
-                                <div class="bg-amber-500 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[1]) }">
-                                    {{ thresholds[1]?.min }} - {{ thresholds[1]?.max }}
-                                </div>
-                                <div class="bg-emerald-600 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[0]) }">
-                                    {{ thresholds[0]?.min }} - 100
-                                </div>
-                            </div>
-                            <div class="flex justify-between text-xs text-gray-400 mt-2">
-                                <span>0</span>
-                                <span>25</span>
-                                <span>50</span>
-                                <span>75</span>
-                                <span>100</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Indicators Tab -->
-                    <div v-if="activeTab === 'indicators'" class="p-8">
-                        <div class="mb-8">
-                            <h3 class="text-lg font-bold text-gray-900">Assessment Indicators</h3>
-                            <p class="text-sm text-gray-500 mt-1">Configure indicators for each pillar</p>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div v-for="(pillar, idx) in pillars" :key="idx"
-                                class="border border-gray-200 rounded-xl p-6 hover:shadow-sm transition-shadow">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h4 class="font-medium text-gray-900">{{ pillar.name }}</h4>
-                                    <button @click="openIndicatorsModal(pillar, Number(idx))"
-                                        class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                        Edit Indicators
-                                    </button>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <span v-for="(ind, i) in pillar.indicators" :key="i"
-                                        class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
-                                        {{ ind }}
-                                    </span>
-                                    <span v-if="!pillar.indicators?.length" class="text-xs text-gray-400 italic">No
-                                        indicators defined</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
-        </main>
 
-        <EditIndicatorsModal :is-open="showIndicatorsModal" :pillar-name="editingPillar?.name || ''"
-            :initial-indicators="editingPillar?.indicators || []" @close="showIndicatorsModal = false"
-            @save="handleSaveIndicators" />
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { CloudArrowUpIcon, ArrowPathIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
-import { useAdminStore } from '~/stores/admin.store'
-import EditIndicatorsModal from '~/components/AdminEditIndicatorsModal.vue'
+import { ref, onMounted } from 'vue'
+import { Switch } from '@headlessui/vue'
 
 definePageMeta({
-    layout: 'admin',
-    middleware: ['auth', 'admin']
+    layout: 'admin'
 })
+import {
+    UserIcon,
+    BellIcon,
+    GlobeAltIcon,
+    ShieldCheckIcon,
+    BookmarkIcon,
+    DocumentCheckIcon
+} from '@heroicons/vue/24/outline'
 
-const adminStore = useAdminStore()
-const activeTab = ref('weights')
-const isSaving = ref(false)
-
-const showIndicatorsModal = ref(false)
-const editingPillar = ref<any>(null)
-const editingPillarIndex = ref<number>(-1)
-
-const openIndicatorsModal = (pillar: any, index: number) => {
-    editingPillar.value = pillar
-    editingPillarIndex.value = index
-    showIndicatorsModal.value = true
-}
-
-const handleSaveIndicators = (indicators: string[]) => {
-    if (editingPillarIndex.value !== -1) {
-        pillars.value[editingPillarIndex.value].indicators = indicators
-        // Auto save to store logic is handled by header "Save Changes", 
-        // but user might expect immediate save for this modal.
-        // Let's just update local state, and they have to click "Save Changes" on header for global sync.
-    }
-    showIndicatorsModal.value = false
-}
+const currentTab = ref('profile')
 
 const tabs = [
-    { id: 'weights', label: 'Pillar Weights' },
-    { id: 'thresholds', label: 'Score Thresholds' },
-    { id: 'indicators', label: 'Indicators' },
+    { id: 'profile', label: 'Profile', icon: UserIcon },
+    { id: 'notifications', label: 'Notifications', icon: BellIcon },
+    { id: 'preferences', label: 'Preferences', icon: GlobeAltIcon },
+    { id: 'security', label: 'Security', icon: ShieldCheckIcon }
 ]
 
-// Initialize from store
-const pillars = ref(JSON.parse(JSON.stringify(adminStore.frameworkSettings)).map((p: any) => ({
-    ...p,
-    enabled: true // Add local UI state
-})))
+const form = ref({
+    name: 'Super Admin',
+    email: 'stsmey@gmail.com',
+    phone: '+855 12 345 678',
+    company: ''
+})
 
-const totalWeight = computed(() => pillars.value.reduce((sum: number, p: any) => sum + (p.enabled ? p.weight : 0), 0))
-const isTotalValid = computed(() => Math.abs(totalWeight.value - 100) < 0.1)
+const notifications = ref({
+    email: true,
+    assessments: true,
+    digest: false,
+    scores: true
+})
 
+const preferences = ref({
+    language: 'en',
+    timezone: 'Asia/Phnom_Penh',
+    dateFormat: 'DD/MM/YYYY'
+})
 
+const security = ref({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+})
 
-const handleSave = async () => {
-    if (!isTotalValid.value) {
-        alert('Total weight must equal 100%')
+const saveProfile = () => {
+    alert('Profile saved successfully!')
+}
+
+const savePreferences = () => {
+    alert('Preferences saved successfully!')
+}
+
+const updatePassword = () => {
+    if (security.value.newPassword !== security.value.confirmPassword) {
+        alert('Passwords do not match!')
         return
     }
-
-    isSaving.value = true
-    try {
-        await adminStore.updateFrameworkSettings(pillars.value.map((p: any) => ({
-            id: p.id || p.name.toLowerCase().replace(/ /g, '_'),
-            name: p.name,
-            weight: p.weight
-        })))
-        alert('Settings saved successfully')
-    } catch (e) {
-        alert('Failed to save settings')
-    } finally {
-        isSaving.value = false
-    }
+    alert('Password updated successfully!')
+    security.value.currentPassword = ''
+    security.value.newPassword = ''
+    security.value.confirmPassword = ''
 }
-
-const handleReset = () => {
-    if (confirm('Reset changes to last saved state?')) {
-        pillars.value = JSON.parse(JSON.stringify(adminStore.frameworkSettings)).map((p: any) => ({
-            ...p,
-            enabled: true
-        }))
-    }
-}
-
-const thresholds = ref([
-    { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
-    { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
-    { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
-    { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
-])
-
-const colors = ['#3b82f6', '#10b981', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1']
-const getWidth = (t: any) => {
-    if (!t) return '0%'
-    return ((t.max - t.min + 1) / 100 * 100) + '%'
-}
-const getColor = (i: number) => colors[i % colors.length]
 </script>

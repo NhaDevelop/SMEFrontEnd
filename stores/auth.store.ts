@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { authService } from '~/modules/auth/auth.service'
 import type { User } from '~/modules/auth/auth.types'
+import { useDashboardStore } from '~/stores/dashboard.store'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -37,6 +38,9 @@ export const useAuthStore = defineStore('auth', {
       try {
         await authService.logout()
       } finally {
+        // Clear all cached store data so the next account starts fresh
+        const dashboardStore = useDashboardStore()
+        dashboardStore.$reset()
         this.user = null
         authCookie.value = null
         navigateTo('/')

@@ -81,24 +81,84 @@
               <!-- Goals List -->
               <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div v-for="goal in filteredGoals" :key="goal.id"
-                  class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                  @click="openGoalDetail(goal)">
+                  class="rounded-lg border p-6 transition-shadow cursor-pointer" :class="[
+                    goal.status === 'Achieved' ? 'bg-emerald-50 border-emerald-200 hover:shadow-md' :
+                      goal.overdue ? 'bg-red-50 border-red-200 hover:shadow-md' : 'bg-white border-gray-200 hover:shadow-md hover:border-gray-300'
+                  ]" @click="openGoalDetail(goal)">
                   <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
                       <BuildingOfficeIcon class="w-4 h-4 text-gray-400" />
                       <span class="text-sm font-medium text-gray-600">{{ goal.smeName }}</span>
                       <span class="px-2 py-0.5 bg-gray-100 rounded-md text-xs text-gray-500 font-medium">{{ goal.sector
-                      }}</span>
+                        }}</span>
                     </div>
-                    <EllipsisHorizontalIcon class="w-5 h-5 text-gray-400" />
+                    <Menu as="div" class="relative">
+                      <MenuButton @click.stop class="p-1 rounded-full hover:bg-gray-100 transition-colors">
+                        <EllipsisHorizontalIcon class="w-5 h-5 text-gray-400" />
+                      </MenuButton>
+                      <transition enter-active-class="transition ease-out duration-100"
+                        enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
+                        leave-active-class="transition ease-in duration-75"
+                        leave-from-class="transform opacity-100 scale-100"
+                        leave-to-class="transform opacity-0 scale-95">
+                        <MenuItems
+                          class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          <MenuItem v-slot="{ active }">
+                          <button @click.stop="openGoalDetail(goal)"
+                            :class="[active ? 'bg-gray-100' : '', 'flex w-full items-center px-4 py-2 text-sm text-gray-700']">
+                            <EyeIcon class="mr-3 h-4 w-4 text-gray-400" aria-hidden="true" />
+                            View Details
+                          </button>
+                          </MenuItem>
+                          <MenuItem v-slot="{ active }">
+                          <button @click.stop="openGoalDetail(goal)"
+                            :class="[active ? 'bg-gray-100' : '', 'flex w-full items-center px-4 py-2 text-sm text-gray-700']">
+                            <PencilIcon class="mr-3 h-4 w-4 text-gray-400" aria-hidden="true" />
+                            Edit
+                          </button>
+                          </MenuItem>
+                          <MenuItem v-slot="{ active }" v-if="goal.status !== 'Achieved'">
+                          <button @click.stop="handleUpdateGoalStatus({ id: goal.id, status: 'Achieved' })"
+                            :class="[active ? 'bg-gray-100' : '', 'flex w-full items-center px-4 py-2 text-sm text-gray-700']">
+                            <CheckCircleIcon class="mr-3 h-4 w-4 text-gray-400" aria-hidden="true" />
+                            Mark Achieved
+                          </button>
+                          </MenuItem>
+                          <MenuItem v-slot="{ active }" v-if="goal.status !== 'Paused' && goal.status !== 'Achieved'">
+                          <button @click.stop="handleUpdateGoalStatus({ id: goal.id, status: 'Paused' })"
+                            :class="[active ? 'bg-gray-100' : '', 'flex w-full items-center px-4 py-2 text-sm text-gray-700']">
+                            <PauseCircleIcon class="mr-3 h-4 w-4 text-gray-400" aria-hidden="true" />
+                            Pause
+                          </button>
+                          </MenuItem>
+                          <MenuItem v-slot="{ active }">
+                          <button @click.stop="handleDeleteGoal(goal.id)"
+                            :class="[active ? 'bg-gray-100' : '', 'flex w-full items-center px-4 py-2 text-sm text-red-600 hover:text-red-700']">
+                            <TrashIcon class="mr-3 h-4 w-4 text-red-400 group-hover:text-red-500" aria-hidden="true" />
+                            Delete
+                          </button>
+                          </MenuItem>
+                        </MenuItems>
+                      </transition>
+                    </Menu>
                   </div>
 
                   <div class="mb-4">
-                    <div class="flex items-center gap-3 mb-2">
+                    <div class="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 class="text-lg font-bold text-gray-900">{{ goal.title }}</h3>
                       <span
                         :class="['px-2 py-0.5 rounded-md text-xs font-semibold uppercase', getStatusColor(goal.status)]">
                         {{ goal.status }}
+                      </span>
+                      <span v-if="goal.status === 'Achieved' && goal.proofNote"
+                        class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                          class="w-3.5 h-3.5">
+                          <path fill-rule="evenodd"
+                            d="M16.403 12.652a3 3 0 000-5.304 3 3 0 00-3.75-3.751 3 3 0 00-5.305 0 3 3 0 00-3.751 3.75 3 3 0 000 5.305 3 3 0 003.75 3.751 3 3 0 005.305 0 3 3 0 003.751-3.75zm-2.546-4.46a.75.75 0 00-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                            clip-rule="evenodd" />
+                        </svg>
+                        Verified
                       </span>
                       <span v-if="goal.isOffTrack"
                         class="px-2 py-0.5 rounded-md text-xs font-semibold uppercase bg-red-100 text-red-600">
@@ -330,8 +390,14 @@ import {
   BuildingOfficeIcon,
   EllipsisHorizontalIcon,
   ClockIcon,
-  SparklesIcon
+  SparklesIcon,
+  EyeIcon,
+  CheckCircleIcon,
+  PauseCircleIcon,
+  TrashIcon,
+  PencilIcon
 } from '@heroicons/vue/24/outline'
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useInvestorStore } from '~/stores/investor.store'
 import Marketplace from '~/components/InvestorMarketplace.vue'
 import GoalDetailModal from '~/components/InvestorGoalDetailModal.vue'
@@ -353,7 +419,7 @@ const openSmeModal = (sme: any) => {
   selectedSme.value = sme
 }
 
-const smeList = computed(() => store.dealFlow.map(sme => ({ id: sme.id, name: sme.name, score: sme.score })))
+const smeList = computed(() => store.dealFlow.map(sme => ({ id: sme.id, name: sme.name, score: sme.score, pillars: sme.pillars })))
 
 const tabs = computed(() => [
   { id: 'comparison', label: 'SME Comparison' },
@@ -419,6 +485,12 @@ const handleUpdateGoalStatus = async ({ id, status }: { id: number, status: stri
   // Close modal if achieved, or update local referencing
   isDetailOpen.value = false
   // Optional: show notification
+}
+
+const handleDeleteGoal = async (id: number) => {
+  if (confirm('Are you sure you want to delete this goal?')) {
+    await store.deleteGoal(id)
+  }
 }
 
 onMounted(() => {

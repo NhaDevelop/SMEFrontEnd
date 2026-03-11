@@ -30,6 +30,7 @@ interface DashboardState {
   progressData: ProgressData[]
   actions: Action[]
   primaryGoal: any | null
+  frameworkThresholds: any[]
   loading: boolean
   error: string | null
 }
@@ -41,6 +42,7 @@ export const useDashboardStore = defineStore('dashboard', {
     progressData: [],
     actions: [],
     primaryGoal: null,
+    frameworkThresholds: [],
     loading: false,
     error: null
   }),
@@ -49,7 +51,7 @@ export const useDashboardStore = defineStore('dashboard', {
     overallScore: (state) => state.company?.overallScore ?? calculateOverallScore(state.pillars),
     growthPotential: (state) => calculateGrowthPotential(state.pillars),
     overallRiskLevel(): string {
-      return getRiskLevel(this.overallScore)
+      return getRiskLevel(this.overallScore, this.frameworkThresholds)
     },
     latestAssessmentDate: (state) => {
       const data = state.progressData || []
@@ -82,7 +84,7 @@ export const useDashboardStore = defineStore('dashboard', {
       try {
         const smeId = authStore.user?.company?.id || authStore.user?.id || 3
         const response = await dashboardService.getDashboardData(smeId)
-        const { company, pillars, progress, actions, primaryGoal } = response
+        const { company, pillars, progress, actions, primaryGoal, thresholds } = response
         
         console.log('[Dashboard Store] Fetched data:', {
           overallScore: company?.overallScore,
@@ -95,6 +97,7 @@ export const useDashboardStore = defineStore('dashboard', {
         this.progressData = progress
         this.actions = actions
         this.primaryGoal = primaryGoal
+        this.frameworkThresholds = thresholds || []
       } catch (error: any) {
         this.error = error.message
         console.error('Dashboard data fetch error:', error)

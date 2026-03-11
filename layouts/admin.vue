@@ -5,15 +5,11 @@
             <aside class="w-64 bg-[#1a3a3a] flex flex-col flex-shrink-0">
                 <!-- Sidebar Header -->
                 <div class="p-6 border-b border-gray-700">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-teal-500 text-white p-2 rounded-lg">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h2 class="text-white font-bold text-lg">IRIP</h2>
-                            <p class="text-gray-400 text-xs">Admin Portal</p>
+                    <div class="flex flex-col items-center justify-center gap-3">
+                        <img src="/logo.png" alt="CAM INVESTMENT"
+                            class="h-28 w-28 object-cover rounded-full shadow-lg" />
+                        <div class="text-center mt-2">
+                            <p class="text-gray-400 text-xs tracking-widest uppercase">Admin Portal</p>
                         </div>
                     </div>
                 </div>
@@ -48,7 +44,7 @@
                     <!-- Framework -->
                     <div>
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Framework</p>
-                        <NuxtLink to="/admin/settings"
+                        <NuxtLink to="/admin/framework-settings"
                             class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
                             <Cog6ToothIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Framework Settings

@@ -9,7 +9,7 @@ export class AuthRepository {
   }
 
   async logout(): Promise<void> {
-    return await $fetch('/api/auth/logout', { method: 'POST' })
+    return await $fetch<void>('/api/auth/logout', { method: 'POST' })
   }
 
   async getUser(): Promise<User | null> {
