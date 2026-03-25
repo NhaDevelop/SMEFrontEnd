@@ -19,6 +19,10 @@ export class AuthService {
   async getCurrentUser(): Promise<User | null> {
     return this.repository.getUser()
   }
+
+  async register(data: any): Promise<void> {
+    return this.repository.register(data)
+  }
 }
 
 export const authService = new AuthService()

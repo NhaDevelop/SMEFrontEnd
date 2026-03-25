@@ -269,8 +269,23 @@ const triggerEvents = [
 ]
 
 // ── Fetch templates ──────────────────────────────────────────────────────────
-const { data: templatesData, refresh: refreshTemplates } = await useFetch<NotificationTemplate[]>('/api/admin/notification-templates')
-const templates = computed(() => templatesData.value || [])
+const loading = ref(true)
+const templates = ref<NotificationTemplate[]>([])
+
+const loadTemplates = async () => {
+    loading.value = true
+    const api = useApi()
+    try {
+        const response = await api<any>('/admin/notification-templates')
+        templates.value = response.data || response || []
+    } catch (e) {
+        console.error('Failed to load templates:', e)
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(loadTemplates)
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 const previewTpl = ref<NotificationTemplate | null>(null)
@@ -278,12 +293,13 @@ const openPreview = (tpl: NotificationTemplate) => { previewTpl.value = tpl }
 
 // ── Toggle active ─────────────────────────────────────────────────────────────
 const toggleActive = async (tpl: NotificationTemplate) => {
+    const api = useApi()
     try {
         const newStatus = !tpl.active
         // Optimistic UI update
         tpl.active = newStatus
 
-        await $fetch(`/api/admin/notification-templates/${tpl.id}`, {
+        await api(`/admin/notification-templates/${tpl.id}`, {
             method: 'PUT',
             body: {
                 is_active: newStatus
@@ -333,9 +349,10 @@ const saveTemplate = async () => {
         return
     }
 
+    const api = useApi()
     try {
         if (editModal.isNew) {
-            await $fetch('/api/admin/notification-templates', {
+            await api('/admin/notification-templates', {
                 method: 'POST',
                 body: {
                     name: editModal.form.name,
@@ -348,7 +365,7 @@ const saveTemplate = async () => {
             })
             showToast('Template created successfully!')
         } else {
-            await $fetch(`/api/admin/notification-templates/${editModal.editingId}`, {
+            await api(`/admin/notification-templates/${editModal.editingId}`, {
                 method: 'PUT',
                 body: {
                     name: editModal.form.name,
@@ -361,7 +378,7 @@ const saveTemplate = async () => {
             })
             showToast('Template updated successfully!')
         }
-        await refreshTemplates()
+        await loadTemplates()
         closeModal()
     } catch (error) {
         console.error('Failed to save template', error)
@@ -372,11 +389,12 @@ const saveTemplate = async () => {
 const deleteTemplate = async (id: string) => {
     if (!confirm('Delete this notification template?')) return
 
+    const api = useApi()
     try {
-        await $fetch(`/api/admin/notification-templates/${id}`, {
+        await api(`/admin/notification-templates/${id}`, {
             method: 'DELETE'
         })
-        await refreshTemplates()
+        await loadTemplates()
         showToast('Template deleted.')
     } catch (error) {
         console.error('Failed to delete template', error)

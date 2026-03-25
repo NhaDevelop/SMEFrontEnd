@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { AdminService } from '~/modules/user/user.service'
-import { db } from '~/utils/db'
+import { AdminService } from '~/modules/admin/admin.service'
 
 interface UserStats {
   total: number
@@ -25,6 +24,7 @@ interface Program {
   template: string
   templateId: string
   smesCount: number
+  investorsCount?: number
   avgScore: number
   progress: number
   startDate?: string
@@ -164,6 +164,8 @@ interface AdminState {
   scoringRules: ScoringRule[]
   customFields: CustomField[]
   questions: Question[]
+  sectors: any[]
+  participants: any[]
   loading: boolean
   error: string | null
 }
@@ -174,406 +176,20 @@ export const useAdminStore = defineStore('admin', {
     pendingUsers: [],
     dashboardStats: null,
     frameworkThresholds: [],
-    users: [
-       {
-            id: 1,
-            name: 'la',
-            email: 'la@gmail.com',
-            role: 'sme',
-            status: 'active',
-            registered: 'Jan 30, 2026'
-       },
-       {
-            id: 2,
-            name: 'panha pay',
-            email: 'paypanha45@gmail.com',
-            role: 'investor',
-            status: 'active',
-            registered: 'Jan 29, 2026'
-       },
-       {
-            id: 3,
-            name: 'Super Admin',
-            email: 'stsmey@gmail.com',
-            role: 'admin',
-            status: 'active',
-            registered: 'Jan 21, 2026'
-       },
-       {
-            id: 4,
-            name: 'Testing',
-            email: 'bunphinim@gmail.com',
-            role: 'sme',
-            status: 'active',
-            registered: 'Jan 17, 2026'
-       },
-       {
-            id: 5,
-            name: 'Testing',
-            email: 'stsmey@gmail.com',
-            role: 'admin',
-            status: 'active',
-            registered: 'Jan 16, 2026'
-       }
-    ],
+    users: [],
     programStats: null,
-    programs: [
-      {
-        id: 1,
-        name: 'Investment Accelerator 2024',
-        description: 'A comprehensive 12-week program designed to prepare high-potential SMEs for Series A funding.',
-        template: 'Standard Investment Readiness Assessment',
-        templateId: 'temp_001',
-        status: 'Active',
-        sector: 'All Sectors',
-        duration: '12 weeks',
-        deadline: 'March 31, 2024',
-        investmentAmount: 'Up to $500K',
-        benefits: ['1-on-1 mentorship', 'Investor introductions', 'Assessment coaching', 'Pitch preparation'],
-        smesCount: 3,
-        avgScore: 62,
-        progress: 45,
-        enrolledSMEs: [1, 2, 3],
-        createdAt: '2023-12-01',
-        createdBy: 'Admin'
-      },
-      {
-        id: 2,
-        name: 'FinTech Growth Program',
-        description: 'Specialized accelerator for financial technology startups ready to scale their operations.',
-        template: 'Financial Focus Assessment',
-        templateId: 'temp_002',
-        status: 'Active',
-        sector: 'FinTech',
-        duration: '8 weeks',
-        deadline: 'April 15, 2024',
-        investmentAmount: 'Up to $300K',
-        benefits: ['Regulatory guidance', 'Banking partnerships', 'Technical advisory', 'Go-to-market support'],
-        smesCount: 1,
-        avgScore: 75,
-        progress: 60,
-        enrolledSMEs: [3],
-        createdAt: '2024-05-15',
-        createdBy: 'Admin'
-      },
-      {
-        id: 3,
-        name: 'AgriTech Innovation Fund',
-        description: 'Supporting agricultural technology ventures transforming food systems in Southeast Asia.',
-        status: 'Draft',
-        template: 'AgriTech Sustainability Standard',
-        templateId: 'temp_agritech_001',
-        sector: 'AgriTech',
-        duration: '16 weeks',
-        deadline: 'May 1, 2024',
-        investmentAmount: 'Up to $250K',
-        benefits: ['Field pilots', 'Supply chain access', 'Impact measurement', 'Sustainability certification'],
-        smesCount: 1,
-        avgScore: 78,
-        progress: 100,
-        enrolledSMEs: [2],
-        createdAt: '2023-12-15',
-        createdBy: 'Admin'
-      }
-    ],
-    frameworkSettings: [
-      { id: 'team', name: 'Team & Leadership', weight: 12.5, indicators: ['Organizational Structure', 'Key Management Experience'] },
-      { id: 'business', name: 'Business Model', weight: 12.5, indicators: ['Value Proposition', 'Revenue Streams', 'Cost Structure'] },
-      { id: 'market', name: 'Market & Traction', weight: 12.5, indicators: ['Market Size', 'Competitive Landscape', 'Customer Acquisition'] },
-      { id: 'finance', name: 'Financial Readiness', weight: 12.5, indicators: ['Financial Statements', 'Unit Economics', 'Funding History'] },
-      { id: 'ops', name: 'Operations', weight: 12.5, indicators: ['Supply Chain', 'Operational Processes', 'Infrastructure'] },
-      { id: 'legal', name: 'Legal & Governance', weight: 12.5, indicators: ['Incorporation Status', 'IP Rights', 'Compliance'] },
-      { id: 'data', name: 'Data & Digital Maturity', weight: 12.5, indicators: ['Data Collection', 'Analytics Usage', 'Cybersecurity'] },
-      { id: 'growth', name: 'Growth & Scalability', weight: 12.5, indicators: ['Expansion Plans', 'Scalability Potential', 'Exit Strategy'] },
-    ],
-    indicators: [
-        { id: 'ind_team_struct', pillarId: 'team', name: 'Organizational Structure', weight: 40 },
-        { id: 'ind_team_exp', pillarId: 'team', name: 'Key Management Experience', weight: 60 },
-        { id: 'ind_fin_audit', pillarId: 'finance', name: 'Financial Audits', weight: 50 },
-        { id: 'ind_fin_perf', pillarId: 'finance', name: 'Financial Performance', weight: 50 }
-    ],
+    programs: [],
+    frameworkSettings: [],
+    indicators: [],
     smes: [],
-    verificationRequests: [
-      {
-        id: 101,
-        smeName: 'GreenTech Solutions',
-        documentType: 'Financial Audit 2023',
-        submissionDate: '2024-03-10',
-        status: 'Pending',
-        evidenceLink: 'audit_2023.pdf',
-        notes: 'Please verify revenue figures against tax return.'
-      },
-      {
-        id: 102,
-        smeName: 'Urban Crafts',
-        documentType: 'Business License',
-        submissionDate: '2024-03-12',
-        status: 'Pending',
-        evidenceLink: 'license_scan.jpg'
-      },
-      {
-        id: 103,
-        smeName: 'AgriExport Co',
-        documentType: 'Export Certification',
-        submissionDate: '2024-03-08',
-        status: 'Approved',
-        evidenceLink: 'cert_export.pdf'
-      }
-    ],
+    verificationRequests: [],
     auditLogs: [],
-    templates: [
-      {
-        id: 'temp_001',
-        name: 'Standard Investment Readiness Assessment',
-        version: 'v1.0',
-        pillarCount: 8,
-        questionCount: 41,
-        usageCount: 45,
-        description: 'Comprehensive assessment covering all 8 pillars of investment readiness',
-        status: 'Active',
-        updatedAt: 'Jan 29, 2026',
-        updatedBy: 'System Admin'
-      },
-      {
-        id: 'temp_agritech_001',
-        name: 'AgriTech Sustainability Standard',
-        version: 'v2.1',
-        pillarCount: 8,
-        questionCount: 42,
-        usageCount: 5,
-        description: 'Specialized assessment for AgriTech startups with focus on sustainability and ESG.',
-        status: 'Active',
-        updatedAt: 'Feb 10, 2026',
-        updatedBy: 'Agri Expert'
-      },
-      {
-        id: 'temp_002',
-        name: 'Financial Focus Assessment',
-        version: 'v1.0',
-        pillarCount: 2,
-        questionCount: 8,
-        usageCount: 0,
-        description: 'Deep-dive assessment focused on financial readiness and business model validation',
-        status: 'Draft',
-        updatedAt: 'Nov 1, 2024',
-        updatedBy: 'Finance Team'
-      },
-      {
-        id: 'temp_003',
-        name: 'Investor Due Diligence',
-        version: 'v1.2',
-        pillarCount: 5,
-        questionCount: 13,
-        usageCount: 12,
-        description: 'Comprehensive due diligence assessment for investors evaluating potential investments',
-        status: 'Active',
-        updatedAt: 'Oct 20, 2024',
-        updatedBy: 'Investment Team'
-      },
-      {
-        id: 'temp_004',
-        name: 'Quick Assessment',
-        version: 'v2.0',
-        pillarCount: 4,
-        questionCount: 4,
-        usageCount: 28,
-        description: 'Shortened assessment for initial screening with focus on core pillars',
-        status: 'Active',
-        updatedAt: 'Sep 15, 2024',
-        updatedBy: 'Admin User'
-      },
-      {
-        id: 'temp_005',
-        name: 'Legacy Assessment (2023)',
-        version: 'v3.0',
-        pillarCount: 6,
-        questionCount: 0,
-        usageCount: 156,
-        description: 'Previous version of the standard assessment - archived for reference',
-        status: 'Archived',
-        updatedAt: 'Jan 1, 2024',
-        updatedBy: 'System Admin'
-      }
-    ],
-    scoringRules: [
-        {
-            id: 'rule_01',
-            name: 'High Growth Bonus',
-            condition: 'revenue_growth > 20%',
-            modifier: +10,
-            isActive: true
-        },
-        {
-            id: 'rule_02',
-            name: 'High Margins Bonus',
-            condition: 'profit_margin > 15%',
-            modifier: +5,
-            isActive: true
-        },
-        {
-            id: 'rule_03',
-            name: 'No Audit Penalty',
-            condition: 'audited_financials == false',
-            modifier: -15,
-            isActive: true
-        },
-        {
-            id: 'rule_04',
-            name: 'Strong Management',
-            condition: 'management_exp > 10yrs',
-            modifier: +8,
-            isActive: false
-        }
-    ],
-    customFields: [
-        {
-            id: 'cf_01',
-            entityType: 'SME',
-            name: 'taxId',
-            label: 'Tax ID Number',
-            type: 'Text',
-            required: false,
-            active: true
-        },
-        {
-            id: 'cf_02',
-            entityType: 'SME',
-            name: 'preferredContact',
-            label: 'Preferred Contact Method',
-            type: 'Dropdown',
-            required: false,
-            active: true,
-            options: ['Email', 'Phone', 'Messaging App']
-        }
-    ] as CustomField[],
-    questions: [
-       // --- Standard Investment Readiness (temp_001) - 41 questions ---
-       // Team (6)
-       { id: 'q1', pillarId: 'team', templateId: 'temp_001', text: 'Does your company have a dedicated CEO?', type: 'Yes/No', weight: 15, required: true },
-       { id: 'q2', pillarId: 'team', templateId: 'temp_001', text: 'Do you have a CFO?', type: 'Yes/No', weight: 15, required: true },
-       { id: 'q3', pillarId: 'team', templateId: 'temp_001', text: 'Do you have an advisory board?', type: 'Yes/No', weight: 10, required: false },
-       { 
-         id: 'q4', 
-         pillarId: 'team', 
-         templateId: 'temp_001', 
-         text: 'Years of industry experience in leadership?', 
-         type: 'Dropdown Select', 
-         weight: 20, 
-         required: true,
-         options: ['10+ years', '6-10 years', '3-5 years', '0-2 years'] 
-       },
-       { id: 'q5', pillarId: 'team', templateId: 'temp_001', text: 'Rate team execution ability', type: 'Scale (1-10)', weight: 20, required: true },
-       { id: 'q23', pillarId: 'team', templateId: 'temp_001', text: 'Do you have a clear organizational chart?', type: 'Yes/No', weight: 20, required: true },
-       
-       // Business (5)
-       { id: 'q8', pillarId: 'business', templateId: 'temp_001', text: 'Is your value proposition clearly defined?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q9', pillarId: 'business', templateId: 'temp_001', text: 'Do you have a scalable business model?', type: 'Yes/No', weight: 20, required: true },
-       { 
-         id: 'q10', 
-         pillarId: 'business', 
-         templateId: 'temp_001', 
-         text: 'Primary revenue stream?', 
-         type: 'Dropdown Select', 
-         weight: 20, 
-         required: true,
-         options: ['Recurring / Subscription', 'One-time Sales', 'Service Fees', 'Licensing', 'Advertising'] 
-       },
-       { id: 'q24', pillarId: 'business', templateId: 'temp_001', text: 'Customer acquisition strategy defined?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q25', pillarId: 'business', templateId: 'temp_001', text: 'Partnership strategy in place?', type: 'Yes/No', weight: 20, required: false },
-
-       // Market (5)
-       { id: 'q7', pillarId: 'market', templateId: 'temp_001', text: 'Total Addressable Market (TAM) size?', type: 'Number', weight: 30, required: true },
-       { id: 'q11', pillarId: 'market', templateId: 'temp_001', text: 'Have you defined your target customer persona?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q12', pillarId: 'market', templateId: 'temp_001', text: 'Who is your main competitor?', type: 'Text', weight: 10, required: false },
-       { id: 'q26', pillarId: 'market', templateId: 'temp_001', text: 'Market growth rate (%)', type: 'Number', weight: 20, required: true },
-       { id: 'q27', pillarId: 'market', templateId: 'temp_001', text: 'Regulatory barriers to entry?', type: 'Yes/No', weight: 20, required: true },
-
-       // Finance (5)
-       { id: 'q13', pillarId: 'finance', templateId: 'temp_001', text: 'Do you have 2 years of financial statements?', type: 'Yes/No', weight: 25, required: true },
-       { id: 'q14', pillarId: 'finance', templateId: 'temp_001', text: 'Are you currently profitable?', type: 'Yes/No', weight: 25, required: true },
-       { id: 'q15', pillarId: 'finance', templateId: 'temp_001', text: 'Monthly Burn Rate (USD)', type: 'Number', weight: 20, required: true },
-       { id: 'q28', pillarId: 'finance', templateId: 'temp_001', text: 'Projected revenue next year?', type: 'Number', weight: 15, required: true },
-       { id: 'q29', pillarId: 'finance', templateId: 'temp_001', text: 'Debt to Equity ratio', type: 'Number', weight: 15, required: false },
-
-       // Ops (5)
-       { id: 'q16', pillarId: 'ops', templateId: 'temp_001', text: 'Do you have documented SOPs?', type: 'Yes/No', weight: 30, required: true },
-       { id: 'q17', pillarId: 'ops', templateId: 'temp_001', text: 'Rate your supply chain stability', type: 'Scale (1-10)', weight: 30, required: true },
-       { id: 'q30', pillarId: 'ops', templateId: 'temp_001', text: 'Disaster recovery plan in place?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q31', pillarId: 'ops', templateId: 'temp_001', text: 'Quality control process defined?', type: 'Yes/No', weight: 10, required: true },
-       { id: 'q32', pillarId: 'ops', templateId: 'temp_001', text: 'Inventory management system used?', type: 'Yes/No', weight: 10, required: false },
-
-       // Legal (5)
-       { id: 'q18', pillarId: 'legal', templateId: 'temp_001', text: 'Is your IP legally protected?', type: 'Yes/No', weight: 40, required: true },
-       { id: 'q19', pillarId: 'legal', templateId: 'temp_001', text: 'Any pending litigation?', type: 'Yes/No', weight: 60, required: true },
-       { id: 'q33', pillarId: 'legal', templateId: 'temp_001', text: 'Employee contracts signed?', type: 'Yes/No', weight: 30, required: true },
-       { id: 'q34', pillarId: 'legal', templateId: 'temp_001', text: 'Compliance with local labor laws?', type: 'Yes/No', weight: 30, required: true },
-       { id: 'q35', pillarId: 'legal', templateId: 'temp_001', text: 'Shareholder agreement signed?', type: 'Yes/No', weight: 40, required: true },
-
-       // Data (5)
-       { id: 'q20', pillarId: 'data', templateId: 'temp_001', text: 'Do you collect customer data?', type: 'Yes/No', weight: 30, required: true },
-       { id: 'q21', pillarId: 'data', templateId: 'temp_001', text: 'Are you compliant with data privacy laws?', type: 'Yes/No', weight: 70, required: true },
-       { 
-         id: 'q36', 
-         pillarId: 'data', 
-         templateId: 'temp_001', 
-         text: 'Data backup frequency?', 
-         type: 'Dropdown Select', 
-         weight: 30, 
-         required: true,
-         options: ['Daily', 'Weekly', 'Monthly', 'Never']
-       },
-       { id: 'q37', pillarId: 'data', templateId: 'temp_001', text: 'Cybersecurity measures in place?', type: 'Yes/No', weight: 40, required: true },
-       { id: 'q38', pillarId: 'data', templateId: 'temp_001', text: 'Analytics tools used?', type: 'Text', weight: 30, required: false },
-
-       // Growth (5)
-       { id: 'q22', pillarId: 'growth', templateId: 'temp_001', text: 'Do you have a clear expansion plan?', type: 'Yes/No', weight: 50, required: true },
-       { id: 'q39', pillarId: 'growth', templateId: 'temp_001', text: 'International markets identified?', type: 'Yes/No', weight: 25, required: true },
-       { id: 'q40', pillarId: 'growth', templateId: 'temp_001', text: 'Product roadmap for next 12 months?', type: 'Yes/No', weight: 25, required: true },
-       { id: 'q41', pillarId: 'growth', templateId: 'temp_001', text: 'Hiring plan for next 12 months?', type: 'Yes/No', weight: 25, required: true },
-       { id: 'q42', pillarId: 'growth', templateId: 'temp_001', text: 'Marketing budget allocated?', type: 'Yes/No', weight: 25, required: true },
-
-       // --- Financial Focus Assessment (temp_002) - ~15 questions ---
-       { id: 'q2_f1', pillarId: 'finance', templateId: 'temp_002', text: 'Do you have audited financials?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q2_f2', pillarId: 'finance', templateId: 'temp_002', text: 'Current Runway (Months)', type: 'Number', weight: 20, required: true },
-       { id: 'q2_f3', pillarId: 'finance', templateId: 'temp_002', text: 'Gross Margin %', type: 'Number', weight: 20, required: true },
-       { id: 'q2_f4', pillarId: 'finance', templateId: 'temp_002', text: 'EBITDA Margin %', type: 'Number', weight: 20, required: true },
-       { id: 'q2_f5', pillarId: 'finance', templateId: 'temp_002', text: 'Do you have a dedicated finance team?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q2_b1', pillarId: 'business', templateId: 'temp_002', text: 'Revenue Model Type', type: 'Dropdown Select', weight: 30, required: true },
-       { id: 'q2_b2', pillarId: 'business', templateId: 'temp_002', text: 'Cost of Customer Acquisition (CAC)', type: 'Number', weight: 35, required: true },
-       { id: 'q2_b3', pillarId: 'business', templateId: 'temp_002', text: 'Customer Lifetime Value (LTV)', type: 'Number', weight: 35, required: true },
-
-       // --- Investor Due Diligence (temp_003) - ~40 questions ---
-       // Team
-       { id: 'q3_t1', pillarId: 'team', templateId: 'temp_003', text: 'Full list of shareholders provided?', type: 'File Upload', weight: 10, required: true },
-       { id: 'q3_t2', pillarId: 'team', templateId: 'temp_003', text: 'Background checks on founders completed?', type: 'Yes/No', weight: 20, required: true },
-       { id: 'q3_t3', pillarId: 'team', templateId: 'temp_003', text: 'Key Man Insurance in place?', type: 'Yes/No', weight: 15, required: true },
-       // Legal
-       { id: 'q3_l1', pillarId: 'legal', templateId: 'temp_003', text: 'Certificate of Incorporation', type: 'File Upload', weight: 20, required: true },
-       { id: 'q3_l2', pillarId: 'legal', templateId: 'temp_003', text: 'Memorandum & Articles of Association', type: 'File Upload', weight: 20, required: true },
-       { id: 'q3_l3', pillarId: 'legal', templateId: 'temp_003', text: 'Cap Table Verification', type: 'Yes/No', weight: 20, required: true },
-       // Finance
-       { id: 'q3_f1', pillarId: 'finance', templateId: 'temp_003', text: '3-Year Financial Projections', type: 'File Upload', weight: 25, required: true },
-       { id: 'q3_f2', pillarId: 'finance', templateId: 'temp_003', text: 'Bank Statements (Last 12 Months)', type: 'File Upload', weight: 25, required: true },
-       { id: 'q3_f3', pillarId: 'finance', templateId: 'temp_003', text: 'Tax Returns (Last 2 Years)', type: 'File Upload', weight: 25, required: true },
-       // Market
-       { id: 'q3_m1', pillarId: 'market', templateId: 'temp_003', text: 'Competitive Analysis Report', type: 'File Upload', weight: 30, required: true },
-       { id: 'q3_m2', pillarId: 'market', templateId: 'temp_003', text: 'Customer Contracts / LOIs', type: 'File Upload', weight: 30, required: true },
-       // Tech/Data
-       { id: 'q3_d1', pillarId: 'data', templateId: 'temp_003', text: 'Tech Stack Documentation', type: 'File Upload', weight: 40, required: true },
-       { id: 'q3_d2', pillarId: 'data', templateId: 'temp_003', text: 'Cybersecurity Audit Report', type: 'File Upload', weight: 60, required: true },
-
-       // --- Quick Assessment (temp_004) - ~21 questions ---
-       { id: 'q4_t1', pillarId: 'team', templateId: 'temp_004', text: 'Founder Full Time?', type: 'Yes/No', weight: 50, required: true },
-       { id: 'q4_b1', pillarId: 'business', templateId: 'temp_004', text: 'Product is Live?', type: 'Yes/No', weight: 50, required: true },
-        { id: 'q4_m1', pillarId: 'market', templateId: 'temp_004', text: 'Market Growing?', type: 'Yes/No', weight: 50, required: true },
-        { id: 'q4_f1', pillarId: 'finance', templateId: 'temp_004', text: 'Generated Revenue?', type: 'Yes/No', weight: 50, required: true },
-
-        // --- AgriTech Sustainability Standard (temp_agritech_001) ---
-        { id: 'qa_t1', pillarId: 'team', templateId: 'temp_agritech_001', text: 'Does your team have agricultural expertise?', type: 'Yes/No', weight: 50, required: true },
-        { id: 'qa_b1', pillarId: 'business', templateId: 'temp_agritech_001', text: 'Is your solution sustainable?', type: 'Yes/No', weight: 100, required: true },
-        { id: 'qa_o1', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you have a stable supply chain?', type: 'Yes/No', weight: 50, required: true },
-        { id: 'qa_o2', pillarId: 'ops', templateId: 'temp_agritech_001', text: 'Do you measure your carbon footprint?', type: 'Yes/No', weight: 50, required: true, helperText: 'Custom ESG metric for AgriTech' }
-    ],
+    templates: [],
+    questions: [],
+    scoringRules: [],
+    customFields: [],
+    sectors: [],
+    participants: [],
     loading: false,
     error: null
   }),
@@ -581,12 +197,12 @@ export const useAdminStore = defineStore('admin', {
   getters: {
     // Add a getter for filtered programs
     filteredPrograms: (state) => (query: string) => {
-       if (!query) return state.programs
-       const lowerQuery = query.toLowerCase()
-       return state.programs.filter(p => 
-         p.name.toLowerCase().includes(lowerQuery) || 
-         p.description.toLowerCase().includes(lowerQuery)
-       )
+        if (!query) return state.programs
+        const lowerQuery = query.toLowerCase()
+        return state.programs.filter(p => 
+          (p.name && p.name.toLowerCase().includes(lowerQuery)) || 
+          (p.description && p.description.toLowerCase().includes(lowerQuery))
+        )
     },
     getSmeById: (state) => (id: string | number) => {
         return state.smes.find(sme => sme.id == id)
@@ -594,7 +210,19 @@ export const useAdminStore = defineStore('admin', {
     pendingVerificationCount: (state) => state.verificationRequests.filter(r => r.status === 'Pending').length,
     // User Getters
     pendingUsersList: (state) => state.users.filter(u => u.status === 'pending'),
-    approvedUsersList: (state) => state.users.filter(u => u.status === 'active')
+    approvedUsersList: (state) => state.users.filter(u => u.status === 'active'),
+    availableTemplates: (state) => {
+      // Get IDs of templates already assigned to programs
+      const assignedTemplateIds = state.programs
+        .map(p => String(p.templateId))
+        .filter(id => id && id !== 'null' && id !== 'undefined')
+      
+      // Return templates that are not assigned AND not archived
+      return state.templates.filter(t => 
+        !assignedTemplateIds.includes(String(t.id)) && 
+        t.status !== 'Archived'
+      )
+    }
   },
 
   actions: {
@@ -603,7 +231,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       const service = new AdminService()
       try {
-        const response = await service.getDashboardData() as any
+        const response = await service.fetchStats() as any
         if (response) {
           this.dashboardStats = response
         }
@@ -620,11 +248,11 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       const service = new AdminService()
       try {
-        const response = await service.getUsersData() as any
+        const response = await service.fetchUsers() as any
 
-        // API returns { users: [], stats: {}, pendingUsers: [] }
-        const userList = response?.users || []
-        if (userList.length > 0) {
+        // AdminService.fetchUsers now returns mapping result directly if it's an array
+        const userList = Array.isArray(response) ? response : (response?.users || [])
+        if (userList.length >= 0) {
           this.users = userList
         }
 
@@ -650,29 +278,50 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async createUser(user: Partial<User>) {
+    async createUser(userData: any) {
         this.loading = true
+        const service = new AdminService()
         try {
-            // Mock Create
-            const newUser = { ...user, status: 'active', lastActive: 'Just now' } // Auto activate for admin creation
-            db.users.create(newUser)
+            if (userData.role) {
+                userData.role = userData.role.toUpperCase()
+            }
+            await service.createUser(userData)
             await this.fetchUsersData()
              this.auditLogs.unshift({
                 id: Date.now(),
                 admin: 'Current Admin',
                 action: 'Created User',
-                target: `User ${newUser.name}`,
+                target: `User ${userData.name}`,
                 timestamp: new Date().toLocaleString(),
-                details: `Created new ${newUser.role} user`
+                details: `Created new ${userData.role} user`
             })
-        } catch (e: any) { this.error = e.message } 
-        finally { this.loading = false }
+        } catch (e: any) { 
+            this.error = e.message 
+        } finally { 
+            this.loading = false 
+        }
     },
+
+    async fetchPendingUsers() {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            const users = await service.fetchPendingUsers()
+            this.pendingUsers = users
+        } catch (err: any) {
+            this.error = err.message
+        } finally {
+            this.loading = false
+        }
+    },
+
     async approveUser(id: number | string) {
         this.loading = true
+        const service = new AdminService()
         try {
-            db.users.updateStatus(id, 'active')
+            await service.setStatus(id, 'approve')
             await this.fetchUsersData()
+            await this.fetchPendingUsers()
             this.auditLogs.unshift({
                 id: Date.now(),
                 admin: 'Current Admin',
@@ -681,15 +330,20 @@ export const useAdminStore = defineStore('admin', {
                 timestamp: new Date().toLocaleString(),
                 details: 'Approved registration request'
             })
-        } catch (e: any) { this.error = e.message } 
-        finally { this.loading = false }
+        } catch (e: any) { 
+            this.error = e.message 
+        } finally { 
+            this.loading = false 
+        }
     },
 
     async rejectUser(id: number | string) {
         this.loading = true
+        const service = new AdminService()
         try {
-            db.users.updateStatus(id, 'rejected')
+            await service.setStatus(id, 'reject')
             await this.fetchUsersData()
+            await this.fetchPendingUsers()
             this.auditLogs.unshift({
                 id: Date.now(),
                 admin: 'Current Admin',
@@ -698,14 +352,18 @@ export const useAdminStore = defineStore('admin', {
                 timestamp: new Date().toLocaleString(),
                 details: 'Rejected registration request'
             })
-        } catch (e: any) { this.error = e.message } 
-        finally { this.loading = false }
+        } catch (err: any) {
+            this.error = err.message
+        } finally {
+            this.loading = false
+        }
     },
 
     async deleteUser(id: number | string) {
         this.loading = true
+        const service = new AdminService()
         try {
-            db.users.updateStatus(id, 'rejected')
+            await service.removeUser(id)
             await this.fetchUsersData()
              this.auditLogs.unshift({
                 id: Date.now(),
@@ -715,8 +373,68 @@ export const useAdminStore = defineStore('admin', {
                 timestamp: new Date().toLocaleString(),
                 details: 'Deleted user from platform'
             })
-        } catch (e: any) { this.error = e.message } 
-        finally { this.loading = false }
+        } catch (e: any) { 
+            this.error = e.message 
+        } finally { 
+            this.loading = false 
+        }
+    },
+
+    async updateUserRole(id: number | string, role: string) {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            await service.setRole(id, role)
+            await this.fetchUsersData()
+             this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: 'Updated User Role',
+                target: `User ID ${id}`,
+                timestamp: new Date().toLocaleString(),
+                details: `Changed role to ${role}`
+            })
+        } catch (e: any) { 
+            this.error = e.message 
+        } finally { 
+            this.loading = false 
+        }
+    },
+
+    async resetPassword(id: number | string, password?: string) {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            await service.resetUserPassword(id, password)
+             this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: 'Reset Password',
+                target: `User ID ${id}`,
+                timestamp: new Date().toLocaleString(),
+                details: 'Initiated password reset'
+            })
+        } catch (e: any) { 
+            this.error = e.message 
+            throw e
+        } finally { 
+            this.loading = false 
+        }
+    },
+
+    async fetchParticipants(programId: number | string) {
+      this.loading = true
+      this.error = null
+      const service = new AdminService()
+      try {
+        const participants = await service.fetchParticipants(programId)
+        this.participants = Array.isArray(participants) ? participants : []
+      } catch (err: any) {
+        this.error = err.message
+        console.error('Failed to fetch participants', err)
+      } finally {
+        this.loading = false
+      }
     },
 
     async fetchProgramsData() {
@@ -724,7 +442,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       const service = new AdminService()
       try {
-        const response = await service.getProgramsData()
+        const response = await service.fetchPrograms()
         this.programStats = response.stats
         this.programs = response.programs
       } catch (err: any) {
@@ -739,7 +457,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
       const service = new AdminService()
       try {
-        const templates = await service.getTemplatesData()
+        const templates = await service.fetchTemplates()
         this.templates = templates
         console.log(`[Admin Store] Fetched ${templates?.length} templates`)
         
@@ -756,7 +474,7 @@ export const useAdminStore = defineStore('admin', {
     async fetchQuestionsData() {
         const service = new AdminService()
         try {
-            const response = await service.getQuestionsData()
+            const response = await service.fetchQuestions()
             if (response && response.length > 0) {
                 this.questions = response
             }
@@ -769,7 +487,7 @@ export const useAdminStore = defineStore('admin', {
     async fetchSmesData() {
         const service = new AdminService()
         try {
-            const response = await service.getSMEsData()
+            const response = await service.fetchSmes() as any[]
             if (response) {
                 this.smes = response
             }
@@ -780,13 +498,16 @@ export const useAdminStore = defineStore('admin', {
     },
     async fetchFrameworkSettings() {
       this.loading = true
+      const service = new AdminService()
       try {
-        const settings = await $fetch<any>('/api/admin/settings')
-        if (settings && settings.pillars) {
-           this.frameworkSettings = settings.pillars
-           if(settings.thresholds) {
-              this.frameworkThresholds = settings.thresholds
-           }
+        const response = await service.fetchFrameworkSettings() as any
+        const settings = response.data || response
+        if (settings) {
+           this.frameworkSettings = (settings.pillars || []).map((p: any) => ({
+             ...p,
+             id: String(p.id)
+           }))
+           this.frameworkThresholds = settings.thresholds || []
         }
       } catch (err: any) {
         console.error('Failed to fetch Framework Settings:', err)
@@ -797,38 +518,26 @@ export const useAdminStore = defineStore('admin', {
 
     async updateFrameworkSettings(payloadData: { pillars: PillarWeight[], thresholds?: any[] }) {
       this.loading = true
+      const service = new AdminService()
       try {
-        const currentData = await $fetch<any>('/api/admin/settings').catch(() => null)
-        const payload = {
-            pillars: payloadData.pillars,
-            thresholds: payloadData.thresholds || currentData?.thresholds || []
-        }
-        
-        const response = await $fetch<any>('/api/admin/settings', {
-            method: 'POST',
-            body: payload
-        })
-        
-        if (response && response.success) {
-            this.frameworkSettings = response.settings.pillars
-            if(response.settings.thresholds) {
-                this.frameworkThresholds = response.settings.thresholds
-            }
-            
-            // Log this action
-            this.auditLogs.unshift({
-                id: Date.now(),
-                admin: 'Super Admin',
-                action: 'Updated Framework',
-                target: 'Pillar Weights',
-                timestamp: new Date().toLocaleString(),
-                details: 'Updated pillar weight distribution'
-            })
-        }
-      } catch(err) {
-         console.error('Failed to update framework settings', err)
+          await service.saveFrameworkSettings(payloadData)
+          
+          // Log this action
+          this.auditLogs.unshift({
+              id: Date.now(),
+              admin: 'Super Admin',
+              action: 'Updated Framework',
+              target: 'Pillar Weights',
+              timestamp: new Date().toLocaleString(),
+              details: 'Updated pillar weight distribution'
+          })
+          
+          await this.fetchFrameworkSettings()
+      } catch (err: any) {
+          console.error('Failed to update Framework Settings:', err)
+          throw err
       } finally {
-         this.loading = false
+          this.loading = false
       }
     },
 
@@ -861,10 +570,8 @@ export const useAdminStore = defineStore('admin', {
       this.loading = true
       const service = new AdminService()
       try {
-        await service.createProgram(programData)
-        // Refresh list to get updated stats and list
+        await service.addProgram(programData)
         await this.fetchProgramsData()
-        
         this.auditLogs.unshift({
             id: Date.now(), 
             admin: 'Current Admin',
@@ -873,10 +580,57 @@ export const useAdminStore = defineStore('admin', {
             timestamp: new Date().toLocaleString(),
             details: 'Created new investment program'
         })
-
       } catch (err: any) {
         this.error = err.message
         throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async updateProgram(programData: any) {
+      this.loading = true
+      const service = new AdminService()
+      try {
+        await service.updateProgram(programData.id, programData)
+        await this.fetchProgramsData()
+        this.auditLogs.unshift({
+            id: Date.now(),
+            admin: 'Current Admin',
+            action: 'Updated Program',
+            target: programData.name,
+            timestamp: new Date().toLocaleString(),
+            details: 'Updated program details'
+        })
+      } catch (err: any) {
+        this.error = err.message
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async setProgramStatus(id: number | string, status: string) {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            await service.setProgramStatus(id, status)
+            await this.fetchProgramsData()
+        } catch (err: any) {
+            this.error = err.message
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async deleteProgram(id: number | string) {
+      this.loading = true
+      const service = new AdminService()
+      try {
+        await service.deleteProgram(id)
+        await this.fetchProgramsData()
+      } catch (err: any) {
+        this.error = err.message
       } finally {
         this.loading = false
       }
@@ -901,60 +655,6 @@ export const useAdminStore = defineStore('admin', {
             })
         }
         this.loading = false
-    },
-
-
-    
-    async updateProgram(programData: any) {
-      this.loading = true
-      // const service = new AdminService() // If we had update endpoint
-      try {
-        // Mock update for now
-        const index = this.programs.findIndex(p => p.id === programData.id)
-        if (index !== -1) {
-             const existing = this.programs[index]
-             const updated = { ...existing, ...programData }
-             this.programs[index] = updated
-             
-             this.auditLogs.unshift({
-                id: Date.now(),
-                admin: 'Current Admin',
-                action: 'Updated Program',
-                target: programData.name || existing?.name || 'Unknown Program',
-                timestamp: new Date().toLocaleString(),
-                details: 'Updated program details'
-            })
-        }
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } catch (err: any) {
-        this.error = err.message
-        throw err
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async deleteProgram(id: number | string) {
-        this.loading = true
-        try {
-            // Mock delete
-            this.programs = this.programs.filter(p => p.id !== id)
-            
-            this.auditLogs.unshift({
-                id: Date.now(),
-                admin: 'Current Admin',
-                action: 'Deleted Program',
-                target: `ID: ${id}`,
-                timestamp: new Date().toLocaleString(),
-                details: 'Deleted program from list'
-            })
-            await new Promise(resolve => setTimeout(resolve, 500))
-        } catch (err: any) {
-            this.error = err.message
-            throw err
-        } finally {
-            this.loading = false
-        }
     },
 
     async addScoringRule(rule: any) {
@@ -1032,8 +732,15 @@ export const useAdminStore = defineStore('admin', {
                 ...question, 
                 id: question.id || `q_${Date.now()}` // Ensure ID
             }
+            const response = await service.saveQuestion(newQuestion) as any
+            const realQuestion = response?.data || response
             
-            await service.saveQuestion(newQuestion)
+            // If the backend returns the newly created question, use its real ID
+            if (realQuestion && realQuestion.id) {
+                newQuestion.id = realQuestion.id
+                // Optionally update other fields if backend assigned them
+            }
+            
             this.questions.push(newQuestion)
 
             // Update template question count
@@ -1144,26 +851,23 @@ export const useAdminStore = defineStore('admin', {
         }
     },
 
-    async updateTemplateStatus(id: string, status: 'Active' | 'Draft' | 'Archived') {
+    async updateTemplateStatus(id: string | number, status: 'Active' | 'Draft' | 'Archived') {
         this.loading = true
+        const service = new AdminService()
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
-            const template = this.templates.find(t => t.id === id)
-            if (template) {
-                const oldStatus = template.status
-                template.status = status
-                template.updatedAt = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                template.updatedBy = 'You'
-                
-                this.auditLogs.unshift({
-                    id: Date.now(),
-                    admin: 'Current Admin',
-                    action: 'Updated Template Status',
-                    target: template.name,
-                    timestamp: new Date().toLocaleString(),
-                    details: `Changed status from ${oldStatus} to ${status}`
-                })
-            }
+            await service.updateTemplateStatus(id, status)
+            await this.fetchTemplatesData()
+            
+            this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: 'Updated Template Status',
+                target: `Template ID ${id}`,
+                timestamp: new Date().toLocaleString(),
+                details: `Changed status to ${status}`
+            })
+        } catch (err: any) {
+            this.error = err.message
         } finally {
             this.loading = false
         }
@@ -1205,36 +909,10 @@ export const useAdminStore = defineStore('admin', {
 
     async createTemplate(templateData: any) {
         this.loading = true
+        const service = new AdminService()
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            const newTemplate = {
-                id: `temp_${Date.now()}`,
-                name: templateData.name,
-                description: templateData.description,
-                version: 'v0.1',
-                // Explicitly cast or handle types if strict check is on
-                pillarCount: 0,
-                questionCount: 0,
-                usageCount: 0,
-                status: 'Draft',
-                updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                updatedBy: 'You'
-            }
-
-            if (templateData.cloneFrom) {
-                const source = this.templates.find(t => t.id === templateData.cloneFrom)
-                if (source) {
-                    newTemplate.pillarCount = source.pillarCount
-                    newTemplate.questionCount = source.questionCount
-                }
-            }
-
-            // Save to server first
-            const service = new AdminService()
-            await service.createTemplate(newTemplate)
-
-            this.templates.unshift(newTemplate as any)
+            await service.createTemplate(templateData)
+            await this.fetchTemplatesData()
             
             this.auditLogs.unshift({
                 id: Date.now(),
@@ -1244,28 +922,31 @@ export const useAdminStore = defineStore('admin', {
                 timestamp: new Date().toLocaleString(),
                 details: `Created new assessment template`
             })
+        } catch (err: any) {
+            this.error = err.message
+            throw err
         } finally {
             this.loading = false
         }
     },
 
-    async deleteTemplate(id: string) {
+    async deleteTemplate(id: string | number) {
         this.loading = true
+        const service = new AdminService()
         try {
-            await new Promise(resolve => setTimeout(resolve, 500))
-            const template = this.templates.find(t => t.id === id)
-            this.templates = this.templates.filter(t => t.id !== id)
+            await service.deleteTemplate(id)
+            await this.fetchTemplatesData()
             
-            if (template) {
-                 this.auditLogs.unshift({
-                    id: Date.now(),
-                    admin: 'Current Admin',
-                    action: 'Deleted Template',
-                    target: template.name,
-                    timestamp: new Date().toLocaleString(),
-                    details: `Deleted assessment template`
-                })
-            }
+            this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: 'Deleted Template',
+                target: String(id),
+                timestamp: new Date().toLocaleString(),
+                details: `Deleted assessment template`
+            })
+        } catch (err: any) {
+            this.error = err.message
         } finally {
             this.loading = false
         }
@@ -1342,7 +1023,7 @@ export const useAdminStore = defineStore('admin', {
         this.loading = true
         try {
             const service = new AdminService()
-            await service.enrollSmesToProgram(programId, smeIds)
+            await service.enroll(programId, smeIds)
             
             const pId = Number(programId)
 
@@ -1478,6 +1159,63 @@ export const useAdminStore = defineStore('admin', {
                 target: 'Pillar Weights',
                 timestamp: new Date().toLocaleString(),
                 details: 'Updated pillar weight distribution'
+            })
+        } catch (err: any) {
+            this.error = err.message
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async fetchSectors() {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            const sectors = await service.fetchSectors()
+            this.sectors = sectors
+            return sectors
+        } catch (err: any) {
+            this.error = err.message
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async saveSector(sectorData: any) {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            await service.saveSector(sectorData)
+            await this.fetchSectors()
+            this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: sectorData.id ? 'Updated Sector' : 'Created Sector',
+                target: sectorData.name,
+                timestamp: new Date().toLocaleString(),
+                details: sectorData.id ? `Updated sector ${sectorData.name}` : `Created new sector ${sectorData.name}`
+            })
+        } catch (err: any) {
+            this.error = err.message
+            throw err
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async deleteSector(id: string | number) {
+        this.loading = true
+        const service = new AdminService()
+        try {
+            await service.deleteSector(id)
+            await this.fetchSectors()
+            this.auditLogs.unshift({
+                id: Date.now(),
+                admin: 'Current Admin',
+                action: 'Deleted Sector',
+                target: String(id),
+                timestamp: new Date().toLocaleString(),
+                details: 'Removed industry sector'
             })
         } catch (err: any) {
             this.error = err.message

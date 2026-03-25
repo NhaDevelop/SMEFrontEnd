@@ -79,18 +79,11 @@ export const useDashboardStore = defineStore('dashboard', {
       this.loading = true
       this.error = null
       const dashboardService = new DashboardService()
-      const authStore = useAuthStore()
       
       try {
-        const smeId = authStore.user?.company?.id || authStore.user?.id || 3
-        const response = await dashboardService.getDashboardData(smeId)
+        // Backend now uses the authenticated user's SME profile automatically
+        const response = await dashboardService.getDashboardData('me') 
         const { company, pillars, progress, actions, primaryGoal, thresholds } = response
-        
-        console.log('[Dashboard Store] Fetched data:', {
-          overallScore: company?.overallScore,
-          pillarCount: pillars?.length,
-          lastAssessed: company?.lastAssessed
-        })
         
         this.company = company
         this.pillars = pillars
@@ -106,5 +99,6 @@ export const useDashboardStore = defineStore('dashboard', {
         this.loading = false
       }
     }
+
   }
 })

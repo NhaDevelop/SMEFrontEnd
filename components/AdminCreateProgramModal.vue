@@ -35,11 +35,11 @@
                   <select v-model="form.templateId"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm">
                     <option value="">-- No Template Assigned (Draft Mode) --</option>
-                    <option v-for="t in templates" :key="t.id" :value="t.id">
+                    <option v-for="t in availableTemplatesWithCurrent" :key="t.id" :value="t.id">
                       {{ t.name }} ({{ t.version }})
                     </option>
                   </select>
-                  <p class="text-xs text-gray-500 mt-1">Select the assessment framework for this program.</p>
+                  <p class="text-xs text-gray-500 mt-1">Select the assessment framework for this program. Only unassigned templates are shown.</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -61,7 +61,7 @@
                     <select v-model="form.sector"
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm bg-white">
                       <option value="">-- Select Sector --</option>
-                      <option v-for="sector in sectors" :key="sector.id" :value="sector.name">
+                      <option v-for="sector in adminStore.sectors" :key="sector.id" :value="sector.name">
                         {{ sector.name }}
                       </option>
                     </select>
@@ -75,12 +75,6 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Deadline</label>
-                    <input v-model="form.deadline" type="text"
-                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                      placeholder="e.g. March 31, 2024" />
-                  </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Investment Amount</label>
                     <input v-model="form.investmentAmount" type="text"
@@ -127,15 +121,24 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'create', 'update'])
 const adminStore = useAdminStore()
 
-const templates = computed(() => adminStore.templates.filter(t => t.status !== 'Archived'))
-
-const sectors = ref<any[]>([])
+const availableTemplatesWithCurrent = computed(() => {
+  // If editing, we must include the current template even if it's "assigned" to this program
+  const available = adminStore.availableTemplates
+  if (props.initialData && props.initialData.templateId) {
+    const currentTemplate = adminStore.templates.find(t => String(t.id) === String(props.initialData.templateId))
+    if (currentTemplate && !available.some(t => String(t.id) === String(currentTemplate.id))) {
+      return [...available, currentTemplate]
+    }
+  }
+  return available
+})
 
 onMounted(async () => {
-  try {
-    sectors.value = await $fetch<any[]>('/api/admin/sectors')
-  } catch (e) {
-    console.error('Failed to load sectors', e)
+  if (adminStore.sectors.length === 0) {
+    await adminStore.fetchSectors()
+  }
+  if (adminStore.templates.length === 0) {
+    await adminStore.fetchTemplatesData()
   }
 })
 
@@ -148,12 +151,28 @@ const form = reactive({
   endDate: '',
   sector: '',
   duration: '',
-  deadline: '',
   investmentAmount: '',
   benefitsRaw: ''
 })
 
 const isEditMode = computed(() => !!props.initialData)
+
+// Auto-calculate duration
+watch([() => form.startDate, () => form.endDate], ([start, end]) => {
+  if (start && end) {
+    const d1 = new Date(start)
+    const d2 = new Date(end)
+    const diffTime = Math.abs(d2.getTime() - d1.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays <= 7) {
+      form.duration = `${diffDays} days`
+    } else {
+      const weeks = Math.floor(diffDays / 7)
+      form.duration = `${weeks} weeks`
+    }
+  }
+})
 
 // Watch for initialData changes to pre-fill form
 watch(() => props.initialData, (newData) => {
@@ -166,7 +185,6 @@ watch(() => props.initialData, (newData) => {
     form.endDate = newData.endDate || ''
     form.sector = newData.sector || ''
     form.duration = newData.duration || ''
-    form.deadline = newData.deadline || ''
     form.investmentAmount = newData.investmentAmount || ''
     form.benefitsRaw = newData.benefits ? newData.benefits.join(', ') : ''
   } else {
@@ -179,7 +197,6 @@ watch(() => props.initialData, (newData) => {
     form.endDate = ''
     form.sector = ''
     form.duration = ''
-    form.deadline = ''
     form.investmentAmount = ''
     form.benefitsRaw = ''
   }
@@ -191,7 +208,7 @@ const close = () => {
 
 const handleSubmit = () => {
   // Look up template name for convenience
-  const selectedTemplate = templates.value.find(t => t.id === form.templateId)
+  const selectedTemplate = availableTemplatesWithCurrent.value.find((t: any) => String(t.id) === String(form.templateId))
   const benefits = form.benefitsRaw.split(',').map(b => b.trim()).filter(b => b !== '')
   const payload = {
     ...form,

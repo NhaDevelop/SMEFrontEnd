@@ -12,6 +12,20 @@
           </span>
         </div>
         <p class="text-gray-500 text-sm max-w-2xl">{{ program.description }}</p>
+        <div class="flex flex-wrap items-center gap-2 mt-3">
+          <span class="px-2.5 py-1 bg-cyan-50 text-cyan-700 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-cyan-100/50">
+            <ClockIcon class="w-3.5 h-3.5" />
+            {{ program.duration || 'Flexible' }}
+          </span>
+          <span v-if="program.sector" class="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-purple-100/50">
+            <TagIcon class="w-3.5 h-3.5" />
+            {{ program.sector }}
+          </span>
+          <span class="px-2.5 py-1 bg-gray-50 text-gray-600 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-gray-200/50">
+            <CalendarIcon class="w-3.5 h-3.5" />
+            {{ program.startDate || 'TBD' }}
+          </span>
+        </div>
       </div>
 
       <!-- Headless UI Menu -->
@@ -55,7 +69,7 @@
               </button>
               </MenuItem>
             </div>
-            <div class="px-1 py-1" v-if="!isInvestor">
+            <div class="px-1 py-1">
               <MenuItem v-slot="{ active }">
               <button :class="[
                 active ? 'bg-red-50' : '',
@@ -63,6 +77,37 @@
               ]" @click="$emit('delete', program.id)">
                 <TrashIcon :active="active" class="mr-2 h-4 w-4 text-red-500" aria-hidden="true" />
                 Delete
+              </button>
+              </MenuItem>
+            </div>
+
+            <!-- Status Actions -->
+            <div class="px-1 py-1" v-if="!isInvestor">
+              <MenuItem v-slot="{ active }" v-if="program.status !== 'Published'">
+              <button :class="[
+                active ? 'bg-green-50' : '',
+                'group flex w-full items-center rounded-md px-2 py-2 text-sm text-green-700'
+              ]" @click="handleStatusChange('Published')">
+                <CheckCircleIcon class="mr-2 h-4 w-4 text-green-500" />
+                Publish Program
+              </button>
+              </MenuItem>
+              <MenuItem v-slot="{ active }" v-if="program.status === 'Published'">
+              <button :class="[
+                active ? 'bg-amber-50' : '',
+                'group flex w-full items-center rounded-md px-2 py-2 text-sm text-amber-700'
+              ]" @click="handleStatusChange('Coming Soon')">
+                <XMarkIcon class="mr-2 h-4 w-4 text-amber-500" />
+                Unpublish (Draft)
+              </button>
+              </MenuItem>
+              <MenuItem v-slot="{ active }" v-if="program.status !== 'Finished'">
+              <button :class="[
+                active ? 'bg-blue-50' : '',
+                'group flex w-full items-center rounded-md px-2 py-2 text-sm text-blue-700'
+              ]" @click="handleStatusChange('Finished')">
+                <FlagIcon class="mr-2 h-4 w-4 text-blue-500" />
+                Finish / Close
               </button>
               </MenuItem>
             </div>
@@ -87,18 +132,22 @@
     </div>
 
     <!-- Stats Row -->
-    <div class="grid grid-cols-3 gap-8 mb-6">
-      <div class="text-center">
-        <div class="text-2xl font-bold text-gray-900">{{ program.smesCount ?? program.smes }}</div>
-        <div class="text-xs text-gray-500 font-medium">SMEs</div>
+    <div class="grid grid-cols-4 gap-3 mb-6">
+      <div class="bg-gray-50/50 rounded-xl p-3 text-center border border-gray-100/50">
+        <div class="text-xl font-bold text-gray-900">{{ program.smesCount ?? program.smes ?? 0 }}</div>
+        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">SMEs</div>
       </div>
-      <div class="text-center">
-        <div class="text-2xl font-bold text-gray-900">{{ program.avgScore }}</div>
-        <div class="text-xs text-gray-500 font-medium">Avg Score</div>
+      <div class="bg-gray-50/50 rounded-xl p-3 text-center border border-gray-100/50">
+        <div class="text-xl font-bold text-indigo-600">{{ program.investorsCount ?? 0 }}</div>
+        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Investors</div>
       </div>
-      <div class="text-center">
-        <div class="text-2xl font-bold text-gray-900">{{ program.progress ?? program.completion }}%</div>
-        <div class="text-xs text-gray-500 font-medium">Complete</div>
+      <div class="bg-gray-50/50 rounded-xl p-3 text-center border border-gray-100/50">
+        <div class="text-xl font-bold text-cyan-600">{{ program.avgScore || 0 }}</div>
+        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Avg Score</div>
+      </div>
+      <div class="bg-gray-50/50 rounded-xl p-3 text-center border border-gray-100/50">
+        <div class="text-xl font-bold text-green-600">{{ program.progress ?? program.completion ?? 0 }}%</div>
+        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Complete</div>
       </div>
     </div>
 
@@ -155,10 +204,16 @@ import {
   EyeIcon,
   UserGroupIcon,
   DocumentTextIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  CheckCircleIcon,
+  XMarkIcon,
+  FlagIcon,
+  ClockIcon,
+  TagIcon,
+  CalendarIcon
 } from '@heroicons/vue/24/outline'
 
-defineProps<{
+const props = defineProps<{
   program: {
     id: number | string
     name: string
@@ -168,15 +223,27 @@ defineProps<{
     templateId?: string
     smesCount?: number
     smes?: number
+    investorsCount?: number
     avgScore: number
     progress?: number
     completion?: number
     startDate?: string
     endDate?: string
+    duration?: string
+    sector?: string
   }
 }>()
 
 const emit = defineEmits(['edit', 'delete', 'view', 'manage-smes', 'discuss'])
+
+// Admin Store for status changes
+const adminStore = useAdminStore()
+
+const handleStatusChange = async (newStatus: string) => {
+  if (confirm(`Change program status to ${newStatus}?`)) {
+    await adminStore.setProgramStatus(props.program.id, newStatus)
+  }
+}
 
 // Get user role to determine correct reports path and actions visibility
 const authStore = useAuthStore()

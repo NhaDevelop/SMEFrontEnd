@@ -282,29 +282,38 @@ const quietEnd = ref('08:00')
 
 // Initialize from backend
 onMounted(async () => {
-    if (!authStore.user?.id) return
+    const api = useApi()
     try {
-        const res = await $fetch(`/api/sme/preferences?userId=${authStore.user.id}`) as any
+        const response = await api<any>('/sme/settings')
+        const res = response.data || response || {}
 
         if (res.email) email.value = res.email
         if (res.digestEnabled !== undefined) digestEnabled.value = res.digestEnabled
+        if (res.digest_enabled !== undefined) digestEnabled.value = res.digest_enabled
+        
         if (res.digestFrequency) digestFrequency.value = res.digestFrequency
+        if (res.digest_frequency) digestFrequency.value = res.digest_frequency
         if (res.digestDay) digestDay.value = res.digestDay
+        if (res.digest_day) digestDay.value = res.digest_day
         if (res.digestTime) digestTime.value = res.digestTime
+        if (res.digest_time) digestTime.value = res.digest_time
 
         if (res.quietHoursEnabled !== undefined) quietHoursEnabled.value = res.quietHoursEnabled
+        if (res.quiet_hours_enabled !== undefined) quietHoursEnabled.value = res.quiet_hours_enabled
         if (res.quietStart) quietStart.value = res.quietStart
+        if (res.quiet_start) quietStart.value = res.quiet_start
         if (res.quietEnd) quietEnd.value = res.quietEnd
+        if (res.quiet_end) quietEnd.value = res.quiet_end
 
-        if (res.notificationGroups) {
-            notificationGroups.value = res.notificationGroups
+        if (res.notificationGroups || res.notification_groups) {
+            notificationGroups.value = res.notificationGroups || res.notification_groups
         }
     } catch (e) {
         console.error('Failed to load preferences', e)
     }
 })
 
-// Mock Data for Notifications
+// Notification Groups Definition
 const notificationGroups = ref([
     {
         name: 'Goals',
@@ -313,7 +322,7 @@ const notificationGroups = ref([
                 id: 'goal_deadline',
                 title: 'Goal Deadline Approaching',
                 description: 'Get notified when a goal is within 7 days of its target date',
-                icon: ExclamationCircleIcon, // Using ExclamationCircle as proxy for target
+                icon: ExclamationCircleIcon,
                 iconBg: 'bg-blue-50',
                 iconColor: 'text-blue-600',
                 email: true,
@@ -448,11 +457,10 @@ const disableAll = () => {
 }
 
 const saveChanges = async () => {
-    if (!authStore.user?.id) return
-
     saving.value = true
+    const api = useApi()
     try {
-        await $fetch(`/api/sme/preferences?userId=${authStore.user.id}`, {
+        await api('/sme/settings', {
             method: 'POST',
             body: {
                 email: email.value,
@@ -467,7 +475,7 @@ const saveChanges = async () => {
             }
         })
 
-        // Show success somehow if needed
+        // Could show a success toast here
     } catch (e) {
         console.error('Failed to save preferences', e)
     } finally {

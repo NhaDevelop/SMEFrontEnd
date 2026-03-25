@@ -191,8 +191,8 @@
                         <!-- Footer -->
                         <div class="flex flex-col gap-1.5 pt-1">
                             <div v-if="template.updatedAt" class="flex items-center gap-2 text-xs text-gray-500">
-                                <CalendarIcon class="w-3.5 h-3.5 text-gray-400" />
-                                Updated {{ template.updatedAt }}
+                                <ClockIcon class="w-3.5 h-3.5 text-gray-400" />
+                                Updated {{ formatTimeAgo(template.updatedAt) }}
                             </div>
                             <div v-if="template.updatedBy" class="flex items-center gap-2 text-xs text-gray-500">
                                 <UserIcon class="w-3.5 h-3.5 text-gray-400" />

@@ -129,16 +129,18 @@ export const useInvestorStore = defineStore('investor', {
   actions: {
     async fetchDealFlow() {
         this.loading = true
+        const api = useApi()
         try {
-            const data = await $fetch<{ dealFlow: SME[], goals: Goal[] }>('/api/investor/dealflow', {
+            const data = await api<any>('/investor/dealflow', {
                 params: {
                     industry: this.filters.industry !== 'All Sectors' ? this.filters.industry : undefined,
                     stage: this.filters.stage !== 'All Stages' ? this.filters.stage : undefined,
                     minScore: this.filters.minScore > 0 ? this.filters.minScore : undefined
                 }
             })
-            this.dealFlow = data.dealFlow
-            this.goals = data.goals
+            // Handle unwrapped data or original structure
+            this.dealFlow = data.dealFlow || data
+            this.goals = data.goals || []
         } catch (error) {
             console.error('Failed to fetch deal flow:', error)
         } finally {
@@ -163,8 +165,9 @@ export const useInvestorStore = defineStore('investor', {
 
     async createGoal(goalData: any) {
       const authStore = useAuthStore()
+      const api = useApi()
       try {
-        await $fetch('/api/sme/goals', {
+        await api('/sme/goals', {
           method: 'POST',
           body: {
             smeId: goalData.smeId,
@@ -199,8 +202,9 @@ export const useInvestorStore = defineStore('investor', {
         }
       }
       
+      const api = useApi()
       try {
-        await $fetch('/api/sme/goals', {
+        await api('/sme/goals', {
           method: 'PATCH',
           body: {
             id,
@@ -215,8 +219,9 @@ export const useInvestorStore = defineStore('investor', {
     },
 
     async deleteGoal(id: number) {
+      const api = useApi()
       try {
-        await $fetch(`/api/sme/goals?id=${id}`, {
+        await api(`/sme/goals?id=${id}`, {
           method: 'DELETE'
         })
         await this.fetchDealFlow()

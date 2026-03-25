@@ -1,34 +1,83 @@
 <template>
   <!-- Template Selection Screen (when no template specified) -->
   <div v-if="!currentTemplateId || currentTemplateId === 'temp_001' && !route.query.template"
-    class="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-    <div class="max-w-4xl w-full">
-      <div class="text-center mb-8">
+    class="min-h-full bg-gray-50 px-6 py-8 md:px-8">
+    <div class="max-w-7xl mx-auto w-full">
+      <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Select an Assessment</h1>
         <p class="text-gray-600">Choose a program to begin your investment readiness assessment</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div v-for="template in availableTemplates" :key="template.id" @click="selectTemplate(template.id)"
-          class="bg-white rounded-xl border-2 border-gray-200 p-6 cursor-pointer hover:border-teal-500 hover:shadow-lg transition-all duration-200">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-              <ClipboardDocumentCheckIcon class="w-6 h-6 text-teal-600" />
-            </div>
-            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-              {{ getQuestionCount(template.id) }} questions
-            </span>
+      <div class="bg-white rounded-xl border border-gray-200 p-4 md:p-5 mb-6">
+        <div class="flex flex-wrap items-center gap-3 md:gap-5">
+          <div class="flex items-center gap-2 text-sm text-gray-500">
+            <span class="text-sm">&#9661;</span>
+            <span>Filter by:</span>
           </div>
 
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ template.name }}</h3>
-          <p class="text-sm text-gray-600 mb-4">{{ template.description }}</p>
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600">Pillars:</label>
+            <select v-model="selectedPillarFilter"
+              class="h-9 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none">
+              <option value="all">All</option>
+              <option value="1-4">1-4</option>
+              <option value="5-6">5-6</option>
+              <option value="7-8">7-8</option>
+              <option value="9+">9+</option>
+            </select>
+          </div>
 
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500">Est. {{ template.duration }} minutes</span>
-            <span class="text-teal-600 font-medium flex items-center gap-1">
-              Start Assessment
-              <ArrowRightIcon class="w-4 h-4" />
-            </span>
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600">Questions:</label>
+            <select v-model="selectedQuestionFilter"
+              class="h-9 px-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none">
+              <option value="all">All</option>
+              <option value="1-20">1-20</option>
+              <option value="21-40">21-40</option>
+              <option value="41+">41+</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="text-sm text-gray-500 mt-4">
+          Showing {{ filteredAvailableTemplates.length }} of {{ availableTemplates.length }} templates
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="template in filteredAvailableTemplates" :key="template.id"
+          class="group relative bg-white rounded-xl border border-gray-200 p-5 hover:border-teal-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
+              <ClipboardDocumentCheckIcon class="w-5 h-5 text-teal-600" />
+            </div>
+            <div class="flex items-center gap-2">
+              <span :class="getTemplateType(template.id) === 'Quick' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'"
+                class="px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                {{ getTemplateType(template.id) }}
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold">
+                v{{ template.version || '1.0' }}
+              </span>
+            </div>
+          </div>
+
+          <h3 class="text-3xl font-bold text-gray-900 mb-2 leading-tight">{{ template.name }}</h3>
+          <p class="text-sm text-gray-500 mb-5 min-h-[40px] line-clamp-2">{{ template.description || 'No description available.' }}</p>
+
+          <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+            <span>{{ getTemplatePillarCount(template.id) }} pillars</span>
+            <span>{{ getQuestionCount(template.id) }} questions</span>
+            <span>{{ getTemplateDuration(template.id) }}</span>
+          </div>
+
+          <div
+            class="absolute inset-x-5 bottom-4 transition-all duration-200 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0">
+            <button type="button" @click="openTemplatePreview(template)"
+              class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
+              <span class="text-xs">&#9679;</span>
+              Preview Questions
+            </button>
           </div>
         </div>
       </div>
@@ -41,6 +90,70 @@
           class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
           Return to Dashboard
         </button>
+      </div>
+
+      <div v-else-if="filteredAvailableTemplates.length === 0" class="text-center py-12">
+        <ClipboardDocumentCheckIcon class="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No templates match your filters</h3>
+        <p class="text-gray-600 mb-6">Try a different filter combination.</p>
+      </div>
+
+      <div v-if="previewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="closeTemplatePreview"></div>
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex items-start justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900">{{ previewTemplate?.name || 'Assessment Preview' }}</h3>
+              <p class="text-sm text-gray-500 mt-1">
+                {{ previewTemplate?.description || 'Preview questions by pillar before you start.' }}
+              </p>
+            </div>
+            <button type="button" @click="closeTemplatePreview"
+              class="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+              <span class="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div v-if="previewLoading" class="py-16 text-center text-gray-500 text-sm">
+              Loading questions...
+            </div>
+
+            <div v-else-if="previewGroupedQuestions.length === 0" class="py-16 text-center">
+              <h4 class="text-base font-semibold text-gray-900 mb-2">No questions found</h4>
+              <p class="text-sm text-gray-500">This template currently has no available questions.</p>
+            </div>
+
+            <div v-else class="space-y-5">
+              <div v-for="group in previewGroupedQuestions" :key="group.pillarId"
+                class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <h4 class="font-semibold text-gray-900">{{ group.pillarName }}</h4>
+                  <span class="text-xs text-gray-500 font-medium">{{ group.questions.length }} questions</span>
+                </div>
+
+                <div class="divide-y divide-gray-100">
+                  <div v-for="(question, idx) in group.questions" :key="question.id" class="px-4 py-3">
+                    <div class="text-xs text-gray-400 mb-1">Q{{ idx + 1 }}</div>
+                    <p class="text-sm text-gray-800">{{ question.text }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
+            <button type="button" @click="closeTemplatePreview"
+              class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors">
+              Close
+            </button>
+            <button type="button" @click="startPreviewedTemplate"
+              class="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors">
+              Start Assessment
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -141,10 +254,10 @@
           <div class="flex items-start justify-between mb-2">
             <div>
               <div class="flex items-center gap-3 mb-1">
-                <h1 class="text-2xl font-bold text-gray-900">Investment Readiness Assessment</h1>
+                <h2 class="text-2xl font-bold text-gray-900">Investment Readiness Assessment</h2>
                 <span
                   class="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
-                  {{adminStore.templates.find(t => t.id === currentTemplateId)?.name || 'Assessment'}}
+                  {{ availableTemplates.find(t => t.id == currentTemplateId)?.name || 'Assessment' }}
                 </span>
               </div>
               <div class="flex items-center gap-2 mb-2">
@@ -324,21 +437,21 @@
                     </div>
 
                     <!-- Proof File Upload — only shown when answer is Yes -->
-                    <div v-if="answers[q.id] === true"
-                      :class="proofValidationErrors.includes(q.id) ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'"
+                    <div v-if="answers[String(q.id)] === true"
+                      :class="proofValidationErrors.includes(String(q.id)) ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'"
                       class="max-w-md mt-1 p-4 rounded-lg border transition-colors">
                       <label class="block text-sm font-medium mb-2"
-                        :class="proofValidationErrors.includes(q.id) ? 'text-red-600' : 'text-gray-700'">
+                        :class="proofValidationErrors.includes(String(q.id)) ? 'text-red-600' : 'text-gray-700'">
                         Upload Proof <span class="text-red-500">*</span>
-                        <span v-if="proofValidationErrors.includes(q.id)" class="ml-2 font-normal text-xs text-red-500">
+                        <span v-if="proofValidationErrors.includes(String(q.id))" class="ml-2 font-normal text-xs text-red-500">
                           ⚠ Proof document required before proceeding
                         </span>
                       </label>
                       <label
-                        :class="proofValidationErrors.includes(q.id) ? 'border-red-300 hover:border-red-400 hover:bg-red-50' : 'border-gray-300 hover:bg-teal-50 hover:border-teal-300'"
+                        :class="proofValidationErrors.includes(String(q.id)) ? 'border-red-300 hover:border-red-400 hover:bg-red-50' : 'border-gray-300 hover:bg-teal-50 hover:border-teal-300'"
                         class="flex flex-col items-center px-4 py-4 bg-white border-2 border-dashed rounded-lg cursor-pointer transition-colors">
                         <svg class="w-6 h-6 mb-2"
-                          :class="proofValidationErrors.includes(q.id) ? 'text-red-400' : 'text-gray-400'" fill="none"
+                          :class="proofValidationErrors.includes(String(q.id)) ? 'text-red-400' : 'text-gray-400'" fill="none"
                           stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
@@ -348,14 +461,14 @@
                             proof</span>
                           document</span>
                         <input type="file" class="hidden"
-                          @change="(e) => { handleFileUpload(e, q.id + '_proof'); proofValidationErrors = proofValidationErrors.filter(id => id !== q.id) }"
+                          @change="(e) => { handleFileUpload(e, String(q.id) + '_proof'); proofValidationErrors = proofValidationErrors.filter(id => id !== String(q.id)) }"
                           accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                       </label>
                       <!-- Show selected file name -->
-                      <div v-if="answers[q.id + '_proof']"
+                      <div v-if="answers[String(q.id) + '_proof']"
                         class="mt-3 text-sm text-gray-700 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                         <CheckCircleIcon class="w-5 h-5 text-teal-600" />
-                        <span class="truncate font-medium">{{ answers[q.id + '_proof']?.name || 'Proof file attached'
+                        <span class="truncate font-medium">{{ answers[String(q.id) + '_proof']?.name || 'Proof file attached'
                         }}</span>
                       </div>
                     </div>
@@ -424,7 +537,7 @@
                       <span class="text-sm text-gray-600"><span class="font-semibold">Click to upload</span> or drag and
                         drop</span>
                       <span class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, XLS, XLSX (max 10MB)</span>
-                      <input type="file" class="hidden" @change="(e) => handleFileUpload(e, q.id)"
+                      <input type="file" class="hidden" @change="(e) => handleFileUpload(e, String(q.id))"
                         accept=".pdf,.doc,.docx,.xls,.xlsx">
                     </label>
                     <!-- Show selected file name -->
@@ -499,10 +612,11 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default'
+  layout: 'default',
+  middleware: ['auth', 'sme']
 })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   ClipboardDocumentListIcon,
@@ -525,22 +639,25 @@ import {
 } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon as CheckCircleIconSolid } from '@heroicons/vue/24/solid'
 
-import { useAdminStore } from '~/stores/admin.store'
+import { smeService } from '~/modules/sme/sme.service'
+import { useSmeProgramStore } from '~/stores/smeProgram.store'
 import { useDashboardStore } from '~/stores/dashboard.store'
 import { calculateOverallScore } from '~/utils/helpers'
 
 const route = useRoute()
-const adminStore = useAdminStore()
+const smeProgramStore = useSmeProgramStore()
+const dashboardStore = useDashboardStore()
+const frameworkSettings = ref<any[]>([])
 
 interface AssessmentQuestion {
-  id: string
-  pillarId: string
+  id: number | string
+  pillar_id: number | string
   text: string
   type: string
   weight: number
   required: boolean
   options?: any[]
-  templateId: string
+  template_id: number | string
 }
 
 interface Section {
@@ -584,9 +701,13 @@ const profileProgress = computed(() => {
 // --- DYNAMIC LOGIC ---
 
 const answers = ref<Record<string, any>>({})
+const availablePrograms = ref<any[]>([])
+const loadingTemplates = ref(false)
+const selectedPillarFilter = ref('all')
+const selectedQuestionFilter = ref('all')
 
 // Helper to get pillar icon
-const getPillarIcon = (id: string) => {
+const getPillarIcon = (id: string | number) => {
   const map: Record<string, any> = {
     'team': UserGroupIcon,
     'business': PresentationChartLineIcon,
@@ -597,69 +718,191 @@ const getPillarIcon = (id: string) => {
     'data': PresentationChartLineIcon,
     'growth': RocketLaunchIcon
   }
-  return map[id] || BuildingOfficeIcon
+  // Allow numeric IDs mapping too if they match business logic
+  const stringId = String(id).toLowerCase()
+  return map[stringId] || BuildingOfficeIcon
 }
 
 // --- TEMPLATE SELECTION LOGIC ---
 
-const authStore = useAuthStore()
-// Get current SME ID from auth store
-const currentSMEId = computed(() => authStore.user?.company?.id || 3)
-
-// Get programs that the current SME is enrolled in
-const enrolledPrograms = computed(() => {
-  return adminStore.programs.filter(program =>
-    program.enrolledSMEs && program.enrolledSMEs.includes(currentSMEId.value)
-  )
-})
-
 // Get available templates from enrolled programs
 const availableTemplates = computed(() => {
-  const templateIds = enrolledPrograms.value.map(p => p.templateId)
-  const uniqueTemplateIds = [...new Set(templateIds)]
-
-  return adminStore.templates
-    .filter(template => uniqueTemplateIds.includes(template.id))
-    .map(template => {
-      const questionCount = adminStore.questions.filter(q => q.templateId === template.id).length
-      const program = enrolledPrograms.value.find(p => p.templateId === template.id)
-      return {
-        ...template,
-        duration: Math.ceil(questionCount * 2), // Estimate 2 minutes per question
-        programName: program?.name || 'Unknown Program'
-      }
-    })
+  return availablePrograms.value
+    .filter(p => p.templateId && p.enrollmentStatus !== 'None')
+    .map(p => ({
+      id: p.templateId,
+      name: p.templateName || p.name,
+      description: p.description,
+      version: p.templateVersion || p.version || null,
+      duration: 15, // Mock duration for now
+      programName: p.name
+    }))
 })
 
+const filteredAvailableTemplates = computed(() => {
+  return availableTemplates.value.filter((template) => {
+    const pillars = getTemplatePillarCount(template.id)
+    const questions = getQuestionCount(template.id)
+
+    let pillarMatch = true
+    if (selectedPillarFilter.value === '1-4') pillarMatch = pillars >= 1 && pillars <= 4
+    else if (selectedPillarFilter.value === '5-6') pillarMatch = pillars >= 5 && pillars <= 6
+    else if (selectedPillarFilter.value === '7-8') pillarMatch = pillars >= 7 && pillars <= 8
+    else if (selectedPillarFilter.value === '9+') pillarMatch = pillars >= 9
+
+    let questionMatch = true
+    if (selectedQuestionFilter.value === '1-20') questionMatch = questions >= 1 && questions <= 20
+    else if (selectedQuestionFilter.value === '21-40') questionMatch = questions >= 21 && questions <= 40
+    else if (selectedQuestionFilter.value === '41+') questionMatch = questions >= 41
+
+    return pillarMatch && questionMatch
+  })
+})
+
+const templateMeta = ref<Record<string, { questionCount: number, pillarCount: number }>>({})
+
 // Function to select a template and start assessment
-const selectTemplate = (templateId: string) => {
+const selectTemplate = (templateId: string | number) => {
   navigateTo({
     path: '/assessment',
-    query: { template: templateId }
+    query: { template: String(templateId) }
   })
 }
 
-// Helper to get question count for a template
-const getQuestionCount = (templateId: string) => {
-  return adminStore.questions.filter(q => q.templateId === templateId).length
+const getQuestionCount = (templateId: string | number) => {
+  const key = String(templateId)
+  return templateMeta.value[key]?.questionCount || 0
+}
+
+const getTemplatePillarCount = (templateId: string | number) => {
+  const key = String(templateId)
+  return templateMeta.value[key]?.pillarCount || 0
+}
+
+const getTemplateType = (templateId: string | number) => {
+  const pillarCount = getTemplatePillarCount(templateId)
+  return pillarCount > 0 && pillarCount <= 4 ? 'Quick' : 'Comprehensive'
+}
+
+const getTemplateDuration = (templateId: string | number) => {
+  const qCount = getQuestionCount(templateId)
+  if (!qCount) return '15-25 min'
+  const upper = Math.max(qCount + 5, Math.round(qCount * 1.5))
+  return `${qCount}-${upper} min`
+}
+
+const loadTemplateMeta = async () => {
+  const api = useApi()
+  const entries = await Promise.all(
+    availableTemplates.value.map(async (template) => {
+      try {
+        const response = await api<any>('/sme/questions', {
+          query: { template_id: normalizeTemplateId(template.id) }
+        })
+        const questions: AssessmentQuestion[] = response.data || response || []
+        const uniquePillars = new Set(questions.map(q => String(q.pillar_id)))
+        return [String(template.id), { questionCount: questions.length, pillarCount: uniquePillars.size }] as const
+      } catch {
+        return [String(template.id), { questionCount: 0, pillarCount: 0 }] as const
+      }
+    })
+  )
+
+  templateMeta.value = Object.fromEntries(entries)
 }
 
 // --- ASSESSMENT LOGIC ---
 
 // Fetch questions based on template
-const currentTemplateId = computed(() => (route.query.template as string) || 'temp_001')
+const currentTemplateId = computed(() => (route.query.template as string) || null)
 
 // Filtered questions for current template
-const assessmentQuestions = computed<AssessmentQuestion[]>(() =>
-  adminStore.questions.filter(q => q.templateId === currentTemplateId.value) as AssessmentQuestion[]
-)
+const assessmentQuestions = ref<AssessmentQuestion[]>([])
+const loadingQuestions = ref(false)
+const previewModalOpen = ref(false)
+const previewLoading = ref(false)
+const previewTemplate = ref<any | null>(null)
+const previewGroupedQuestions = ref<Array<{ pillarId: string, pillarName: string, questions: AssessmentQuestion[] }>>([])
+
+const normalizeTemplateId = (templateId: string | number) => {
+  if (typeof templateId === 'string') {
+    return Number(templateId.replace('temp_', '')) || templateId
+  }
+  return templateId
+}
+
+const openTemplatePreview = async (template: any) => {
+  previewModalOpen.value = true
+  previewLoading.value = true
+  previewTemplate.value = template
+  previewGroupedQuestions.value = []
+
+  const api = useApi()
+  try {
+    const response = await api<any>('/sme/questions', {
+      query: { template_id: normalizeTemplateId(template.id) }
+    })
+
+    const questions: AssessmentQuestion[] = response.data || response || []
+    const grouped = new Map<string, AssessmentQuestion[]>()
+
+    questions.forEach((q) => {
+      const key = String(q.pillar_id || 'general')
+      if (!grouped.has(key)) grouped.set(key, [])
+      grouped.get(key)?.push(q)
+    })
+
+    previewGroupedQuestions.value = Array.from(grouped.entries()).map(([pillarId, qList]) => {
+      const found = frameworkSettings.value.find(p => String(p.id) === String(pillarId))
+      return {
+        pillarId,
+        pillarName: found?.name || `Pillar ${pillarId}`,
+        questions: qList
+      }
+    })
+  } catch (e) {
+    console.error('Failed to preview template questions', e)
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+const closeTemplatePreview = () => {
+  previewModalOpen.value = false
+  previewLoading.value = false
+  previewTemplate.value = null
+  previewGroupedQuestions.value = []
+}
+
+const startPreviewedTemplate = () => {
+  if (!previewTemplate.value) return
+  const tId = previewTemplate.value.id
+  closeTemplatePreview()
+  selectTemplate(tId)
+}
+
+const fetchQuestions = async () => {
+  if (!currentTemplateId.value) return
+  loadingQuestions.value = true
+  const api = useApi()
+  try {
+    const response = await api<any>(`/sme/questions`, {
+      query: { template_id: currentTemplateId.value }
+    })
+    assessmentQuestions.value = response.data || response || []
+  } catch (e) {
+    console.error('Failed to fetch questions', e)
+  } finally {
+    loadingQuestions.value = false
+  }
+}
 
 const groupedQuestions = computed<Record<string, AssessmentQuestion[]>>(() => {
   const groups: Record<string, AssessmentQuestion[]> = {}
   if (assessmentQuestions.value) {
     assessmentQuestions.value.forEach(q => {
-      if (q && q.pillarId) {
-        const pId = q.pillarId
+      if (q && q.pillar_id) {
+        const pId = String(q.pillar_id)
         if (!groups[pId]) {
           groups[pId] = []
         }
@@ -687,7 +930,7 @@ const contentSections = computed<Section[]>(() => {
 
   // 2. Dynamic Pillars
   const dynamicPillars = Object.keys(groupedQuestions.value).map(pillarId => {
-    const pillarStyle = adminStore.frameworkSettings.find(p => p.id === pillarId)
+    const pillarStyle = frameworkSettings.value.find(p => String(p.id) === String(pillarId))
     const qList = groupedQuestions.value[pillarId] || []
     const answered = getAnsweredCount(pillarId)
 
@@ -716,7 +959,7 @@ const sections = computed<Section[]>(() => [
 
 const currentSectionData = computed<Section | undefined>(() => sections.value[currentSection.value])
 
-const totalQuestions = computed(() => adminStore.questions.filter(q => q.templateId === currentTemplateId.value).length + 5)
+const totalQuestions = computed(() => assessmentQuestions.value.length + 5)
 
 const totalAnswered = computed(() => {
   const qCount = Object.keys(answers.value).filter(k => answers.value[k] !== undefined && answers.value[k] !== null && answers.value[k] !== '').length
@@ -727,7 +970,7 @@ const verifiedScore = ref<number | null>(null)
 
 const finalScore = computed(() => {
   // Calculate actual score based on answers and question weights
-  const questionsList = adminStore.questions.filter(q => q.templateId === currentTemplateId.value)
+  const questionsList = assessmentQuestions.value
 
   if (questionsList.length === 0) return 0
 
@@ -735,7 +978,7 @@ const finalScore = computed(() => {
   const pillarScores: Record<string, { totalScore: number, maxScore: number }> = {}
 
   questionsList.forEach(question => {
-    const pillarId = question.pillarId
+    const pillarId = String(question.pillar_id)
     const answer = answers.value[question.id]
     const weight = question.weight || 10
 
@@ -799,8 +1042,8 @@ const finalScore = computed(() => {
 
   // Calculate overall score using shared helper
   const pillarResults = Object.entries(pillarScores).map(([pillarId, stats]) => {
-    // Get weight for this pillar from adminStore
-    const pillarConfig = adminStore.frameworkSettings.find(fs => fs.id === pillarId)
+    // Get weight for this pillar from local framework settings
+    const pillarConfig = frameworkSettings.value.find(fs => String(fs.id) === String(pillarId))
     const pillarScore = stats.maxScore > 0 ? (stats.totalScore / stats.maxScore) * 100 : 0
 
     return {
@@ -851,49 +1094,54 @@ const validateAndNext = () => {
 
 const submitAssessment = async () => {
   console.log('[Assessment] Submit button clicked')
+  const api = useApi()
   try {
-    // Get the questions for this template to send to server
-    // This is needed because server can't access Pinia store for admin-created questions
-    const templateQuestions = assessmentQuestions.value.map(q => ({
-      id: q.id,
-      pillarId: q.pillarId,
-      templateId: q.templateId,
-      text: q.text,
-      type: q.type,
-      weight: q.weight,
-      required: q.required,
-      options: q.options
-    }))
+    const tId = currentTemplateId.value
+    if (!tId) throw new Error('No template selected')
 
-    console.log('[Assessment] Constructed templateQuestions array:', templateQuestions.length)
-    console.log('[Assessment] Initiating backend API call')
+    const startResponse = await api<any>('/assessment/start', {
+      method: 'POST',
+      body: { 
+        template_id: typeof tId === 'string' ? (Number(tId.replace('temp_', '')) || tId) : tId
+      }
+    })
+    
+    // The unwrapped response should have assessment_id
+    const assessmentId = startResponse.data?.assessment_id || startResponse.assessment_id
+    
+    if (!assessmentId) throw new Error('Failed to initialize assessment session')
 
-    // Submit to mock backend to persist score
-    const response = await $fetch('/api/assessment/submit', {
+    // 2. Prepare answers in the format the backend expects
+    // Backend expects array of { question_id, value }
+    const formattedAnswers = Object.entries(answers.value)
+      .filter(([key]) => !key.endsWith('_proof')) // Skip proof file keys for now as they go to document store or separate logic
+      .map(([questionId, value]) => ({
+        question_id: Number(questionId),
+        value: value
+      }))
+
+    console.log('[Assessment] Submitting formatted answers for assessment:', assessmentId)
+
+    // 3. Submit to real backend
+    const response = await api<any>(`/assessment/${assessmentId}/submit`, {
       method: 'POST',
       body: {
-        smeId: currentSMEId.value,
-        score: finalScore.value,
-        answers: answers.value,
-        formData: formData.value,
-        templateId: currentTemplateId.value,
-        questions: templateQuestions // ← Send questions to server!
+        answers: formattedAnswers
       }
     })
 
-    if (response && 'assessment' in response && response.assessment) {
-      verifiedScore.value = response.assessment.total_score
+    const data = response.data || response
+    if (data && 'total_score' in data) {
+      verifiedScore.value = data.total_score
     }
 
     console.log('[Assessment] Submit successful, API response:', response)
     isSubmitted.value = true
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Assessment] FAILED to save assessment:', error)
-    alert("There was an error submitting your assessment. Please try again.")
+    alert(error.data?.message || "There was an error submitting your assessment. Please try again.")
   }
 }
-
-const dashboardStore = useDashboardStore()
 
 const navigateToDashboard = async () => {
   // Force refresh of dashboard data since we just submitted a new assessment
@@ -946,39 +1194,67 @@ const nextSection = () => {
 }
 
 onMounted(async () => {
-  // fetch fresh data
+  loadingTemplates.value = true
   try {
-    await adminStore.fetchProgramsData()
-    await adminStore.fetchTemplatesData()
-    await adminStore.fetchQuestionsData() // Explicitly fetch questions to be sure
+    // 1. Fetch available programs (which includes templates)
+    await smeProgramStore.fetchEnrolledPrograms()
+    availablePrograms.value = smeProgramStore.enrolledPrograms
+
+    // 2. Fetch Framework Settings
+    frameworkSettings.value = await smeService.fetchFrameworkSettings()
+    await loadTemplateMeta()
   } catch (e) {
-    console.warn('Failed to fetch data:', e)
+    console.error('Failed to fetch initial assessment data:', e)
+  } finally {
+    loadingTemplates.value = false
   }
 
-  // 1. Load Program Name
+  // 3. Load Program Name from query if possible
   const programId = route.query.program
   if (programId) {
-    const program = adminStore.programs.find(p => p.id == programId)
+    const program = availablePrograms.value.find(p => p.id == programId)
     if (program) {
       programName.value = program.name
     }
   }
 
-  // 2. Load SME Data
+  // 4. Initial Questions Fetch if template already in URL
+  if (currentTemplateId.value) {
+    await fetchQuestions()
+  }
+
+  // 5. Load SME Profile Data (Optional for summary display)
   const smeId = route.query.sme
   if (smeId) {
-    const sme = adminStore.smes.find(s => s.id == smeId)
-    if (sme) {
-      formData.value.name = sme.name
-      formData.value.sector = sme.industry || ''
-      formData.value.location = sme.location || ''
-      // Mock other fields as they might not be in the simple SME list model
-      formData.value.founded = '2022'
-      formData.value.employees = '11-50'
-      formData.value.website = `https://www.${sme.name.toLowerCase().replace(/\s+/g, '')}.com`
+    try {
+      const sme = await smeService.fetchSmeDetails()
+      if (sme) {
+        formData.value.name = sme.name
+        formData.value.sector = sme.industry || ''
+        formData.value.location = sme.location || ''
+      }
+    } catch (e) {
+      console.warn('Could not fetch SME details for pre-filling', e)
     }
   }
 })
+
+watch(
+  () => currentTemplateId.value,
+  async (newTemplateId, oldTemplateId) => {
+    // React to template selection changes on the same route (/assessment?template=...)
+    if (!newTemplateId) {
+      assessmentQuestions.value = []
+      currentSection.value = 0
+      return
+    }
+
+    if (newTemplateId !== oldTemplateId) {
+      currentSection.value = 0
+      await fetchQuestions()
+    }
+  }
+)
 </script>
 
 <style scoped>

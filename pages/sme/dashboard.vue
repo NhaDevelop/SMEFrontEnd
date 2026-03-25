@@ -261,7 +261,13 @@ export default {
     const loading = ref(true)
 
     const isAdmin = computed(() => authStore.userRole === 'ADMIN')
-    const thresholds = ref < any[] > ([])
+    const thresholds = computed(() => dashboardStore.frameworkThresholds.length ? dashboardStore.frameworkThresholds : [
+      { id: 'investor', label: 'Investment Ready', min: 80, max: 100 },
+      { id: 'near', label: 'Near Ready', min: 60, max: 79 },
+      { id: 'early', label: 'Early Stage', min: 40, max: 59 },
+      { id: 'pre', label: 'Pre-Investment', min: 0, max: 39 }
+    ])
+
     onMounted(async () => {
       // Redirect investors to their own dashboard
       if (authStore.userRole === 'INVESTOR') {
@@ -269,9 +275,6 @@ export default {
       }
 
       try {
-        const settings = await $fetch < any > ('/api/admin/settings').catch(() => null)
-        if (settings && settings.thresholds) thresholds.value = settings.thresholds
-
         if (!isAdmin.value && dashboardStore.pillars.length === 0) {
           await dashboardStore.fetchDashboardData()
         }

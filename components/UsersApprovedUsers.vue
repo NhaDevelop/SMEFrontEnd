@@ -152,57 +152,27 @@ import { useAdminStore } from '~/stores/admin.store'
 const adminStore = useAdminStore()
 const searchQuery = ref('')
 const roleFilter = ref('all')
-const loading = ref(false)
-
-// ── Seed users (always present, hardcoded approved users) ─────────────────────
-const seedUsers = [
-  { id: 1, name: 'la', email: 'la@gmail.com', role: 'sme', status: 'active', registered: 'Jan 30, 2026' },
-  { id: 2, name: 'panha pay', email: 'paypanha45@gmail.com', role: 'investor', status: 'active', registered: 'Jan 29, 2026' },
-  { id: 3, name: 'Super Admin', email: 'stsmey@gmail.com', role: 'admin', status: 'active', registered: 'Jan 21, 2026' },
-  { id: 4, name: 'Testing', email: 'bunphinim@gmail.com', role: 'sme', status: 'active', registered: 'Jan 17, 2026' },
-  { id: 5, name: 'Testing', email: 'stsmey@gmail.com', role: 'admin', status: 'active', registered: 'Jan 16, 2026' }
-]
-
-// ── Approved registrations fetched from the real API ─────────────────────────
-const approvedFromRegistrations = ref<any[]>([])
+const loading = computed(() => adminStore.loading)
 
 const fetchApproved = async () => {
-  loading.value = true
   try {
-    const data = await $fetch<{ pending: any[], approved: any[], stats: any }>('/api/registrations')
-    const seedEmails = new Set(seedUsers.map(u => u.email.toLowerCase()))
-    approvedFromRegistrations.value = (data.approved || [])
-      .filter(r => !seedEmails.has(r.email?.toLowerCase()))
-      .map(r => ({
-        id: r.id,
-        name: r.name,
-        email: r.email,
-        role: r.role,
-        status: 'active',
-        registered: r.registered || (r.registered_at
-          ? new Date(r.registered_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          : 'N/A')
-      }))
+    await adminStore.fetchUsersData()
   } catch (e) {
-    console.error('[ApprovedUsers] Failed to fetch approved registrations', e)
-  } finally {
-    loading.value = false
+    console.error('[ApprovedUsers] Failed to fetch approved users', e)
   }
 }
 
-// Refresh button handler (exposed for template)
+// Refresh button handler
 const refresh = () => fetchApproved()
 
-// Fetch on every mount (component remounts when admin switches to Approved tab)
-onMounted(() => fetchApproved())
-
-// ── Merge seed users + approved registrations ─────────────────────────────────
-const allUsers = computed(() => {
-  return [...seedUsers, ...approvedFromRegistrations.value]
+onMounted(() => {
+  if (adminStore.users.length === 0) {
+    fetchApproved()
+  }
 })
 
 const filteredUsers = computed(() => {
-  return allUsers.value.filter(user => {
+  return adminStore.users.filter(user => {
     const matchesSearch = !searchQuery.value ||
       user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -213,22 +183,20 @@ const filteredUsers = computed(() => {
 
 const deleteUser = async (id: number | string) => {
   if (confirm('Are you sure you want to remove this user?')) {
-    await adminStore.deleteUser(id)
-    // If it was a registration-sourced user, remove from local list
-    approvedFromRegistrations.value = approvedFromRegistrations.value.filter(u => u.id !== id)
+    try {
+      await adminStore.deleteUser(id)
+    } catch (e) {
+      console.error('Failed to delete user:', e)
+    }
   }
 }
 
 const changeUserRole = async (user: any, newRole: string) => {
   if (confirm(`Are you sure you want to change ${user.name}'s role to ${newRole.toUpperCase()}?`)) {
-    user.role = newRole; // Optimistic update
     try {
-      await ($fetch as any)(`/api/admin/users/${user.id}/role`, {
-        method: 'PATCH',
-        body: { role: newRole }
-      });
-    } catch {
-      console.log('Role updated locally structure (Mock API format).');
+      await adminStore.updateUserRole(user.id, newRole)
+    } catch (e) {
+      console.error('Failed to update role:', e)
     }
   }
 }
@@ -236,22 +204,22 @@ const changeUserRole = async (user: any, newRole: string) => {
 const resetUserPassword = async (user: any) => {
   if (confirm(`Are you sure you want to send a password reset link to ${user.email}?`)) {
     try {
-      await ($fetch as any)(`/api/admin/users/${user.id}/reset-password`, {
-        method: 'POST'
-      });
-      alert(`Password reset link sent to ${user.email}`);
-    } catch {
-      alert(`A password reset link was sent to ${user.email} (Mock)`);
+      await adminStore.resetPassword(user.id)
+      alert(`Password has been reset for ${user.email}`);
+    } catch (e) {
+      console.error('Failed to reset password:', e)
+      alert(`Failed to reset password for ${user.email}`);
     }
   }
 }
 
 const getInitials = (name: string) => {
+  if (!name) return '?'
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 }
 
 const getRoleBadge = (role: string) => {
-  switch (role) {
+  switch (String(role).toLowerCase()) {
     case 'admin': return 'bg-[#198754] text-white border-[#198754]'
     case 'sme': return 'bg-white text-gray-700 border-gray-200'
     case 'investor': return 'bg-emerald-50 text-emerald-700 border-emerald-100'

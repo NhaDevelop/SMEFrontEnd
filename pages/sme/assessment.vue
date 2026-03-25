@@ -292,6 +292,7 @@ const selectedPillarFilter = ref('all')
 const selectedQuestionFilter = ref('all')
 const adminStore = useAdminStore()
 const authStore = useAuthStore()
+const route = useRoute()
 
 // Current logged in SME (Derive from auth store, fallback to 3 for demo)
 const currentSMEId = computed(() => authStore.user?.company?.id || 3)
@@ -326,10 +327,12 @@ const templates = computed(() => {
 })
 
 onMounted(async () => {
-    // Ensure we have fresh data
-    await adminStore.fetchProgramsData()
-    await adminStore.fetchTemplatesData()
-    await adminStore.fetchQuestionsData()
+    // Legacy route compatibility:
+    // SME users should use `/assessment` flow (SME endpoints), not admin endpoints.
+    await navigateTo({
+        path: '/assessment',
+        query: route.query
+    })
 })
 
 const filteredTemplates = computed(() => {

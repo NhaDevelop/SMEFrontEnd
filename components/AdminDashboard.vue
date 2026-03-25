@@ -29,7 +29,7 @@
         <StatCard title="Total SMEs" :value="adminStore.dashboardStats?.stats?.totalSMEs ?? 0"
           :icon="BuildingOfficeIcon" />
         <StatCard title="Total Users"
-          :value="(adminStore.dashboardStats?.stats?.totalSMEs ?? 0) + (adminStore.dashboardStats?.stats?.totalInvestors ?? 0) + 1"
+          :value="adminStore.dashboardStats?.stats?.totalUsers ?? 0"
           :icon="UsersIcon" />
         <StatCard title="Programs" :value="adminStore.dashboardStats?.stats?.totalPrograms ?? 0" :icon="FolderIcon" />
         <StatCard title="Assessments This Month"
@@ -83,8 +83,10 @@ const adminStore = useAdminStore()
 
 onMounted(async () => {
   await Promise.all([
+    adminStore.fetchUsersData(),
     adminStore.fetchDashboardStats(),
-    adminStore.fetchProgramsData()
+    adminStore.fetchProgramsData(),
+    adminStore.fetchFrameworkSettings()
   ])
 })
 </script>

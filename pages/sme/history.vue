@@ -71,7 +71,7 @@
                         </svg>
                         <span class="text-sm text-gray-600">Current Score</span>
                     </div>
-                    <div class="text-3xl font-bold text-teal-600">{{ currentScore }}</div>
+                    <div class="text-3xl font-bold text-teal-600">{{ formatScore(currentScore) }}</div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
@@ -83,7 +83,9 @@
                         </svg>
                         <span class="text-sm text-gray-600">Total Change</span>
                     </div>
-                    <div class="text-3xl font-bold text-green-600">+{{ totalChange }}</div>
+                    <div :class="['text-3xl font-bold', totalChange >= 0 ? 'text-green-600' : 'text-red-600']">
+                        {{ formatSignedDelta(totalChange) }}
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
@@ -95,7 +97,9 @@
                         </svg>
                         <span class="text-sm text-gray-600">Avg/Assessment</span>
                     </div>
-                    <div class="text-3xl font-bold text-blue-600">+{{ avgChange }}</div>
+                    <div :class="['text-3xl font-bold', avgChange >= 0 ? 'text-blue-600' : 'text-red-600']">
+                        {{ formatSignedDelta(avgChange) }}
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
@@ -107,7 +111,7 @@
                         </svg>
                         <span class="text-sm text-gray-600">Best Score</span>
                     </div>
-                    <div class="text-3xl font-bold text-yellow-600">{{ bestScore }}</div>
+                    <div class="text-3xl font-bold text-yellow-600">{{ formatScore(bestScore) }}</div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
@@ -119,7 +123,7 @@
                         </svg>
                         <span class="text-sm text-gray-600">Lowest Score</span>
                     </div>
-                    <div class="text-3xl font-bold text-gray-600">{{ lowestScore }}</div>
+                    <div class="text-3xl font-bold text-gray-600">{{ formatScore(lowestScore) }}</div>
                 </div>
             </div>
 
@@ -165,7 +169,7 @@
                                 </div>
 
                                 <div class="text-center">
-                                    <div class="text-4xl font-bold text-teal-600">{{ assessment.score }}</div>
+                                    <div class="text-4xl font-bold text-teal-600">{{ formatScore(assessment.score) }}</div>
                                     <div v-if="assessment.isLatest"
                                         class="mt-2 px-2 py-1 bg-teal-100 text-teal-700 text-xs font-semibold rounded">
                                         Latest
@@ -189,7 +193,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                     :d="assessment.change > 0 ? 'M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941' : 'M2.25 6L9 12.75l4.306-4.307a11.95 11.95 0 015.814 5.519l2.74 1.22m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941'" />
                                             </svg>
-                                            {{ assessment.change > 0 ? '+' : '' }}{{ assessment.change }} pts
+                                            {{ formatSignedDelta(assessment.change) }} pts
                                         </span>
                                     </div>
                                 </div>
@@ -198,7 +202,7 @@
                                 <div class="flex gap-6 text-center">
                                     <div v-for="pillar in assessment.topPillars" :key="pillar.name">
                                         <div class="text-2xl font-bold" :class="getPillarColor(pillar.score)">{{
-                                            pillar.score }}</div>
+                                            formatScore(pillar.score) }}</div>
                                         <div class="text-xs text-gray-500 mt-1">{{ pillar.name }}</div>
                                     </div>
                                 </div>
@@ -283,24 +287,23 @@
                                             <tr v-for="item in comparisonData.tableData" :key="item.name"
                                                 class="text-sm">
                                                 <td class="py-4 text-gray-900 font-medium">{{ item.name }}</td>
-                                                <td class="py-4 text-gray-600 text-right">{{ item.oldScore }}</td>
-                                                <td class="py-4 text-gray-600 text-right">{{ item.newScore }}</td>
+                                                <td class="py-4 text-gray-600 text-right">{{ formatScore(item.oldScore) }}</td>
+                                                <td class="py-4 text-gray-600 text-right">{{ formatScore(item.newScore) }}</td>
                                                 <td class="py-4 text-right font-medium"
                                                     :class="item.change >= 0 ? 'text-green-600' : 'text-red-600'">
-                                                    {{ item.change > 0 ? '+' : '' }}{{ item.change }}
+                                                    {{ formatSignedDelta(item.change) }}
                                                 </td>
                                             </tr>
                                             <!-- Overall Row -->
                                             <tr class="font-bold border-t border-gray-100">
                                                 <td class="py-4 text-gray-900">Overall</td>
-                                                <td class="py-4 text-gray-900 text-right">{{ comparisonData.old.score }}
+                                                <td class="py-4 text-gray-900 text-right">{{ formatScore(comparisonData.old.score) }}
                                                 </td>
-                                                <td class="py-4 text-gray-900 text-right">{{ comparisonData.new.score }}
+                                                <td class="py-4 text-gray-900 text-right">{{ formatScore(comparisonData.new.score) }}
                                                 </td>
                                                 <td class="py-4 text-right"
                                                     :class="comparisonData.new.score - comparisonData.old.score >= 0 ? 'text-green-600' : 'text-red-600'">
-                                                    {{ comparisonData.new.score - comparisonData.old.score > 0 ? '+' :
-                                                        '' }}{{ comparisonData.new.score - comparisonData.old.score }}
+                                                    {{ formatSignedDelta(comparisonData.new.score - comparisonData.old.score) }}
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -343,7 +346,7 @@
                 <div class="p-6">
                     <!-- Overall Score -->
                     <div class="bg-teal-50 rounded-lg p-6 mb-6 flex items-center gap-6">
-                        <div class="text-5xl font-bold text-teal-600">{{ selectedAssessment.score }}</div>
+                        <div class="text-5xl font-bold text-teal-600">{{ formatScore(selectedAssessment.score) }}</div>
                         <div>
                             <h3 class="text-lg font-bold text-gray-900">Overall Score</h3>
                             <p class="text-sm text-gray-600">{{ getScoreLabel(selectedAssessment.score) }}</p>
@@ -357,7 +360,7 @@
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm font-medium text-gray-700">{{ pillar.name }}</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold text-gray-900">{{ pillar.score }}</span>
+                                    <span class="text-sm font-bold text-gray-900">{{ formatScore(pillar.score) }}</span>
                                     <span :class="[
                                         'text-xs font-semibold px-2 py-1 rounded',
                                         getRiskClass(pillar.score)
@@ -403,12 +406,14 @@ const authStore = useAuthStore()
 
 const fetchHistory = async () => {
     isLoading.value = true
+    const api = useApi()
     try {
-        const smeId = authStore.user?.company?.id || 3
-        const data = await $fetch(`/api/assessment/history?smeId=${smeId}`)
-        assessments.value = data as any[]
-    } catch (e) {
-        console.error('Failed to fetch history:', e)
+        const response = await api<any>('/assessment/history')
+        // data is unwrapped, but if it's still a wrapper, handle it
+        const data = response.data || response
+        assessments.value = data || []
+    } catch (error) {
+        console.error('Failed to fetch assessment history:', error)
     } finally {
         isLoading.value = false
     }
@@ -431,6 +436,26 @@ const avgChange = computed(() => {
 })
 const bestScore = computed(() => Math.max(...assessments.value.map(a => a.score)))
 const lowestScore = computed(() => Math.min(...assessments.value.map(a => a.score)))
+
+const formatCompactNumber = (value: number, maxDecimals: number = 2) => {
+    const n = Number(value)
+    if (Number.isNaN(n)) return '0'
+    const fixed = n.toFixed(maxDecimals)
+    // Trim trailing zeros (e.g. 50.1200 -> 50.12, 10.00 -> 10)
+    return fixed.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')
+}
+
+const formatScore = (value: number) => {
+    return formatCompactNumber(value, 2)
+}
+
+const formatSignedDelta = (value: number) => {
+    const n = Number(value)
+    if (Number.isNaN(n)) return '0'
+    if (n === 0) return '0'
+    const sign = n > 0 ? '+' : '-'
+    return `${sign}${formatCompactNumber(Math.abs(n), 2)}`
+}
 
 const viewDetails = (assessment: any) => {
     selectedAssessment.value = assessment

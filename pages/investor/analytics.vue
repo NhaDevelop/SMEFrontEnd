@@ -1433,8 +1433,20 @@ const dateRange = computed(() => {
 })
 
 // State
-const { data: analyticsData } = useFetch('/api/investor/analytics')
-const apiSmes = computed(() => (analyticsData.value as any)?.smes || [])
+const analyticsData = ref<any>(null)
+const fetchAnalytics = async () => {
+    try {
+        analyticsData.value = await useApi()('/investor/analytics')
+    } catch (e) {
+        console.error('Failed to fetch analytics', e)
+    }
+}
+
+onMounted(() => {
+    fetchAnalytics()
+})
+
+const apiSmes = computed(() => analyticsData.value?.smes || [])
 
 // -- 2. Filter Logic --
 const filteredDealFlow = computed(() => {

@@ -320,10 +320,15 @@ const isDownloading = ref(false)
 
 const handleDownloadReport = async () => {
     isDownloading.value = true
+    const config = useRuntimeConfig()
     try {
-        const url = `/api/reports/export?smeId=${smeId.value}`
+        const urlRaw = `/reports/export?smeId=${smeId.value}`
+        // Get token from cookie or store if available
+        const token = useCookie('auth_token').value || ''
+        const downloadUrl = `${config.public.apiBase}${urlRaw}${urlRaw.includes('?') ? '&' : '?'}token=${token}`
+        
         const a = document.createElement('a')
-        a.href = url
+        a.href = downloadUrl
         a.download = `sme_${smeId.value}_assessment_export.csv`
         document.body.appendChild(a)
         a.click()
@@ -344,11 +349,12 @@ const apiSmeData = ref<any>(null)
 // Fetch SME from API to ensure we have the full `assessments` array and history
 const fetchSmeDetails = async () => {
     if (!smeId.value) return
+    const api = useApi()
     try {
-        const res: any = await $fetch(`/api/sme/${smeId.value}`)
-        if (res) {
-            apiSmeData.value = res
-        }
+        const role = authStore.user?.role
+        const prefix = role === 'ADMIN' ? '/admin' : ''
+        const response = await api<any>(`${prefix}/sme/${smeId.value}`)
+        apiSmeData.value = response.data || response
     } catch (e) {
         console.error('Failed to fetch SME details:', e)
     }
@@ -409,12 +415,6 @@ const smeData = computed(() => {
         pillars: undefined as any[] | undefined
     }
 })
-
-// Deterministic random generator based on seed (ID) - for actions only
-const seededRandom = (seed: number) => {
-    const x = Math.sin(seed++) * 10000;
-    return x - Math.floor(x);
-}
 
 // Use centralized pillar score generation for consistency
 const pillars = computed(() => {
@@ -498,8 +498,15 @@ const getStageBadgeClass = (stage: string) => {
 
 const fetchRealActions = async () => {
     if (!smeId.value) return
+    const api = useApi()
     try {
-        const res: any = await $fetch(`/api/dashboard?smeId=${smeId.value}`)
+        const role = authStore.user?.role
+        let endpoint = '/sme/dashboard'
+        if (role === 'INVESTOR') endpoint = '/investor/dashboard'
+        if (role === 'ADMIN') endpoint = '/admin/dashboard'
+
+        const response = await api<any>(`${endpoint}?smeId=${smeId.value}`)
+        const res = response.data || response
         if (res && res.actions) {
             actions.value = res.actions.map((a: any) => ({
                 title: a.title,

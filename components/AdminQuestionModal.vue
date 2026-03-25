@@ -9,6 +9,12 @@
             <h2 class="text-xl font-bold text-gray-900 mb-6">{{ isEditMode ? 'Edit Question' : 'Add New Question' }}
             </h2>
 
+            <div v-if="errorMessage"
+                class="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 text-red-700 text-sm">
+                <ExclamationTriangleIcon class="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{{ errorMessage }}</span>
+            </div>
+
             <form @submit.prevent="handleSubmit" class="space-y-5">
                 <!-- Pillar Selection -->
                 <div>
@@ -128,12 +134,13 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
     isOpen: boolean
     initialData?: any
     pillars: any[]
+    errorMessage?: string
 }>()
 
 const emit = defineEmits(['close', 'save'])

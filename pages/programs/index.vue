@@ -105,7 +105,7 @@
                             </div>
 
                             <!-- If SME, show the direct Application control -->
-                            <button v-if="auth.isAuthenticated.value && auth.user.value?.role?.toLowerCase() === 'sme'"
+                            <button v-if="auth.isAuthenticated && auth.user?.role?.toLowerCase() === 'sme'"
                                 @click="(e) => checkEnrolled(program) ? e.preventDefault() : handleApply(program, e)"
                                 :disabled="checkEnrolled(program) || isApplying" :class="[
                                     'flex-1 py-3.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm',
@@ -192,7 +192,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
     ArrowRightIcon,
     GlobeAltIcon,
@@ -214,10 +214,25 @@ definePageMeta({
     layout: 'landing'
 })
 
+const api = useApi()
+const programs = ref<any[]>([])
+const pending = ref(true)
 
+const fetchPrograms = async () => {
+    pending.value = true
+    try {
+        const res = await api<any>('/programs')
+        programs.value = res.data || res || []
+    } catch (e) {
+        console.error('Failed to fetch programs:', e)
+    } finally {
+        pending.value = false
+    }
+}
 
-const { data: programs, pending } = useFetch('/api/programs')
-
+onMounted(() => {
+    fetchPrograms()
+})
 
 const programFaqs = ref([
     {
@@ -252,32 +267,35 @@ const programFaqs = ref([
     }
 ])
 
-const toggleFaq = (index) => {
+const toggleFaq = (index: number) => {
     programFaqs.value[index].isOpen = !programFaqs.value[index].isOpen
 }
 
 // Form and Auth Integration
-const auth = useAuth()
+const auth = useAuthStore()
 const isApplying = ref(false)
 const showSuccessToast = ref(false)
 const route = useRoute()
 
-const checkEnrolled = (program) => {
-    if (!auth.isAuthenticated.value || auth.user.value?.role?.toLowerCase() !== 'sme' || !program) return false
-    const smeId = auth.user.value?.company?.id || auth.user.value.id
-    return program.enrolledSMEs?.some(id => String(id) === String(smeId))
+const checkEnrolled = (program: any) => {
+    const userRole = auth.user?.role
+    if (!auth.isAuthenticated || String(userRole).toLowerCase() !== 'sme' || !program) return false
+    const smeId = auth.user?.company?.id || auth.user?.id
+    return program.enrolled_smes?.some((id: any) => String(id) === String(smeId)) || 
+           program.enrolledSMEs?.some((id: any) => String(id) === String(smeId))
 }
 
-const handleApply = async (program, event) => {
+const handleApply = async (program: any, event: Event) => {
     // Prevent the NuxtLink from navigating when the button is clicked directly
     if (event) event.preventDefault()
 
-    if (!auth.isAuthenticated.value) {
+    if (!auth.isAuthenticated) {
         useRouter().push({ path: '/login', query: { redirect: route.fullPath } })
         return
     }
 
-    if (auth.user.value?.role?.toLowerCase() !== 'sme') {
+    const userRole = auth.user?.role
+    if (String(userRole).toLowerCase() !== 'sme') {
         alert("Only SME accounts can apply to programs.")
         return
     }
@@ -286,36 +304,27 @@ const handleApply = async (program, event) => {
 
     isApplying.value = true
     try {
-        const smeId = auth.user.value?.company?.id || auth.user.value.id
-
-        await $fetch('/api/sme/programs/apply', {
-            method: 'POST',
-            body: {
-                programId: program.id,
-                smeId: smeId
-            }
+        await api(`/programs/${program.id}/apply`, {
+            method: 'POST'
         })
 
         // Refresh programs to trigger reactivity in checkEnrolled
-        const { data } = await useFetch('/api/programs')
-        if (data.value) {
-            programs.value = data.value
-        }
+        await fetchPrograms()
 
         showSuccessToast.value = true
         setTimeout(() => {
             showSuccessToast.value = false
         }, 5000)
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Failed to apply to program:", e)
-        alert("Something went wrong while applying. Please try again.")
+        alert(e.data?.message || "Something went wrong while applying. Please try again.")
     } finally {
         isApplying.value = false
     }
 }
 
-const getIcon = (name) => {
+const getIcon = (name: string) => {
     const n = name.toLowerCase()
     if (n.includes('digit') || n.includes('tech')) return CpuChipIcon
     if (n.includes('green') || n.includes('sustain') || n.includes('agri')) return SparklesIcon

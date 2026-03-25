@@ -1,0 +1,27 @@
+# IRIP - Investment Readiness Intelligence Platform
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IRIP - Investment Readiness Intelligence Platform</title>
+    <meta name="description" content="Measure, track and improve SME investment readiness across 8 key pillars. A comprehensive platform for investors and programs to assess and compare investment opportunities." />
+    <meta name="author" content="IRIP" />
+
+    <meta property="og:title" content="IRIP - Investment Readiness Intelligence Platform" />
+    <meta property="og:description" content="Measure, track and improve SME investment readiness across 8 key pillars." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9089a9de-3ee0-4207-bcf7-2469305464b0/id-preview-511cf93d--e7a11b8a-7a00-43ec-91e5-b9a1001853d6.lovable.app-1768968640718.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@IRIP" />
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9089a9de-3ee0-4207-bcf7-2469305464b0/id-preview-511cf93d--e7a11b8a-7a00-43ec-91e5-b9a1001853d6.lovable.app-1768968640718.png" />
+    <script type="module" crossorigin src="/assets/index-gIHaF7ox.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C167elyX.css">
+  <script defer src="https://consultancyinspirecom.lovable.app/~flock.js" data-proxy-url="https://consultancyinspirecom.lovable.app/~api/analytics"></script></head>
+
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -2,11 +2,10 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   const authStore = useAuthStore()
   
   // Fast server-side / client-side hydration via cookies
-  const userCookie = useCookie('irip_auth_user')
-  if (userCookie.value) {
-    authStore.user = userCookie.value as any
-  } else {
-    // Attempt standard network restoration fallback
-    await authStore.restoreSession()
+  // Fast server-side / client-side hydration via cookies
+  const token = useCookie('irip_access_token')
+  if (token.value) {
+    // We have a token, fetch the user profile from Laravel to hydrate the store
+    await authStore.fetchUser()
   }
 })

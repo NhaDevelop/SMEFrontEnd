@@ -165,9 +165,9 @@
                         <div class="flex flex-col items-center shrink-0">
                             <div
                                 class="w-11 h-11 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-sm">
-                                {{ String(index + 1).padStart(2, '0') }}
+                                {{ String(Number(index) + 1).padStart(2, '0') }}
                             </div>
-                            <div v-if="index < program.timeline.length - 1"
+                            <div v-if="Number(index) < program.timeline.length - 1"
                                 class="w-0.5 flex-grow bg-gray-100 my-1 min-h-[24px]"></div>
                         </div>
                         <!-- Step card -->
@@ -269,7 +269,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 definePageMeta({
     layout: 'landing'
 })
@@ -298,15 +298,33 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
-const { data: allPrograms, pending } = useFetch('/api/programs')
+const api = useApi()
+const allPrograms = ref<any[]>([])
+const pending = ref(true)
 
-const program = computed(() => {
+const fetchPrograms = async () => {
+    pending.value = true
+    try {
+        const res = await api<any>('/programs')
+        allPrograms.value = res.data || res || []
+    } catch (e) {
+        console.error('Failed to fetch programs:', e)
+    } finally {
+        pending.value = false
+    }
+}
+
+onMounted(() => {
+    fetchPrograms()
+})
+
+const program = computed<any>(() => {
     if (!allPrograms.value) return null
-    const found = allPrograms.value.find(p => p.slug === route.params.slug)
+    const found = allPrograms.value.find((p: any) => p.slug === route.params.slug)
     return found || null
 })
 
-const getIcon = (name) => {
+const getIcon = (name: string) => {
     const n = name?.toLowerCase() || ''
     if (n.includes('digit') || n.includes('tech')) return CpuChipIcon
     if (n.includes('green') || n.includes('sustain') || n.includes('agri')) return SparklesIcon
@@ -316,23 +334,26 @@ const getIcon = (name) => {
     return BeakerIcon
 }
 
-const auth = useAuth()
+const auth = useAuthStore()
 const isApplying = ref(false)
 
 // Modal triggers removed
 const hasEnrolled = computed(() => {
-    if (!auth.isAuthenticated.value || auth.user.value?.role?.toLowerCase() !== 'sme' || !program.value) return false
-    const smeId = auth.user.value?.company?.id || auth.user.value.id
-    return program.value.enrolledSMEs?.some(id => String(id) === String(smeId))
+    const userRole = auth.user?.role
+    if (!auth.isAuthenticated || String(userRole).toLowerCase() !== 'sme' || !program.value) return false
+    const smeId = auth.user?.company?.id || auth.user?.id
+    return program.value.enrolled_smes?.some((id: any) => String(id) === String(smeId)) || 
+           program.value.enrolledSMEs?.some((id: any) => String(id) === String(smeId))
 })
 
 const handleApply = async () => {
-    if (!auth.isAuthenticated.value) {
+    if (!auth.isAuthenticated) {
         useRouter().push({ path: '/login', query: { redirect: route.fullPath } })
         return
     }
 
-    if (auth.user.value?.role?.toLowerCase() !== 'sme') {
+    const userRole = auth.user?.role
+    if (String(userRole).toLowerCase() !== 'sme') {
         alert("Only SME accounts can apply to programs.")
         return
     }
@@ -341,30 +362,21 @@ const handleApply = async () => {
 
     isApplying.value = true
     try {
-        const smeId = auth.user.value?.company?.id || auth.user.value.id
-
-        await $fetch('/api/sme/programs/apply', {
-            method: 'POST',
-            body: {
-                programId: program.value.id,
-                smeId: smeId
-            }
+        await api(`/programs/${program.value.id}/apply`, {
+            method: 'POST'
         })
 
-        // Force a refresh of the program data to trigger the reactive 'enrolled' state
-        const { data } = await useFetch('/api/programs')
-        if (data.value) {
-            allPrograms.value = data.value
-        }
+        // Refresh programs data
+        await fetchPrograms()
 
         showSuccessToast.value = true
         setTimeout(() => {
             showSuccessToast.value = false
         }, 5000)
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Failed to apply to program:", e)
-        alert("Something went wrong while applying. Please try again.")
+        alert(e.data?.message || "Something went wrong while applying. Please try again.")
     } finally {
         isApplying.value = false
     }

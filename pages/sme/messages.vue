@@ -284,9 +284,29 @@ definePageMeta({
     middleware: ['auth']
 })
 
+
+// Types
+interface Message {
+    id: number | string
+    senderId: number | string
+    recipientId: number | string
+    senderName: string
+    senderEmail: string
+    recipientName: string
+    recipientEmail: string
+    subject: string
+    preview: string
+    content: string
+    date: string
+    fullDate: string
+    read: boolean
+    sender: string
+    recipient: string
+}
+
 // State
 const activeFolder = ref<'inbox' | 'sent' | 'programs'>('inbox')
-const selectedMessage = ref<any>(null)
+const selectedMessage = ref<Message | null>(null)
 const isComposeOpen = ref(false)
 
 const newMessage = ref({
@@ -296,8 +316,8 @@ const newMessage = ref({
 })
 
 // Dynamic Data
-const inbox = ref<any[]>([])
-const sent = ref<any[]>([])
+const inbox = ref<Message[]>([])
+const sent = ref<Message[]>([])
 const loading = ref(false)
 const authStore = useAuthStore()
 
@@ -324,7 +344,7 @@ const fetchEnrolledPrograms = async () => {
 // Computed
 const filteredMessages = computed(() => activeFolder.value === 'inbox' ? inbox.value : sent.value)
 
-const inboxUnreadCount = computed(() => inbox.value.filter(m => !m.read).length)
+const inboxUnreadCount = computed(() => inbox.value.filter((m: Message) => !m.read).length)
 
 const isValidMessage = computed(() => {
     return newMessage.value.recipient.includes('@') &&
@@ -335,53 +355,35 @@ const isValidMessage = computed(() => {
 // Fetch Data
 const fetchMessages = async () => {
     loading.value = true
+    const api = useApi()
     try {
-        const userId = authStore.user?.id
-        // We'll simulate fetching all messages involved with this user's email
-        // In a real database, we'd query where sender == me OR recipient == me
-
-        // For our unified mock db, we rely on the users list to map emails
-        const { data: users } = await useFetch('/api/admin/users')
-        const allUsers = users.value?.users || []
-
-        // Find my email
-        const me = (allUsers as any[]).find((u: any) => u.id === userId) || authStore.user
-
-        // Fetch all messages from DB (since our get endpoint currently expects a chatId, we'll fetch direct for now, or adapt GET)
-        // Let's use generic call approach passing our email mapping
-        let allMessages: any[] = []
-        try {
-            // Note: DB structure might be flat, we'll adapt depending on schema
-            const res = await $fetch('/api/messages')
-            allMessages = Array.isArray(res) ? res : []
-        } catch (e) { /* fallback if api not ready for bare get */ }
+        const response = await api<any>('/messages')
+        const allMessages = response.data || response || []
 
         // Format to UI structure
-        const formatted = allMessages.map(m => {
-            const senderUser = (allUsers as any[]).find((u: any) => u.id === m.senderId)
-            const recpUser = (allUsers as any[]).find((u: any) => u.id === m.recipientId)
-
+        const formatted = allMessages.map((m: any) => {
+            const isMeSender = m.sender_id === authStore.user?.id
             return {
                 id: m.id,
-                senderId: m.senderId,
-                recipientId: m.recipientId,
-                senderName: senderUser?.name || 'Unknown User',
-                senderEmail: senderUser?.email || m.senderEmail,
-                recipientName: recpUser?.name || 'Unknown User',
-                recipientEmail: recpUser?.email || m.recipientEmail,
+                senderId: m.sender_id,
+                recipientId: m.receiver_id,
+                senderName: m.sender?.full_name || 'System',
+                senderEmail: m.sender?.email || '',
+                recipientName: m.receiver?.full_name || 'Recipient',
+                recipientEmail: m.receiver?.email || '',
                 subject: m.subject || 'Direct Message',
-                preview: m.text.substring(0, 60) + '...',
-                content: m.text,
-                date: new Date(m.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                fullDate: new Date(m.timestamp).toLocaleString(),
+                preview: m.content.substring(0, 60) + '...',
+                content: m.content,
+                date: new Date(m.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                fullDate: new Date(m.created_at).toLocaleString(),
                 read: m.read || false,
-                sender: senderUser?.name || m.senderEmail,
-                recipient: recpUser?.name || m.recipientEmail,
+                sender: m.sender?.full_name || 'System',
+                recipient: m.receiver?.full_name || 'Recipient',
             }
         })
 
-        inbox.value = formatted.filter(m => m.recipientEmail === me?.email)
-        sent.value = formatted.filter(m => m.senderEmail === me?.email)
+        inbox.value = formatted.filter((m: Message) => m.recipientId === authStore.user?.id)
+        sent.value = formatted.filter((m: Message) => m.senderId === authStore.user?.id)
 
     } catch (e) {
         console.error('Failed to fetch messages', e)
@@ -397,25 +399,27 @@ onMounted(() => {
 
 // Actions
 const sendMessage = async () => {
+    const api = useApi()
     try {
         const userId = authStore.user?.id
-        const userEmail = authStore.user?.email
-
+        
         // Attempt to find recipient user ID
-        const { data: users } = await useFetch('/api/admin/users')
-        const allUsers = users.value?.users || []
-        const targetUser = (allUsers as any[]).find((u: any) => u.email === newMessage.value.recipient)
+        const usersRes = await api<any>('/admin/users')
+        const allUsers = usersRes.data || usersRes || []
+        const targetUser = allUsers.find((u: any) => u.email === newMessage.value.recipient)
 
-        await $fetch('/api/messages', {
+        if (!targetUser) {
+            alert('Recipient not found. Please check the email address.')
+            return
+        }
+
+        await api('/messages', {
             method: 'POST',
             body: {
-                senderId: userId,
-                senderEmail: userEmail,
-                recipientId: targetUser?.id || 0,
-                recipientEmail: newMessage.value.recipient,
-                subject: newMessage.value.subject,
-                text: newMessage.value.content,
-                chatId: `chat_${userId}_${targetUser?.id || 'unknown'}`
+                receiver_id: targetUser.id,
+                content: newMessage.value.content,
+                chat_id: `chat_${userId}_${targetUser.id}`,
+                subject: newMessage.value.subject // Note: Backend store doesn't explicitly mention subject in validated, but it's good to send
             }
         })
 
@@ -423,9 +427,9 @@ const sendMessage = async () => {
         closeCompose()
         activeFolder.value = 'sent'
 
-    } catch (e) {
+    } catch (e: any) {
         console.error('Failed to send message', e)
-        alert('Failed to send message. See console.')
+        alert(e.data?.message || 'Failed to send message.')
     }
 }
 

@@ -159,13 +159,11 @@ const templatePillars = computed(() => {
     const allPillars = adminStore.frameworkSettings;
 
     // Get questions for this template
-    const templateQuestions = adminStore.questions.filter(q => q.templateId === props.template.id);
+    const templateQuestions = adminStore.questions.filter(q => String(q.templateId) === String(props.template.id));
 
     // Map pillars with counts
-    // For simpler logic matching the "questions count" badge in screenshot, we count actual questions.
-
     return allPillars.map(p => {
-        const count = templateQuestions.filter(q => q.pillarId === p.id).length;
+        const count = templateQuestions.filter(q => String(q.pillarId) === String(p.id)).length;
         return {
             ...p,
             questionCount: count

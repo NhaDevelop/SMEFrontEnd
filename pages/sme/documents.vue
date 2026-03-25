@@ -353,9 +353,11 @@ const categoryBadgeClass = (category: string) => {
 // ── Load Documents from Server ────────────────────────────────────────────────
 const loadDocuments = async () => {
     loadingDocs.value = true
+    const api = useApi()
     try {
-        const data = await $fetch<{ documents: Doc[] }>(`/api/documents?smeId=${smeId.value}`)
-        documents.value = data.documents || []
+        const response = await api<any>('/documents')
+        const data = response.data || response || {}
+        documents.value = data.documents || data || []
     } catch (e) {
         console.error('Failed to load documents:', e)
         documents.value = []
@@ -394,6 +396,7 @@ const uploadDocument = async () => {
     if (!newDocument.value.file || !newDocument.value.name) return
     uploadError.value = ''
     uploading.value = true
+    const api = useApi()
 
     try {
         const formData = new FormData()
@@ -401,9 +404,8 @@ const uploadDocument = async () => {
         formData.append('name', newDocument.value.name)
         formData.append('category', newDocument.value.category)
         formData.append('description', newDocument.value.description)
-        formData.append('smeId', String(smeId.value))
 
-        await $fetch('/api/documents', {
+        await api('/documents', {
             method: 'POST',
             body: formData
         })
@@ -415,7 +417,7 @@ const uploadDocument = async () => {
         newDocument.value = { file: null, name: '', description: '', category: 'General' }
         isUploadModalOpen.value = false
     } catch (e: any) {
-        uploadError.value = e?.data?.statusMessage || 'Upload failed. Please try again.'
+        uploadError.value = e?.data?.message || 'Upload failed. Please try again.'
     } finally {
         uploading.value = false
     }
@@ -425,8 +427,9 @@ const uploadDocument = async () => {
 const deleteDocument = async (id: string) => {
     if (!confirm('Delete this document? This cannot be undone.')) return
     deletingId.value = id
+    const api = useApi()
     try {
-        await $fetch(`/api/documents/${id}`, { method: 'DELETE' })
+        await api(`/documents/${id}`, { method: 'DELETE' })
         documents.value = documents.value.filter(d => d.id !== id)
     } catch (e) {
         alert('Failed to delete document.')

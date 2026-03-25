@@ -98,9 +98,9 @@ const auth = useAuth()
 const route = useRoute()
 
 const dashboardRoute = computed(() => {
-    const role = auth.user?.value?.role?.toLowerCase()
-    if (role === 'admin' || role === 'administrator') return '/admin/dashboard'
-    if (role === 'investor') return '/investor/dashboard'
+    const role = auth.user?.value?.role?.toUpperCase()
+    if (role === 'ADMIN' || role === 'ADMINISTRATOR') return '/admin/dashboard'
+    if (role === 'INVESTOR') return '/investor/dashboard'
     return '/sme/dashboard'
 })
 

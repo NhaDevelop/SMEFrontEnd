@@ -25,7 +25,7 @@
               <ClockIcon class="w-5 h-5 text-yellow-500" />
             </div>
             <h3 class="text-gray-500 font-medium text-sm mb-4">Pending</h3>
-            <span class="text-3xl font-bold text-yellow-600">{{ pendingRegistrations.length }}</span>
+            <span class="text-3xl font-bold text-yellow-600">{{ adminStore.pendingUsers.length }}</span>
           </div>
           <StatCard title="SMEs" :value="adminStore.userStats?.smes || 0" />
           <StatCard title="Investors" :value="adminStore.userStats?.investors || 0" />
@@ -39,9 +39,9 @@
               :class="[activeTab === 'pending' ? 'border-cyan-600 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'pb-3 px-1 text-sm font-medium border-b-2 transition-colors flex items-center gap-2']">
               <ClockIcon class="w-4 h-4" />
               Pending Approval
-              <span v-if="pendingRegistrations.length > 0"
+              <span v-if="adminStore.pendingUsers.length > 0"
                 class="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                {{ pendingRegistrations.length }}
+                {{ adminStore.pendingUsers.length }}
               </span>
             </button>
             <button @click="activeTab = 'approved'"
@@ -216,12 +216,13 @@ const registrationStats = reactive({
 })
 
 const filteredPending = computed(() => {
-  return pendingRegistrations.value.filter(r => {
-    const matchSearch = !searchQuery.value ||
-      r.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      r.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (r.company || '').toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchRole = !roleFilter.value || r.role === roleFilter.value
+  return adminStore.pendingUsers.filter(r => {
+    const nameMatch = r.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) || false
+    const emailMatch = r.email?.toLowerCase().includes(searchQuery.value.toLowerCase()) || false
+    const companyMatch = r.company?.toLowerCase().includes(searchQuery.value.toLowerCase()) || false
+    
+    const matchSearch = !searchQuery.value || nameMatch || emailMatch || companyMatch
+    const matchRole = !roleFilter.value || r.role?.toLowerCase() === roleFilter.value.toLowerCase()
     return matchSearch && matchRole
   })
 })
@@ -236,15 +237,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 const loadRegistrations = async () => {
   loadingRegs.value = true
   try {
-    const data = await $fetch<{ pending: Registration[], approved: Registration[], stats: any }>('/api/registrations')
-    pendingRegistrations.value = data.pending || []
-    registrationStats.total = data.stats?.total || 0
-    registrationStats.pending = data.stats?.pending || 0
-    registrationStats.approved = data.stats?.approved || 0
-    registrationStats.smes = data.stats?.smes || 0
-    registrationStats.investors = data.stats?.investors || 0
-    registrationStats.approvedSmes = data.stats?.approvedSmes || 0
-    registrationStats.approvedInvestors = data.stats?.approvedInvestors || 0
+    await adminStore.fetchPendingUsers()
   } catch (e) {
     console.error('Failed to load registrations:', e)
   } finally {
@@ -256,36 +249,10 @@ const handleApprove = async (id: string) => {
   if (!confirm('Approve this user?')) return
   processingId.value = id
   try {
-    const res = await $fetch<{ success: boolean, registration: any }>(`/api/registrations/${id}`, {
-      method: 'PATCH',
-      body: { action: 'approve' }
-    })
-
-    const approvedReg = pendingRegistrations.value.find(r => r.id === id)
-    pendingRegistrations.value = pendingRegistrations.value.filter(r => r.id !== id)
-
-    // Reload users from API (now reads approved registrations from storage)
-    await adminStore.fetchUsersData()
-
-    // Add audit log entry
-    if (res.registration) {
-      const reg = res.registration
-      adminStore.auditLogs.unshift({
-        id: Date.now(),
-        admin: 'Super Admin',
-        action: 'Approved Registration',
-        target: `${reg.name} (${reg.email})`,
-        timestamp: new Date().toLocaleString(),
-        details: `Approved ${reg.role?.toUpperCase()} registration for ${reg.company || reg.name}`
-      })
-    }
-
-    // Refresh pending/stat counters
-    await loadRegistrations()
-
-    showToast(`${approvedReg?.name || 'User'} approved and added to the platform!`)
-  } catch {
-    showToast('Failed to approve user.', 'error')
+    await adminStore.approveUser(id)
+    showToast('User approved and added to the platform!')
+  } catch (e: any) {
+    showToast(e.message || 'Failed to approve user.', 'error')
   } finally {
     processingId.value = null
   }
@@ -295,29 +262,10 @@ const handleReject = async (id: string) => {
   if (!confirm('Reject this registration?')) return
   processingId.value = id
   try {
-    const rejected = pendingRegistrations.value.find(r => r.id === id)
-    await $fetch(`/api/registrations/${id}`, {
-      method: 'PATCH',
-      body: { action: 'reject' }
-    })
-    pendingRegistrations.value = pendingRegistrations.value.filter(r => r.id !== id)
-
-    // Add audit log entry
-    if (rejected) {
-      adminStore.auditLogs.unshift({
-        id: Date.now(),
-        admin: 'Super Admin',
-        action: 'Rejected Registration',
-        target: `${rejected.name} (${rejected.email})`,
-        timestamp: new Date().toLocaleString(),
-        details: `Rejected ${rejected.role?.toUpperCase()} registration request`
-      })
-    }
-
-    await loadRegistrations()
+    await adminStore.rejectUser(id)
     showToast('Registration rejected.')
-  } catch {
-    showToast('Failed to reject registration.', 'error')
+  } catch (e: any) {
+    showToast(e.message || 'Failed to reject registration.', 'error')
   } finally {
     processingId.value = null
   }

@@ -166,7 +166,7 @@
                                 <div
                                     class="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
                                     <span class="text-emerald-700 font-bold text-sm">{{ prog.name?.charAt(0) || 'P'
-                                    }}</span>
+                                        }}</span>
                                 </div>
                                 <div>
                                     <div class="text-sm font-semibold text-gray-900">{{ prog.name }}</div>
@@ -305,7 +305,7 @@ const enrolledPrograms = ref<any[]>([])
 
 const fetchEnrolledPrograms = async () => {
     try {
-        const res = await $fetch<any>('/api/programs')
+        const res = await useApi()('/investor/programs')
         enrolledPrograms.value = Array.isArray(res) ? res : (res?.programs || [])
     } catch (e) {
         console.error('[Investor Messages] Failed to fetch programs:', e)
@@ -328,26 +328,18 @@ const fetchMessages = async () => {
     loading.value = true
     try {
         const userId = authStore.user?.id
-        // We'll simulate fetching all messages involved with this user's email
-        // In a real database, we'd query where sender == me OR recipient == me
 
-        // For our unified mock db, we rely on the users list to map emails
-        const { data: users } = await useFetch('/api/admin/users')
-        const allUsers = users.value?.users || []
+        // Fetch users using useApi()(). Laravel response is wrapped in data, useApi unwraps it.
+        const usersResponse = await useApi()('/admin/users')
+        const allUsers = usersResponse || []
 
-        // Find my email
         const me = (allUsers as any[]).find((u: any) => u.id === userId) || authStore.user
 
-        // Fetch all messages from DB (since our get endpoint currently expects a chatId, we'll fetch direct for now, or adapt GET)
-        // Let's use generic call approach passing our email mapping
         let allMessages: any[] = []
         try {
-            // Note: DB structure might be flat, we'll adapt depending on schema
-            const res = await $fetch('/api/messages')
-            allMessages = Array.isArray(res) ? res : []
-        } catch (e) { /* fallback if api not ready for bare get */ }
+            allMessages = await useApi()('/messages')
+        } catch (e) { /* fallback if api not ready */ }
 
-        // Format to UI structure
         const formatted = allMessages.map(m => {
             const senderUser = (allUsers as any[]).find((u: any) => u.id === m.senderId)
             const recpUser = (allUsers as any[]).find((u: any) => u.id === m.recipientId)
@@ -356,18 +348,18 @@ const fetchMessages = async () => {
                 id: m.id,
                 senderId: m.senderId,
                 recipientId: m.recipientId,
-                senderName: senderUser?.name || 'Unknown User',
+                senderName: senderUser?.full_name || senderUser?.name || 'Unknown User',
                 senderEmail: senderUser?.email || m.senderEmail,
-                recipientName: recpUser?.name || 'Unknown User',
+                recipientName: recpUser?.full_name || recpUser?.name || 'Unknown User',
                 recipientEmail: recpUser?.email || m.recipientEmail,
                 subject: m.subject || 'Direct Message',
-                preview: m.text.substring(0, 60) + '...',
+                preview: m.text?.substring(0, 60) + '...',
                 content: m.text,
-                date: new Date(m.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                fullDate: new Date(m.timestamp).toLocaleString(),
+                date: new Date(m.timestamp || m.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                fullDate: new Date(m.timestamp || m.created_at).toLocaleString(),
                 read: m.read || false,
-                sender: senderUser?.name || m.senderEmail,
-                recipient: recpUser?.name || m.recipientEmail,
+                sender: senderUser?.full_name || senderUser?.name || m.senderEmail,
+                recipient: recpUser?.full_name || recpUser?.name || m.recipientEmail,
             }
         })
 
@@ -392,12 +384,11 @@ const sendMessage = async () => {
         const userId = authStore.user?.id
         const userEmail = authStore.user?.email
 
-        // Attempt to find recipient user ID
-        const { data: users } = await useFetch('/api/admin/users')
-        const allUsers = users.value?.users || []
+        const usersResponse = await useApi()('/admin/users')
+        const allUsers = usersResponse || []
         const targetUser = (allUsers as any[]).find((u: any) => u.email === newMessage.value.recipient)
 
-        await $fetch('/api/messages', {
+        await useApi()('/messages', {
             method: 'POST',
             body: {
                 senderId: userId,

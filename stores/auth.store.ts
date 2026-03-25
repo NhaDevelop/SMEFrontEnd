@@ -14,8 +14,30 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.user,
     role: (state) => state.user?.role,
     userRole: (state) => state.user?.role,
-    companyInfo: (state) => state.user?.company
+    companyInfo: (state) => {
+      if (!state.user) return null
+      
+      if (state.user.role === 'SME' && state.user.sme_profile) {
+        return {
+          id: state.user.sme_profile.id,
+          name: state.user.sme_profile.company_name,
+          industry: state.user.sme_profile.industry,
+          readinessScore: state.user.sme_profile.readiness_score
+        }
+      }
+      
+      if (state.user.role === 'INVESTOR' && state.user.investor_profile) {
+        return {
+          id: state.user.investor_profile.id,
+          name: state.user.investor_profile.organization_name,
+          industry: state.user.investor_profile.industry
+        }
+      }
+      
+      return state.user.company || null
+    }
   },
+
 
   actions: {
     async login(credentials: any) {
@@ -23,7 +45,23 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       try {
         const response = await authService.login(credentials)
-        this.user = response.user
+        
+        // Persist token for session restoration
+        const token = response.access_token
+        const tokenCookie = useCookie('irip_access_token', { maxAge: 60 * 60 * 24 * 7 }) // 7 days
+        tokenCookie.value = token
+        
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('irip_access_token', token)
+        }
+
+        // Now fetch the user profile since it's not in the login response
+        await this.fetchUser()
+        
+        if (this.user && typeof localStorage !== 'undefined') {
+          localStorage.setItem('irip_user_data', JSON.stringify(this.user))
+        }
+
         return response
       } catch (e: any) {
         this.error = e.message || 'Login failed'
@@ -35,6 +73,8 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       const authCookie = useCookie('irip_auth_user')
+      const tokenCookie = useCookie('irip_access_token')
+      
       try {
         await authService.logout()
       } finally {
@@ -43,6 +83,14 @@ export const useAuthStore = defineStore('auth', {
         dashboardStore.$reset()
         this.user = null
         authCookie.value = null
+        tokenCookie.value = null
+        
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('irip_access_token')
+          localStorage.removeItem('irip_user_data')
+          localStorage.removeItem('irip_auth_user')
+        }
+        
         navigateTo('/')
       }
     },

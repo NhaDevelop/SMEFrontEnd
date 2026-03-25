@@ -298,13 +298,16 @@ import {
     ExclamationCircleIcon
 } from '@heroicons/vue/24/outline'
 
+import { authService } from '~/modules/auth/auth.service'
+import { adminService } from '~/modules/admin/admin.service'
+
 definePageMeta({ layout: false })
 
 const sectors = ref<any[]>([])
 
 onMounted(async () => {
     try {
-        sectors.value = await $fetch<any[]>('/api/admin/sectors')
+        sectors.value = await adminService.fetchPublicSectors()
     } catch (e) {
         console.error('Failed to load sectors', e)
     }
@@ -330,13 +333,13 @@ const form = reactive({
 
 const roleOptions = [
     {
-        value: 'sme',
+        value: 'SME',
         label: 'SME / Business',
         icon: BuildingOffice2Icon,
         description: 'I represent a small or medium enterprise seeking investment readiness assessment'
     },
     {
-        value: 'investor',
+        value: 'INVESTOR',
         label: 'Investor / Program',
         icon: BriefcaseIcon,
         description: 'I am an investor or program manager looking to evaluate SMEs'
@@ -364,27 +367,24 @@ const handleSubmit = async () => {
     error.value = ''
     loading.value = true
     try {
-        await $fetch('/api/registrations', {
-            method: 'POST',
-            body: {
-                name: form.name,
-                email: form.email,
-                role: form.role,
-                company: form.company,
-                phone: form.phone,
-                website: form.website,
-                industry: form.industry,
-                employees: form.employees,
-                years: form.years,
-                regNo: form.regNo,
-                address: form.address,
-                password: form.password
-            }
+        await authService.register({
+            full_name: form.name,
+            email: form.email,
+            role: form.role,
+            company_name: form.company,
+            phone: form.phone,
+            website_url: form.website,
+            industry: form.industry,
+            employees: form.employees,
+            years_in_business: form.years,
+            registration_no: form.regNo,
+            address: form.address,
+            password: form.password,
+            password_confirmation: form.confirmPassword
         })
         submitted.value = true
-    } catch (e) {
-        const err = e as any
-        error.value = err?.data?.statusMessage || 'Something went wrong. Please try again.'
+    } catch (e: any) {
+        error.value = e?.data?.message || e?.message || 'Something went wrong. Please try again.'
     } finally {
         loading.value = false
     }

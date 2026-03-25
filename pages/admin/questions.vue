@@ -53,7 +53,7 @@
                 <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
                     <div>
                         <p class="text-xs font-medium text-gray-500">Last Updated</p>
-                        <p class="text-lg font-bold text-gray-900 mt-0.5">{{ selectedTemplate?.updatedAt || 'N/A' }}</p>
+                        <p class="text-lg font-bold text-gray-900 mt-0.5">{{ selectedTemplate?.updatedAt ? formatDateTime(selectedTemplate.updatedAt) : 'N/A' }}</p>
                     </div>
                 </div>
             </div>
@@ -119,9 +119,14 @@
                             @click="toggleGroup(group.pillarId)">
                             <div class="flex items-center gap-3">
                                 <h3 class="text-base font-bold text-gray-900">{{ group.pillarName }}</h3>
-                                <span class="bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md text-xs font-semibold">
-                                    {{ group.questions.length }} questions
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md text-xs font-semibold">
+                                        {{ group.questions.length }} questions
+                                    </span>
+                                    <span :class="['px-2 py-0.5 rounded-md text-xs font-semibold border', group.totalWeight > 100 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-100 text-gray-700 border-gray-200']">
+                                        Weight: {{ group.totalWeight }}% / 100%
+                                    </span>
+                                </div>
                             </div>
                             <ChevronDownIcon class="w-5 h-5 text-gray-400 transition-transform duration-200"
                                 :class="{ 'transform rotate-180': expandedPillars.includes(group.pillarId) }" />
@@ -129,7 +134,7 @@
 
                         <!-- Questions List -->
                         <div v-show="expandedPillars.includes(group.pillarId)" class="divide-y divide-gray-100">
-                            <div v-for="q in group.questions" :key="q.id"
+                            <div v-for="(q, qIndex) in group.questions" :key="q.id"
                                 class="p-4 hover:bg-gray-50 transition-colors group relative">
                                 <div class="flex items-start gap-3">
                                     <!-- Drag Handle -->
@@ -147,8 +152,8 @@
                                         <div class="flex items-start justify-between">
                                             <div class="flex-1 pr-6">
                                                 <p class="text-gray-900 font-medium text-sm mb-2">
-                                                    <span class="text-gray-400 font-normal mr-2">{{
-                                                        q.id.toUpperCase()
+                                                    <span class="text-gray-400 font-normal mr-2">Question {{
+                                                        qIndex + 1
                                                     }}</span>
                                                     {{ q.text }}
                                                 </p>
@@ -213,8 +218,8 @@
         </div>
 
         <!-- Custom Modals -->
-        <QuestionModal :is-open="showModal" :initial-data="editingQuestion" :pillars="pillars"
-            @close="showModal = false" @save="handleSave" />
+        <QuestionModal :is-open="showModal" :initial-data="editingQuestion" :pillars="pillars" :error-message="modalError"
+            @close="closeModal" @save="handleSave" />
         <PillarWeightModal :is-open="showWeightModal" :pillars="pillars" @close="showWeightModal = false"
             @save="handleSaveWeights" />
 
@@ -250,6 +255,7 @@ const selectedPillar = ref('all')
 const showModal = ref(false)
 const showWeightModal = ref(false)
 const editingQuestion = ref<any>(null)
+const modalError = ref('')
 const expandedPillars = ref<string[]>([])
 
 const pillars = computed(() => adminStore.frameworkSettings || [])
@@ -257,8 +263,11 @@ const templates = computed(() => adminStore.templates || [])
 const selectedTemplateId = ref(route.query.templateId as string || 'temp_001')
 
 onMounted(async () => {
+    // Fetch framework settings to load the pillars structure
+    await adminStore.fetchFrameworkSettings()
+    
+    // Fetch templates and questions
     await adminStore.fetchTemplatesData()
-    // adminStore.fetchTemplatesData already calls fetchQuestionsData internally
 
     // Expand all pillars that have questions by default
     setTimeout(() => {
@@ -296,19 +305,25 @@ const groupedQuestions = computed(() => {
     if (selectedPillar.value !== 'all') {
         const pillar = pillars.value.find(p => p.id === selectedPillar.value)
         if (!pillar) return []
+        const pillarQuestions = questions.value.filter(q => q.pillarId === pillar.id)
+        const totalWeight = pillarQuestions.reduce((sum, q) => sum + Number(q.weight || 0), 0)
         return [{
             pillarId: pillar.id,
             pillarName: pillar.name,
-            questions: questions.value.filter(q => q.pillarId === pillar.id)
+            questions: pillarQuestions,
+            totalWeight: totalWeight
         }]
     }
 
     // Otherwise, show all relevant pillars
     return (relevantPillars.value || []).map(pillar => {
+        const pillarQuestions = (questions.value || []).filter(q => q.pillarId === pillar.id)
+        const totalWeight = pillarQuestions.reduce((sum, q) => sum + Number(q.weight || 0), 0)
         return {
             pillarId: pillar.id,
             pillarName: pillar.name,
-            questions: (questions.value || []).filter(q => q.pillarId === pillar.id)
+            questions: pillarQuestions,
+            totalWeight: totalWeight
         }
     }).filter(group => group.questions.length > 0)
 })
@@ -339,6 +354,7 @@ const getIconForType = (type: string) => {
 }
 
 const openCreateModal = () => {
+    modalError.value = ''
     editingQuestion.value = {
         pillarId: selectedPillar.value === 'all' ? pillars.value[0]?.id : selectedPillar.value,
         templateId: selectedTemplateId.value
@@ -347,8 +363,14 @@ const openCreateModal = () => {
 }
 
 const openEditModal = (question: any) => {
+    modalError.value = ''
     editingQuestion.value = JSON.parse(JSON.stringify(question)) // Deep copy
     showModal.value = true
+}
+
+const closeModal = () => {
+    modalError.value = ''
+    showModal.value = false
 }
 
 // Open Weight Configuration Modal
@@ -368,12 +390,30 @@ const handleDelete = async (id: string) => {
 }
 
 const handleSave = async (data: any) => {
-    if (data.id) {
-        await adminStore.updateQuestion(data)
-    } else {
-        await adminStore.addQuestion(data)
+    modalError.value = ''
+    // Validation check: ensure total weight of pillar does not exceed 100%
+    const pillarQuestions = adminStore.questions.filter(q => q.pillarId === data.pillarId && q.templateId === data.templateId)
+    const currentTotal = pillarQuestions.reduce((sum, q) => {
+        // Exclude the currently edited question from the total
+        if (data.id && q.id === data.id) return sum
+        return sum + Number(q.weight || 0)
+    }, 0)
+    
+    if (currentTotal + Number(data.weight) > 100) {
+        modalError.value = `Cannot save question. Total weight would become ${currentTotal + Number(data.weight)}%, which exceeds the 100% limit.`
+        return
     }
-    showModal.value = false
+
+    try {
+        if (data.id) {
+            await adminStore.updateQuestion(data)
+        } else {
+            await adminStore.addQuestion(data)
+        }
+        closeModal()
+    } catch (error: any) {
+        alert(error.message || 'Failed to save question. Please try again.')
+    }
 }
 
 const handleSaveWeights = async (newPillars: any[]) => {

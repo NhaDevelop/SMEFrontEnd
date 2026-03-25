@@ -1,22 +1,34 @@
 import type { User, AuthResponse } from './auth.types'
+import { useApi } from '~/composables/useApi'
 
 export class AuthRepository {
   async login(credentials: any): Promise<AuthResponse> {
-    return await $fetch<AuthResponse>('/api/auth/login', {
+    const api = useApi()
+    return await api<AuthResponse>('/auth/login', {
       method: 'POST',
       body: credentials
     })
   }
 
   async logout(): Promise<void> {
-    return await $fetch<void>('/api/auth/logout', { method: 'POST' })
+    const api = useApi()
+    await api('/auth/logout', { method: 'POST' })
   }
 
   async getUser(): Promise<User | null> {
+    const api = useApi()
     try {
-      return await $fetch<User>('/api/auth/user')
+      return await api<User>('/auth/profile')
     } catch {
       return null
     }
+  }
+
+  async register(data: any): Promise<void> {
+    const api = useApi()
+    await api('/auth/register', {
+      method: 'POST',
+      body: data
+    })
   }
 }

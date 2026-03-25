@@ -32,16 +32,16 @@
                 <!-- Author info -->
                 <div :class="isMe(comment) ? 'flex-row-reverse' : 'flex-row'" class="flex items-center gap-2">
                     <!-- Avatar -->
-                    <div :class="getRoleAvatarClass(comment.authorRole)"
+                    <div :class="getRoleAvatarClass(comment.user?.role || comment.authorRole)"
                         class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
-                        {{ comment.authorName?.charAt(0)?.toUpperCase() || '?' }}
+                        {{ (comment.user?.full_name || comment.authorName)?.charAt(0)?.toUpperCase() || '?' }}
                     </div>
-                    <span class="text-xs font-medium text-gray-700">{{ comment.authorName }}</span>
-                    <span :class="getRoleBadgeClass(comment.authorRole)"
+                    <span class="text-xs font-medium text-gray-700">{{ comment.user?.full_name || comment.authorName }}</span>
+                    <span :class="getRoleBadgeClass(comment.user?.role || comment.authorRole)"
                         class="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide">
-                        {{ comment.authorRole }}
+                        {{ comment.user?.role || comment.authorRole }}
                     </span>
-                    <span class="text-[10px] text-gray-400">{{ formatTime(comment.timestamp) }}</span>
+                    <span class="text-[10px] text-gray-400">{{ formatTime(comment.created_at || comment.timestamp) }}</span>
                 </div>
 
                 <!-- Bubble -->
@@ -51,7 +51,7 @@
                         ? 'bg-teal-600 text-white rounded-br-sm'
                         : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
                 ]">
-                    {{ comment.text }}
+                    {{ comment.content || comment.text }}
                 </div>
             </div>
         </div>
@@ -90,26 +90,28 @@ const scrollEl = ref<HTMLElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
 
 const isMe = (comment: any) =>
-    String(comment.authorId) === String(authStore.user?.id)
+    String(comment.user_id || comment.authorId) === String(authStore.user?.id)
 
-const getRoleAvatarClass = (role: string) => {
-    switch (role) {
-        case 'admin': return 'bg-purple-100 text-purple-700'
-        case 'investor': return 'bg-emerald-100 text-emerald-700'
-        default: return 'bg-teal-100 text-teal-700'
-    }
+const getRoleAvatarClass = (role?: string) => {
+    if (!role) return 'bg-teal-100 text-teal-700'
+    const r = role.toLowerCase()
+    if (r.includes('admin')) return 'bg-purple-100 text-purple-700'
+    if (r.includes('investor')) return 'bg-emerald-100 text-emerald-700'
+    return 'bg-teal-100 text-teal-700'
 }
 
-const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-        case 'admin': return 'bg-purple-50 text-purple-600'
-        case 'investor': return 'bg-emerald-50 text-emerald-600'
-        default: return 'bg-teal-50 text-teal-600'
-    }
+const getRoleBadgeClass = (role?: string) => {
+    if (!role) return 'bg-teal-50 text-teal-600'
+    const r = role.toLowerCase()
+    if (r.includes('admin')) return 'bg-purple-50 text-purple-600'
+    if (r.includes('investor')) return 'bg-emerald-50 text-emerald-600'
+    return 'bg-teal-50 text-teal-600'
 }
 
-const formatTime = (iso: string) => {
+const formatTime = (iso?: string) => {
+    if (!iso) return '...'
     const d = new Date(iso)
+    if (isNaN(d.getTime())) return iso || '...'
     const now = new Date()
     const isToday = d.toDateString() === now.toDateString()
     return isToday
@@ -122,11 +124,25 @@ const scrollToBottom = async () => {
     if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight
 }
 
+const findComment = (commentsArray: any[], id: number): any | null => {
+    for (const comment of commentsArray) {
+        if (comment.id === id) return comment
+        if (comment.replies) {
+            const found = findComment(comment.replies, id)
+            if (found) return found
+        }
+    }
+    return null
+}
+
+const replyTo = ref<any | null>(null)
+
 const fetchComments = async () => {
+    if (!props.programId) return
     loading.value = true
     try {
-        const res = await $fetch<any[]>(`/api/programs/${props.programId}/comments`)
-        comments.value = res || []
+        const res = await useApi()(`/programs/${props.programId}/comments`)
+        comments.value = Array.isArray(res) ? res : (res?.data || [])
         await scrollToBottom()
     } catch (e) {
         console.error('[ProgramCommentThread] Failed to load comments:', e)
@@ -139,21 +155,21 @@ const postComment = async () => {
     if (!newText.value.trim() || sending.value) return
     sending.value = true
     const text = newText.value.trim()
-    newText.value = ''
-    if (textareaEl.value) textareaEl.value.style.height = 'auto'
 
     try {
-        const role = authStore.user?.role || 'sme'
-        await $fetch(`/api/programs/${props.programId}/comments`, {
+        const response: any = await useApi()(`/programs/${props.programId}/comments`, {
             method: 'POST',
             body: {
-                authorId: authStore.user?.id,
-                authorName: authStore.user?.name || authStore.user?.email,
-                authorRole: `${role}`.toLowerCase().includes('admin') ? 'admin' : `${role}`.toLowerCase(),
-                text
+                content: text
             }
         })
-        await fetchComments()
+
+        const newComment = response.data || response
+        comments.value.unshift(newComment)
+
+        newText.value = ''
+        if (textareaEl.value) textareaEl.value.style.height = 'auto'
+        await scrollToBottom()
     } catch (e) {
         console.error('[ProgramCommentThread] Failed to post comment:', e)
     } finally {

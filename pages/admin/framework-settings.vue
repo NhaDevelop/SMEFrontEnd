@@ -13,9 +13,9 @@
                         <ArrowPathIcon class="w-4 h-4" />
                         Reset
                     </button>
-                    <button @click="handleSave" :disabled="isSaving || !isTotalValid"
+                    <button @click="handleSave" :disabled="isSaving || !canSave"
                         class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        <CloudArrowUpIcon class="w-4 h-4" />
+                       <CloudArrowUpIcon class="w-4 h-4" />
                         {{ isSaving ? 'Saving...' : 'Save Changes' }}
                     </button>
                 </div>
@@ -116,6 +116,11 @@
                                         class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 </div>
                             </div>
+                        </div>
+
+                        <div v-if="!isThresholdsValid" class="mt-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-3">
+                            <ExclamationTriangleIcon class="w-5 h-5 mt-0.5 flex-shrink-0" />
+                            <p class="text-sm font-medium">{{ thresholdErrorMessage }}</p>
                         </div>
 
                         <div class="mt-12 pt-8 border-t border-gray-100" v-if="thresholds.length >= 4">
@@ -281,7 +286,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { CloudArrowUpIcon, ArrowPathIcon, InformationCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { CloudArrowUpIcon, ArrowPathIcon, InformationCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { useAdminStore } from '~/stores/admin.store'
 import EditIndicatorsModal from '~/components/AdminEditIndicatorsModal.vue'
 
@@ -331,7 +336,52 @@ const totalWeight = computed(() => pillars.value.reduce((sum: number, p: any) =>
 const isTotalValid = computed(() => Math.abs(totalWeight.value - 100) < 0.1)
 
 const thresholds = ref<{ id: string, label: string, min: number, max: number, colorBg: string }[]>([])
+ 
+const thresholdErrorMessage = ref('')
+const isThresholdsValid = computed(() => {
+    if (thresholds.value.length === 0) return true
+    
+    const sorted = [...thresholds.value].sort((a, b) => Number(a.min) - Number(b.min))
+    const first = sorted[0]
+    const last = sorted[sorted.length - 1]
+    
+    // 1. Must start at 0
+    if (!first || Number(first.min) !== 0) {
+        thresholdErrorMessage.value = 'Thresholds must start from 0'
+        return false
+    }
+    
+    // 2. Must end at 100
+    if (!last || Number(last.max) !== 100) {
+        thresholdErrorMessage.value = 'Thresholds must end at 100'
+        return false
+    }
+    
+    // 3. Must be contiguous and min < max for each
+    for (let i = 0; i < sorted.length; i++) {
+        const current = sorted[i];
+        if (!current) continue;
 
+        if (Number(current.min) >= Number(current.max)) {
+            thresholdErrorMessage.value = `Invalid range for ${current.label}: min must be less than max`;
+            return false;
+        }
+        if (i < sorted.length - 1) {
+            const next = sorted[i + 1];
+            if (!next) continue;
+
+            if (Number(current.max) !== Number(next.min) - 1) {
+                thresholdErrorMessage.value = `Gaps or overlaps detected between ${current.label} and ${next.label}. Ranges must be contiguous (e.g., 0-39, 40-59).`;
+                return false;
+            }
+        }
+    }
+    
+    thresholdErrorMessage.value = ''
+    return true
+})
+ 
+const canSave = computed(() => isTotalValid.value && isThresholdsValid.value)
 
 onMounted(async () => {
     // 1. Fetch live DB settings
@@ -406,7 +456,7 @@ const getWidth = (t: any) => {
 const getColor = (i: number) => colors[i % colors.length]
 
 // ─── SECTORS CRUD ──────────────────────────────────────────
-const sectors = ref<any[]>([])
+const sectors = computed(() => adminStore.sectors)
 const sectorsLoading = ref(false)
 const showAddSector = ref(false)
 const editingSector = ref<any>(null)
@@ -424,14 +474,23 @@ const sectorForm = ref({ name: '', description: '', color: '#16a34a' })
 const fetchSectors = async () => {
     sectorsLoading.value = true
     try {
-        sectors.value = await $fetch<any[]>('/api/admin/sectors')
-    } catch (e) { console.error(e) } finally { sectorsLoading.value = false }
+        await adminStore.fetchSectors()
+    } catch (e) { 
+        console.error(e) 
+    } finally { 
+        sectorsLoading.value = false 
+    }
 }
 
 const startEditSector = (sector: any) => {
     editingSector.value = sector
     showAddSector.value = false
-    sectorForm.value = { name: sector.name, description: sector.description || '', color: sector.color }
+    sectorForm.value = { 
+        ...sectorForm.value,
+        name: sector.name, 
+        description: sector.description || '', 
+        color: sector.color 
+    }
 }
 
 const cancelSectorForm = () => {
@@ -443,22 +502,26 @@ const cancelSectorForm = () => {
 const saveSector = async () => {
     sectorSaving.value = true
     try {
-        if (editingSector.value) {
-            await $fetch(`/api/admin/sectors/${editingSector.value.id}`, { method: 'PUT', body: sectorForm.value })
-        } else {
-            await $fetch('/api/admin/sectors', { method: 'POST', body: sectorForm.value })
+        const payload = {
+            ...sectorForm.value,
+            id: editingSector.value?.id
         }
-        await fetchSectors()
+        await adminStore.saveSector(payload)
         cancelSectorForm()
-    } catch (e) { console.error(e) } finally { sectorSaving.value = false }
+    } catch (e) { 
+        console.error(e) 
+    } finally { 
+        sectorSaving.value = false 
+    }
 }
 
 const deleteSector = async (sector: any) => {
     if (!confirm(`Delete sector "${sector.name}"? This cannot be undone.`)) return
     try {
-        await $fetch(`/api/admin/sectors/${sector.id}`, { method: 'DELETE' })
-        await fetchSectors()
-    } catch (e) { console.error(e) }
+        await adminStore.deleteSector(sector.id)
+    } catch (e) { 
+        console.error(e) 
+    }
 }
 // ────────────────────────────────────────────────────────────
 </script>

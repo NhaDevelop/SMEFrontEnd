@@ -70,7 +70,8 @@ export default {
   },
   async mounted() {
     try {
-      const settings = await $fetch('/api/admin/settings')
+      // useApi() can be used in components
+      const settings = await useApi()('/sme/settings')
       if (settings && settings.thresholds) {
         this.thresholds = settings.thresholds
       }

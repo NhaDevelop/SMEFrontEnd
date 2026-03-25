@@ -487,16 +487,18 @@ const currentSmeId = computed(() => authStore.user?.company?.id || 2)
 
 const fetchGoals = async () => {
     loading.value = true
+    const api = useApi()
     try {
-        const data = await $fetch<any[]>(`/api/sme/goals?smeId=${currentSmeId.value}`)
-        goals.value = data
+        const data = await api<any[]>('/sme/goals')
+        goals.value = data || []
 
-        // Auto-select first goal
+        // Auto-select first goal if none selected
         if (goals.value.length > 0 && !selectedGoal.value) {
-            const firstGoal = goals.value[0]
-            if (firstGoal) {
-                selectedGoal.value = firstGoal
-            }
+            selectedGoal.value = goals.value[0] || null
+        } else if (selectedGoal.value) {
+            // Update selected goal from new data
+            const updated = goals.value.find(g => g.id === selectedGoal.value?.id)
+            if (updated) selectedGoal.value = updated
         }
 
         updateFilterCounts()
@@ -508,35 +510,32 @@ const fetchGoals = async () => {
 }
 
 const updateFilterCounts = () => {
-    const active = goals.value.filter(g => g.status === 'Active' || g.status === 'PAUSED' || g.status === 'Paused' || g.status === 'ACTIVE').length
-    const achieved = goals.value.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED').length
+    const active = goals.value.filter(g => ['Active', 'ACTIVE', 'Paused', 'PAUSED'].includes(g.status)).length
+    const achieved = goals.value.filter(g => ['Achieved', 'COMPLETED'].includes(g.status)).length
 
     filters.value[0] = `Active (${active})`
     filters.value[1] = `Achieved (${achieved})`
 
     // Maintain active filter if possible
     if (activeFilter.value.startsWith('Active')) activeFilter.value = filters.value[0]
-    else activeFilter.value = filters.value[1]
+    else if (activeFilter.value.startsWith('Achieved')) activeFilter.value = filters.value[1]
 }
 
 const handleCreateGoal = async (goalData: any) => {
+    const api = useApi()
     try {
-        const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
+        const result = await api<any>('/sme/goals', {
             method: 'POST',
-            body: {
-                ...goalData,
-                smeId: currentSmeId.value
-            }
+            body: goalData
         })
 
-        if (result.success) {
-            // Re-fetch to get transformed goal from server
+        if (result) {
             await fetchGoals()
             showCreateGoalModal.value = false
         }
-    } catch (e) {
+    } catch (e: any) {
         console.error('Failed to create goal', e)
-        alert('Failed to save goal. Please try again.')
+        alert(e.data?.message || 'Failed to save goal. Please try again.')
     }
 }
 
@@ -547,25 +546,22 @@ const openProofModal = (id: number) => {
 
 const submitProofAndAchieve = async (payload: { id: number, proofNote: string, proofDocument: string }) => {
     loading.value = true
+    const api = useApi()
     try {
-        const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
+        await api(`/sme/goals/${payload.id}`, {
             method: 'PATCH',
             body: {
-                id: payload.id,
                 status: 'COMPLETED',
-                proofNote: payload.proofNote,
-                proofDocument: payload.proofDocument
+                proof_note: payload.proofNote,
+                proof_document: payload.proofDocument
             }
         })
 
-        if (result.success) {
-            await fetchGoals()
-            selectedGoal.value = (goals.value.find(g => g.id === payload.id) as Goal) || null
-            showProofModal.value = false
-        }
-    } catch (e) {
+        await fetchGoals()
+        showProofModal.value = false
+    } catch (e: any) {
         console.error('Failed to update goal', e)
-        alert('Failed to update goal status.')
+        alert(e.data?.message || 'Failed to update goal status.')
     } finally {
         loading.value = false
     }
@@ -573,23 +569,18 @@ const submitProofAndAchieve = async (payload: { id: number, proofNote: string, p
 
 const pauseGoal = async (id: number, currentStatus: string) => {
     loading.value = true
+    const api = useApi()
     try {
-        const newStatus = currentStatus === 'Paused' ? 'ACTIVE' : 'PAUSED'
-        const result = await $fetch<{ success: boolean, goal: any }>('/api/sme/goals', {
+        const newStatus = ['Paused', 'PAUSED'].includes(currentStatus) ? 'ACTIVE' : 'PAUSED'
+        await api(`/sme/goals/${id}`, {
             method: 'PATCH',
-            body: {
-                id,
-                status: newStatus
-            }
+            body: { status: newStatus }
         })
 
-        if (result.success) {
-            await fetchGoals()
-            selectedGoal.value = (goals.value.find(g => g.id === id) as Goal) || null
-        }
-    } catch (e) {
-        console.error('Failed to pause goal', e)
-        alert('Failed to update goal status.')
+        await fetchGoals()
+    } catch (e: any) {
+        console.error('Failed to update goal status', e)
+        alert(e.data?.message || 'Failed to update goal status.')
     } finally {
         loading.value = false
     }
@@ -599,25 +590,24 @@ const deleteGoal = async (id: number) => {
     if (!confirm('Are you sure you want to delete this goal? This action cannot be undone.')) return
 
     loading.value = true
+    const api = useApi()
     try {
-        const result = await $fetch<{ success: boolean }>('/api/sme/goals', {
-            method: 'DELETE',
-            query: { id }
+        await api(`/sme/goals/${id}`, {
+            method: 'DELETE'
         })
 
-        if (result.success) {
-            await fetchGoals()
-            if (selectedGoal.value?.id === id) {
-                selectedGoal.value = (goals.value[0] as Goal) || null
-            }
+        await fetchGoals()
+        if (selectedGoal.value?.id === id) {
+            selectedGoal.value = goals.value[0] || null
         }
-    } catch (e) {
+    } catch (e: any) {
         console.error('Failed to delete goal', e)
-        alert('Failed to delete goal.')
+        alert(e.data?.message || 'Failed to delete goal.')
     } finally {
         loading.value = false
     }
 }
+
 
 onMounted(() => {
     fetchGoals()

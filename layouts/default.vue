@@ -110,11 +110,14 @@ export default {
     const { user, logout } = useAuth()
     const isCollapsed = ref(false)
     const isInvestor = computed(() => {
-      // Only check the user's actual role, not the route
-      return user.value?.role === 'investor'
+      const role = user.value?.role?.toUpperCase()
+      return role === 'INVESTOR'
     })
 
-    const isAdmin = computed(() => user.value?.role === 'administrator')
+    const isAdmin = computed(() => {
+      const role = user.value?.role?.toUpperCase()
+      return role === 'ADMIN' || role === 'ADMINISTRATOR'
+    })
 
     const navItems = computed(() => {
       if (isInvestor.value) {
@@ -172,7 +175,7 @@ export default {
 
           { header: 'USER MANAGEMENT' },
           {
-            path: '/users',
+            path: '/admin/users',
             label: 'Users',
             icon: UsersIcon
           },
@@ -189,17 +192,17 @@ export default {
             icon: ShieldCheckIcon
           },
           {
-            path: '/templates',
+            path: '/admin/templates',
             label: 'Templates',
             icon: DocumentDuplicateIcon
           },
           {
-            path: '/questions',
+            path: '/admin/questions',
             label: 'Question Builder',
             icon: ListBulletIcon
           },
           {
-            path: '/rules',
+            path: '/admin/rules',
             label: 'Scoring Rules',
             icon: BoltIcon
           },
@@ -225,6 +228,11 @@ export default {
             path: '/sme/assessment',
             label: 'Assessment',
             icon: ClipboardDocumentCheckIcon
+          },
+          {
+            path: '/sme/programs',
+            label: 'Programs',
+            icon: Square3Stack3DIcon
           },
           {
             path: '/sme/history',
