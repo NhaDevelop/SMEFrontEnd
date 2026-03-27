@@ -90,6 +90,31 @@ export const formatCurrency = (value: number | string | null | undefined): strin
 }
 
 /**
+ * Format a number to remove unnecessary decimal places
+ * Shows decimals only when needed, max 2 decimal places
+ */
+export const formatNumber = (value: number | string | null | undefined): string => {
+  if (value === null || value === undefined) return '0'
+  
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '0'
+  
+  // If the number is an integer, show no decimal places
+  if (Number.isInteger(num)) return num.toString()
+  
+  // Otherwise, show up to 2 decimal places, removing trailing zeros
+  return parseFloat(num.toFixed(2)).toString()
+}
+
+/**
+ * Format a number as a percentage with proper decimal handling
+ */
+export const formatPercentage = (value: number | string | null | undefined): string => {
+  const formatted = formatNumber(value)
+  return `${formatted}%`
+}
+
+/**
  * Enhanced relative time formatter for discussions
  */
 export const formatRelativeTime = (dateString: string | Date | null | undefined): string => {

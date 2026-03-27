@@ -345,6 +345,8 @@ const smeId = computed(() => Array.isArray(route.params.id) ? route.params.id[0]
 
 // Local state for the full, database-hydrated SME object
 const apiSmeData = ref<any>(null)
+const realPillars = ref<any[]>([])  // Store real pillars from dashboard endpoint
+const realProgress = ref<any[]>([]) // Store real progress data from dashboard endpoint
 
 // Fetch SME from API to ensure we have the full `assessments` array and history
 const fetchSmeDetails = async () => {
@@ -353,7 +355,7 @@ const fetchSmeDetails = async () => {
     try {
         const role = authStore.user?.role
         const prefix = role === 'ADMIN' ? '/admin' : ''
-        const response = await api<any>(`${prefix}/sme/${smeId.value}`)
+        const response = await api<any>(`${prefix}/smes/${smeId.value}`)
         apiSmeData.value = response.data || response
     } catch (e) {
         console.error('Failed to fetch SME details:', e)
@@ -418,16 +420,27 @@ const smeData = computed(() => {
 
 // Use centralized pillar score generation for consistency
 const pillars = computed(() => {
+    // Use real pillars from dashboard endpoint if available
+    if (realPillars.value && realPillars.value.length > 0) {
+        return realPillars.value.map((pillar: any) => ({
+            ...pillar,
+            fullMark: 100
+        }))
+    }
+    // Fallback to generated data only if no real data available
     const scores = smeData.value.pillars || generatePillarScores(smeData.value.id, smeData.value.score ?? 0)
-    // Add fullMark property for radar chart compatibility
     return scores.map((pillar: any) => ({
         ...pillar,
         fullMark: 100
     }))
 })
 
-// Use centralized progress data generation
+// Use real progress data from dashboard endpoint
 const progressData = computed(() => {
+    if (realProgress.value && realProgress.value.length > 0) {
+        return realProgress.value
+    }
+    // Fallback to generated data only if no real data available
     return generateProgressData(
         smeData.value.id,
         smeData.value.score ?? 0,
@@ -503,9 +516,9 @@ const fetchRealActions = async () => {
         const role = authStore.user?.role
         let endpoint = '/sme/dashboard'
         if (role === 'INVESTOR') endpoint = '/investor/dashboard'
-        if (role === 'ADMIN') endpoint = '/admin/dashboard'
+        if (role === 'ADMIN') endpoint = `/admin/smes/${smeId.value}/dashboard`
 
-        const response = await api<any>(`${endpoint}?smeId=${smeId.value}`)
+        const response = await api<any>(endpoint)
         const res = response.data || response
         if (res && res.actions) {
             actions.value = res.actions.map((a: any) => ({
@@ -515,6 +528,14 @@ const fetchRealActions = async () => {
                 points: a.impact || 10,
                 completed: a.status === 'completed'
             }))
+        }
+        // Store real pillars from dashboard for radar chart and pillar details
+        if (res && res.pillars) {
+            realPillars.value = res.pillars
+        }
+        // Store real progress data for progress chart
+        if (res && res.progress) {
+            realProgress.value = res.progress
         }
     } catch (e) {
         console.error('Failed to fetch real actions:', e)

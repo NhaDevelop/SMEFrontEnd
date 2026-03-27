@@ -105,6 +105,7 @@ import { useAdminStore } from '~/stores/admin.store'
 
 const emit = defineEmits(['cancel', 'save'])
 const adminStore = useAdminStore()
+const api = useApi()
 
 const existingTemplates = computed(() => adminStore.templates)
 
@@ -112,7 +113,7 @@ const sectors = ref<any[]>([])
 
 onMounted(async () => {
   try {
-    sectors.value = await $fetch<any[]>('/api/admin/sectors')
+    sectors.value = await api('/admin/sectors')
   } catch (e) {
     console.error('Failed to load sectors', e)
   }

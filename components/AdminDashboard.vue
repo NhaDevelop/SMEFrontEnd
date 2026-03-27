@@ -26,14 +26,14 @@
     <main class="px-8 pb-12 max-w-[1600px] mx-auto flex-1 overflow-y-auto custom-scrollbar w-full">
       <!-- KPI Stats -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Total SMEs" :value="adminStore.dashboardStats?.stats?.totalSMEs ?? 0"
+        <StatCard title="Total SMEs" :value="totalSMEs"
           :icon="BuildingOfficeIcon" />
         <StatCard title="Total Users"
-          :value="adminStore.dashboardStats?.stats?.totalUsers ?? 0"
+          :value="totalUsers"
           :icon="UsersIcon" />
-        <StatCard title="Programs" :value="adminStore.dashboardStats?.stats?.totalPrograms ?? 0" :icon="FolderIcon" />
+        <StatCard title="Programs" :value="totalPrograms" :icon="FolderIcon" />
         <StatCard title="Assessments This Month"
-          :value="(adminStore.dashboardStats?.stats?.completedAssessments ?? 0) + (adminStore.dashboardStats?.stats?.inProgressAssessments ?? 0)"
+          :value="totalAssessments"
           :icon="Cog6ToothIcon" />
       </div>
 
@@ -77,9 +77,18 @@ import FrameworkSettingsSummary from '~/components/AdminFrameworkSettingsSummary
 import QuickActions from '~/components/AdminQuickActions.vue'
 import ActivePrograms from '~/components/AdminActivePrograms.vue'
 import { useAdminStore } from '~/stores/admin.store'
-import { onMounted } from 'vue'
+import { formatNumber } from '~/utils/format'
+import { onMounted, computed } from 'vue'
 
 const adminStore = useAdminStore()
+
+const totalSMEs = computed(() => formatNumber(adminStore.dashboardStats?.stats?.totalSMEs ?? 0))
+const totalUsers = computed(() => formatNumber(adminStore.dashboardStats?.stats?.totalUsers ?? 0))
+const totalPrograms = computed(() => formatNumber(adminStore.dashboardStats?.stats?.totalPrograms ?? 0))
+const totalAssessments = computed(() => formatNumber(
+  (adminStore.dashboardStats?.stats?.completedAssessments ?? 0) + 
+  (adminStore.dashboardStats?.stats?.inProgressAssessments ?? 0)
+))
 
 onMounted(async () => {
   await Promise.all([

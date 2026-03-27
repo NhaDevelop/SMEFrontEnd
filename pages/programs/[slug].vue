@@ -123,6 +123,32 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Enrolled Users Section -->
+                        <div v-if="program.enrolled_smes?.length || program.enrolledSMEs?.length" class="bg-white border border-gray-100 rounded-xl p-8 shadow-sm mt-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900">Enrolled Participants</h3>
+                                <span class="px-2.5 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded-full">
+                                    {{ (program.enrolled_smes?.length || 0) + (program.enrolledSMEs?.length || 0) }}
+                                </span>
+                            </div>
+                            <div class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+                                <div v-for="(smeId, index) in (program.enrolled_smes || program.enrolledSMEs || []).slice(0, 5)" :key="index"
+                                    class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xs">
+                                        {{ String(smeId).charAt(0) }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-700 truncate">Participant {{ Number(index) + 1 }}</p>
+                                        <p class="text-xs text-gray-500">ID: {{ String(smeId).slice(-6) }}</p>
+                                    </div>
+                                </div>
+                                <div v-if="(program.enrolled_smes?.length || program.enrolledSMEs?.length || 0) > 5" 
+                                    class="text-center py-2 text-sm text-gray-500">
+                                    +{{ (program.enrolled_smes?.length || program.enrolledSMEs?.length || 0) - 5 }} more participants
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

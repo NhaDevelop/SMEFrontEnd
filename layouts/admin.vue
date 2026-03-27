@@ -24,7 +24,6 @@
                             Dashboard
                         </NuxtLink>
                     </div>
-
                     <!-- User Management -->
                     <div>
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">User

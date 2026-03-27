@@ -267,12 +267,6 @@ export const getPillarChartColor = (score: number, thresholds?: any[]): string =
 // SME DATA GENERATION
 // ============================================================================
 
-// Deterministic random generator for consistent data
-const seededRandom = (seed: number): number => {
-  const x = Math.sin(seed) * 10000
-  return x - Math.floor(x)
-}
-
 // Standard pillar names in consistent order
 export const PILLAR_NAMES = [
   'Team & Leadership',
@@ -293,56 +287,36 @@ export interface PillarScore {
 
 /**
  * Generate consistent pillar scores for an SME
- * This function MUST be used everywhere to ensure data consistency
+ * DEPRECATED: Returns empty/zero data. Use real API data instead.
  * 
  * @param smeId - The unique ID of the SME
  * @param baseScore - The overall readiness score of the SME
- * @returns Array of pillar scores with consistent values
+ * @returns Array of pillar scores with zeros (no fake data)
  */
 export const generatePillarScores = (smeId: string | number, baseScore: number): PillarScore[] => {
-  if (baseScore === 0) {
-    return PILLAR_NAMES.map(name => ({
-      name,
-      score: 0,
-      potential: 0
-    }))
-  }
-  
-  const id = Number(smeId) || 1
-  
-  return PILLAR_NAMES.map((name, index) => {
-    // Use consistent seed based on ID and pillar index
-    const variance = (seededRandom(id * 100 + index * 10) * 30) - 15
-    let score = Math.round(baseScore + variance)
-    
-    // Clamp score between 10 and 95
-    score = Math.max(10, Math.min(95, score))
-    
-    // Calculate improvement potential (40% of remaining score to 100)
-    const potential = Math.round((100 - score) * 0.4)
-    
-    return {
-      name,
-      score,
-      potential
-    }
-  })
+  // Return zeros only - no fake data generation
+  return PILLAR_NAMES.map(name => ({
+    name,
+    score: 0,
+    potential: 0
+  }))
 }
 
 /**
- * Generate consistent progress/history data for an SME
+ * Generate progress/history data for an SME
+ * DEPRECATED: Returns empty array or maps real data only. No fake generation.
  * 
  * @param smeId - The unique ID of the SME
  * @param currentScore - Current readiness score
  * @param readinessHistory - Optional existing history array
- * @returns Array of historical data points
+ * @returns Array of historical data points or empty array
  */
 export const generateProgressData = (
   smeId: string | number,
   currentScore: number,
   readinessHistory?: number[]
 ): { date: string; score: number }[] => {
-  // If readiness history exists in the data, use it
+  // If real history exists, use it
   if (readinessHistory && readinessHistory.length > 0) {
     return readinessHistory.map((score, index) => ({
       date: `Month ${index + 1}`,
@@ -350,16 +324,8 @@ export const generateProgressData = (
     }))
   }
   
-  if (currentScore === 0) return []
-  
-  // Otherwise generate consistent historical data
-  const id = Number(smeId) || 1
-  const prevScore = Math.max(10, currentScore - Math.round(seededRandom(id * 50) * 20))
-  
-  return [
-    { date: 'Jan 2024', score: prevScore },
-    { date: 'Jul 2024', score: currentScore }
-  ]
+  // Return empty - no fake data generation
+  return []
 }
 
 /**

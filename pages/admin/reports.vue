@@ -77,28 +77,45 @@
                 <!-- Generate Custom Report Section -->
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
                     <h3 class="text-lg font-bold text-gray-900 mb-2">Generate Custom Report</h3>
-                    <p class="text-gray-500 text-sm mb-6">Select an SME and report type to generate</p>
+                    <p class="text-gray-500 text-sm mb-6">Select an SME, program scope, and report type to generate</p>
 
-                    <div class="flex flex-col md:flex-row gap-4 items-end">
-                        <div class="w-full md:w-1/3">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <!-- SME Selector -->
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">SME</label>
                             <select v-model="selectedReportSmeId"
-                                class="w-full rounded-lg border-gray-300 text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                                class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-emerald-500 focus:border-emerald-500">
                                 <option :value="null">All SMEs</option>
                                 <option v-for="sme in smes" :key="sme.id" :value="sme.id">{{ sme.name }}</option>
                             </select>
                         </div>
-                        <div class="w-full md:w-1/3">
+                        <!-- Program Filter -->
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Program
+                                (Optional)</label>
+                            <select v-model="selectedProgramId"
+                                class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-emerald-500 focus:border-emerald-500">
+                                <option :value="null">All Programs</option>
+                                <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
+                            </select>
+                        </div>
+                        <!-- Report Type -->
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Report
+                                Type</label>
                             <select v-model="selectedReportType"
-                                class="w-full rounded-lg border-gray-300 text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                                class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-emerald-500 focus:border-emerald-500">
                                 <option>Detailed Assessment</option>
                                 <option>Executive Summary</option>
                                 <option>Progress Report</option>
                             </select>
                         </div>
-                        <button
-                            @click="generateReport(selectedReportType, selectedReportSmeId ? smes.find(s => s.id === selectedReportSmeId)?.name : 'All SMEs', selectedReportSmeId || null)"
-                            :disabled="isGenerating"
-                            class="w-full md:w-1/3 px-4 py-2.5 bg-[#198754] text-white rounded-lg font-medium hover:bg-[#157347] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
+                        <!-- Generate Button -->
+                        <button @click="generateCustomReport()" :disabled="isGenerating"
+                            class="w-full px-4 py-2.5 bg-[#198754] text-white rounded-lg font-medium hover:bg-[#157347] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50">
                             <ArrowDownTrayIcon class="w-5 h-5 text-white" />
                             {{ isGenerating ? 'Generating...' : 'Generate Report' }}
                         </button>
@@ -114,17 +131,24 @@
                             <p class="text-gray-500 text-sm mt-1">Download reports for individual SMEs</p>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
                             <!-- Search -->
                             <div class="relative">
                                 <input v-model="searchQuery" type="text" placeholder="Search SMEs..."
-                                    class="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-64">
+                                    class="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-56">
                                 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
+
+                            <!-- Program Filter (real data) -->
+                            <select v-model="selectedTableProgramId"
+                                class="py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                <option :value="null">All Programs</option>
+                                <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
+                            </select>
 
                             <!-- Risk Filter -->
                             <select v-model="selectedRiskFilter"
@@ -135,10 +159,12 @@
                                 <option value="High">High Risk</option>
                             </select>
 
+                            <!-- Active filter badge -->
                             <div v-if="currentProgramName"
                                 class="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
                                 <span>Filter: {{ currentProgramName }}</span>
-                                <button @click="navigateTo('/reports')" class="hover:text-emerald-900">
+                                <button @click="selectedTableProgramId = null; clearRouteProgram()"
+                                    class="hover:text-emerald-900">
                                     <XMarkIcon class="w-4 h-4" />
                                 </button>
                             </div>
@@ -169,11 +195,14 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
+                            <tr v-if="filteredSMEs.length === 0">
+                                <td colspan="6" class="px-8 py-12 text-center text-sm text-gray-400">No SMEs match your
+                                    current filters.</td>
+                            </tr>
                             <tr v-for="sme in filteredSMEs" :key="sme.id" class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-8 py-5 whitespace-nowrap text-sm font-medium text-[#2BB8B8]">
-                                    <button @click="navigateTo('/sme/' + sme.id)" class="hover:underline text-left">
-                                        {{ sme.name }}
-                                    </button>
+                                    <button @click="router.push('/sme/' + sme.id)" class="hover:underline text-left">{{
+                                        sme.name }}</button>
                                 </td>
                                 <td class="px-8 py-5 whitespace-nowrap">
                                     <span v-if="sme.sector"
@@ -185,7 +214,8 @@
                                     </span>
                                     <span v-else class="text-sm text-gray-400">Not Assigned</span>
                                 </td>
-                                <td class="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">{{ sme.score }}
+                                <td class="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">
+                                    {{ sme.score !== null ? Math.round(sme.score) : '—' }}
                                 </td>
                                 <td class="px-8 py-5 whitespace-nowrap">
                                     <span
@@ -218,6 +248,8 @@
                         <h3 class="text-lg font-bold text-gray-900">Recent Reports</h3>
                         <p class="text-gray-500 text-sm mt-1">Previously generated reports</p>
                     </div>
+                    <div v-if="recentReports.length === 0" class="p-8 text-center text-sm text-gray-400">No reports
+                        generated yet.</div>
                     <div class="divide-y divide-gray-100">
                         <div v-for="report in recentReports" :key="report.id"
                             class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
@@ -241,16 +273,8 @@
                                 <span
                                     class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded uppercase tracking-wide">{{
                                         report.type }}</span>
-                                <button
-                                    v-if="report.type === 'PDF' && report.name === 'Investment Readiness Report' && report.smeId"
-                                    @click="generateReport('PDF', report.company, report.smeId)"
-                                    class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-                                    title="Regenerate">
-                                    <ArrowDownTrayIcon class="w-5 h-5" />
-                                </button>
-                                <button
-                                    v-else-if="report.type === 'CSV' && report.name === 'Raw Scores Export' && report.smeId"
-                                    @click="generateReport('CSV', report.company, report.smeId)"
+                                <button v-if="report.smeId"
+                                    @click="generateReport('PDF Report', report.company, report.smeId)"
                                     class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                                     title="Regenerate">
                                     <ArrowDownTrayIcon class="w-5 h-5" />
@@ -267,6 +291,7 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
     DocumentTextIcon,
     ArrowDownTrayIcon,
@@ -285,18 +310,37 @@ definePageMeta({
 import { useAdminStore } from '~/stores/admin.store'
 
 const route = useRoute()
+const router = useRouter()
 const adminStore = useAdminStore()
 
 const recentReports = ref<any[]>([])
 const sectorsList = ref<any[]>([])
+const programs = ref<{ id: number; name: string }[]>([])
 
 onMounted(async () => {
     await adminStore.fetchSmesData()
     await loadReportLogs()
+    await loadPrograms()
     try {
-        sectorsList.value = await $fetch<any[]>('/api/admin/sectors')
+        const api = useApi()
+        sectorsList.value = await api('/admin/sectors')
     } catch (e) { console.error('Failed to load sectors', e) }
+
+    // If URL has programId, sync to table filter
+    if (route.query.programId) {
+        selectedTableProgramId.value = Number(route.query.programId)
+    }
 })
+
+const loadPrograms = async () => {
+    try {
+        const api = useApi()
+        const res = await api<any>('/admin/programs')
+        programs.value = (res?.programs ?? res ?? []).map((p: any) => ({ id: p.id, name: p.name }))
+    } catch (e) {
+        console.error('Failed to load programs', e)
+    }
+}
 
 const getSectorStyle = (sectorName: string) => {
     const sector = sectorsList.value.find(s => s.name === sectorName)
@@ -318,8 +362,9 @@ const getSectorStyle = (sectorName: string) => {
 
 const loadReportLogs = async () => {
     try {
-        const logs = await $fetch<any[]>('/api/reports/logs')
-        recentReports.value = logs.map(log => ({
+        const api = useApi()
+        const logs = await api<any[]>('/reports/logs')
+        recentReports.value = logs.map((log: any) => ({
             id: log.id,
             name: log.name,
             company: log.company || 'All SMEs',
@@ -343,59 +388,49 @@ const smes = computed(() => {
         date: sme.lastAssessed
             ? new Date(sme.lastAssessed).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
             : '—',
-        programIds: sme.programIds
+        programIds: sme.programIds ?? []
     }))
-})
-
-
-
-const filteredSMEs = computed(() => {
-    let result = smes.value
-
-    // Filter by Program ID (from URL)
-    const programId = route.query.programId
-    if (programId) {
-        result = result.filter(sme => sme.programIds.includes(Number(programId)))
-    }
-
-    // Filter by Risk Level
-    if (selectedRiskFilter.value) {
-        result = result.filter(sme => sme.risk === selectedRiskFilter.value)
-    }
-
-    // Filter by Search Query
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        result = result.filter(sme =>
-            sme.name.toLowerCase().includes(query) ||
-            sme.sector.toLowerCase().includes(query)
-        )
-    }
-
-    // Filter by Dropdown Selection
-    if (selectedReportSmeId.value) {
-        result = result.filter(sme => sme.id === selectedReportSmeId.value)
-    }
-
-    return result
-})
-
-const currentProgramName = computed(() => {
-    const programId = route.query.programId
-    if (!programId) return ''
-    const programs: Record<number, string> = {
-        1: 'Investment Accelerator 2024',
-        2: 'FinTech Growth Program',
-        3: 'AgriTech Innovation Fund',
-        4: 'Women Entrepreneurs Initiative'
-    }
-    return programs[Number(programId)] || ''
 })
 
 const searchQuery = ref('')
 const selectedRiskFilter = ref('')
 const selectedReportSmeId = ref<number | string | null>(null)
 const selectedReportType = ref('Detailed Assessment')
+const selectedProgramId = ref<number | null>(null)       // custom report program filter
+const selectedTableProgramId = ref<number | null>(null)  // table row program filter
+
+const filteredSMEs = computed(() => {
+    let result = smes.value
+
+    const programId = selectedTableProgramId.value ?? (route.query.programId ? Number(route.query.programId) : null)
+    if (programId) {
+        result = result.filter(sme => sme.programIds.includes(programId))
+    }
+
+    if (selectedRiskFilter.value) {
+        result = result.filter(sme => sme.risk === selectedRiskFilter.value)
+    }
+
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        result = result.filter(sme =>
+            sme.name.toLowerCase().includes(query) ||
+            (sme.sector ?? '').toLowerCase().includes(query)
+        )
+    }
+
+    return result
+})
+
+const currentProgramName = computed(() => {
+    const id = selectedTableProgramId.value ?? (route.query.programId ? Number(route.query.programId) : null)
+    if (!id) return ''
+    return programs.value.find(p => p.id === id)?.name ?? ''
+})
+
+const clearRouteProgram = () => {
+    router.replace({ query: {} })
+}
 
 const getRiskBadgeStyles = (risk: string) => {
     switch (risk) {
@@ -414,50 +449,73 @@ const getRiskDotStyles = (risk: string) => {
         default: return 'bg-gray-500'
     }
 }
+
 const isGenerating = ref(false)
 
-const generateReport = async (type: string, subject: string = '', smeId?: number | string | null) => {
+const getToken = () => {
+    const cookie = useCookie('irip_access_token').value
+    if (cookie) return cookie
+    if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem('irip_access_token')
+    }
+    return null
+}
+
+const generateCustomReport = () => {
+    const smeName = selectedReportSmeId.value
+        ? smes.value.find(s => s.id === selectedReportSmeId.value)?.name ?? 'SME'
+        : 'All SMEs'
+    generateReport(selectedReportType.value, smeName, selectedReportSmeId.value, selectedProgramId.value)
+}
+
+const generateReport = async (
+    type: string,
+    subject: string = '',
+    smeId?: number | string | null,
+    programId?: number | null
+) => {
     isGenerating.value = true
+    const config = useRuntimeConfig()
+    const apiBase = config.public.apiBase || 'http://127.0.0.1:8001/api'
+    const token = getToken()
+
+    const buildQuery = (params: Record<string, any>) => {
+        const qs = Object.entries(params)
+            .filter(([, v]) => v !== null && v !== undefined)
+            .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+            .join('&')
+        return qs ? '?' + qs : ''
+    }
+
     try {
         if (type === 'Raw Scores Export' || type === 'CSV Export' || type === 'CSV') {
-            // Real CSV export — triggers browser download
-            const url = `/api/reports/export${smeId ? `?smeId=${smeId}` : ''}`
+            const params: any = { type: 'sme', format: 'excel' }
+            if (smeId) params.id = smeId
+            if (token) params.token = token
+            const url = `${apiBase}/admin/reports/export${buildQuery(params)}`
             const a = document.createElement('a')
             a.href = url
-            a.download = smeId ? `sme_${smeId}_assessment_export.csv` : `all_smes_assessment_export.csv`
+            a.download = smeId ? `sme_${smeId}_report.csv` : 'all_smes_report.csv'
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
-        } else if (type === 'Investment Readiness Report' || type === 'PDF Report' || type === 'PDF') {
-            // Real PDF — opens printable HTML report in new tab
-            const url = `/api/reports/readiness${smeId ? `?smeId=${smeId}` : ''}`
-            window.open(url, '_blank')
         } else if (type === 'Portfolio Comparison' || type === 'Portfolio') {
-            // Real Portfolio Comparison — opens printable HTML report in new tab
-            window.open('/api/reports/portfolio', '_blank')
+            const params: any = {}
+            if (programId) params.programId = programId
+            if (token) params.token = token
+            window.open(`${apiBase}/admin/reports/portfolio${buildQuery(params)}`, '_blank')
         } else {
-            // Fallback for custom report types
-            const url = `/api/reports/readiness${smeId ? `?smeId=${smeId}` : ''}`
-            window.open(url, '_blank')
+            // Readiness / custom — individual or all SMEs
+            const params: any = {}
+            if (smeId) params.smeId = smeId
+            if (programId) params.programId = programId
+            if (token) params.token = token
+            window.open(`${apiBase}/admin/reports/readiness${buildQuery(params)}`, '_blank')
         }
 
-        // Refresh the audit logs to show the newly generated report
         await loadReportLogs()
     } finally {
         isGenerating.value = false
     }
 }
-
-const navigateTo = (path: string) => {
-    // If router is available
-    // router.push(path)
-    // Or just window location for now as fallback or useNuxtApp
-    // But better to use the navigation tool or simply:
-    return navigateToNuxt(path)
-}
-
-// Helper to wrap nuxt navigateTo if auto-import isn't working or just use router
-import { useRouter } from 'vue-router'
-const router = useRouter()
-const navigateToNuxt = (path: string) => router.push(path)
 </script>

@@ -410,7 +410,7 @@
                   </label>
 
                   <!-- YES/NO or BOOLEAN (Yes/No Questions) -->
-                  <div v-if="q.type === 'Yes/No' || q.type === 'BOOLEAN'" class="flex flex-col gap-4">
+                  <div v-if="q.type === 'Yes/No' || q.type === 'YesNo' || q.type === 'BOOLEAN' || q.type === 'Boolean'" class="flex flex-col gap-4">
                     <div class="flex gap-6">
                       <!-- If question has options (BOOLEAN type from mock data) -->
                       <template v-if="q.options && q.options.length > 0">
@@ -475,7 +475,7 @@
                   </div>
 
                   <!-- CHOICE (Single Choice or Multiple Choice with options) -->
-                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Multiple Choice' || q.type === 'Single Choice'"
+                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Choice' || q.type === 'Multiple Choice' || q.type === 'MultipleChoice' || q.type === 'Single Choice' || q.type === 'SingleChoice'"
                     class="space-y-3">
                     <template v-if="q.options && q.options.length > 0">
                       <!-- Handle both object format {label, value, points} and simple string array -->
@@ -491,7 +491,7 @@
                   </div>
 
                   <!-- DROPDOWN SELECT -->
-                  <div v-else-if="q.type === 'Dropdown Select' || q.type === 'Dropdown'" class="relative max-w-md">
+                  <div v-else-if="q.type === 'Dropdown Select' || q.type === 'Dropdown' || q.type === 'Select'" class="relative max-w-md">
                     <select v-model="answers[q.id]"
                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 outline-none text-sm appearance-none bg-white">
                       <option value="" disabled selected>Select an option</option>
@@ -516,7 +516,7 @@
                   </div>
 
                   <!-- SCALE (1-10) -->
-                  <div v-else-if="q.type === 'Scale (1-10)' || q.type === 'SCALE'" class="max-w-xl">
+                  <div v-else-if="q.type === 'Scale (1-10)' || q.type === 'SCALE' || q.type === 'Scale' || q.type === 'Rating'" class="max-w-xl">
                     <input type="range" v-model.number="answers[q.id]" min="1" max="10" step="1"
                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600">
                     <div class="flex justify-between text-xs text-gray-500 mt-2">
@@ -526,7 +526,7 @@
                   </div>
 
                   <!-- FILE UPLOAD -->
-                  <div v-else-if="q.type === 'File Upload'" class="max-w-md">
+                  <div v-else-if="q.type === 'File Upload' || q.type === 'File' || q.type === 'Upload'" class="max-w-md">
                     <label
                       class="flex flex-col items-center px-4 py-6 bg-white border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                       <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,11 +549,17 @@
                     </div>
                   </div>
 
-                  <!-- FALLBACK: Unknown question type - render as TEXT -->
+                  <!-- FALLBACK: Unknown question type - show warning message instead of text input -->
                   <div v-else>
-                    <textarea v-model="answers[q.id]" rows="3" placeholder="Enter your answer..."
-                      class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 outline-none text-sm resize-none"></textarea>
-                    <p class="text-xs text-gray-400 mt-1">Question type: {{ q.type }}</p>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p class="text-sm text-yellow-800 font-medium mb-1">⚠️ Question Type Error</p>
+                      <p class="text-sm text-yellow-700">
+                        This question has an unhandled type: <strong>{{ q.type }}</strong>
+                      </p>
+                      <p class="text-xs text-yellow-600 mt-2">
+                        Please contact support or check the question configuration in the admin panel.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

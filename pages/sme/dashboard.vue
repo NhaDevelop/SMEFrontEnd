@@ -41,13 +41,13 @@
                 <InformationCircleIcon class="w-5 h-5 text-gray-400" />
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-5xl font-semibold text-cyan-600">{{ overallScore }}</span>
+                <span class="text-5xl font-semibold text-cyan-600">{{ formatNumber(overallScore) }}</span>
                 <span class="text-lg text-gray-500">/100</span>
                 <span :class="[
                   'text-sm font-medium ml-2',
                   scoreChange > 0 ? 'text-green-600' : scoreChange < 0 ? 'text-red-600' : 'text-gray-500'
                 ]">
-                  {{ scoreChange > 0 ? '+' : '' }}{{ scoreChange }}
+                  {{ scoreChange > 0 ? '+' : '' }}{{ formatNumber(scoreChange) }}
                 </span>
               </div>
               <div class="mt-3 flex items-center gap-2">
@@ -63,7 +63,7 @@
                     class="w-4 h-4"
                     :class="scoreChange > 0 ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-gray-400'" />
                   <span :class="scoreChange > 0 ? 'text-green-600' : scoreChange < 0 ? 'text-red-600' : ''">
-                    {{ scoreChange > 0 ? '+' : '' }}{{ scoreChange }}
+                    {{ scoreChange > 0 ? '+' : '' }}{{ formatNumber(scoreChange) }}
                   </span>
                   since last assessment
                 </span>
@@ -76,7 +76,7 @@
                 <h3 class="text-sm font-medium text-gray-600">Growth Potential</h3>
                 <ChartBarIcon class="w-5 h-5 text-gray-400" />
               </div>
-              <div class="text-5xl font-semibold text-gray-900">{{ growthPotential }}</div>
+              <div class="text-5xl font-semibold text-gray-900">{{ formatNumber(growthPotential) }}</div>
               <p class="text-sm text-gray-500 mt-2">Total improvement potential across all pillars</p>
             </div>
 
@@ -86,7 +86,7 @@
                 <h3 class="text-sm font-medium text-gray-600">Actions Needed</h3>
                 <ExclamationTriangleIcon class="w-5 h-5 text-gray-400" />
               </div>
-              <div class="text-5xl font-semibold text-gray-900">{{ actionsCount }}</div>
+              <div class="text-5xl font-semibold text-gray-900">{{ formatNumber(actionsCount) }}</div>
               <p class="text-sm text-gray-500 mt-2">Recommended improvement actions</p>
             </div>
           </div>
@@ -207,6 +207,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '~/stores/auth.store'
 import { useDashboardStore } from '~/stores/dashboard.store'
 import { getReadinessStatus } from '~/utils/helpers'
+import { formatNumber } from '~/utils/format'
 import RiskBadge from '~/components/BaseRiskBadge.vue'
 import RadarChart from '~/components/DashboardRadarChart.vue'
 import ProgressChart from '~/components/DashboardProgressChart.vue'
@@ -323,9 +324,10 @@ export default {
       scoreChange,
       actionsCount,
       recommendedActions,
-      primaryGoal, // Added to return
+      primaryGoal,
       readinessStatus,
       readinessColorClass,
+      formatNumber,
       goToGoals: () => navigateTo('/sme/goals')
     }
   }

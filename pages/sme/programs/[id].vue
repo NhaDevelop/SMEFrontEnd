@@ -62,12 +62,12 @@
                                     <ArrowRightIcon v-if="!isApplying" class="w-5 h-5" />
                                 </button>
                                 <div v-else
-                                    class="px-8 py-4 bg-gray-100 text-teal-700 font-bold rounded-xl flex items-center gap-2 border border-teal-50 italic">
+                                    class="px-8 py-4 bg-white text-teal-700 font-bold rounded-xl flex items-center gap-2 border border-teal-100 shadow-sm transition-all italic">
                                     <CheckCircleIcon class="w-5 h-5" />
                                     {{ program.enrollmentStatus }}
                                 </div>
-                                <button @click="scrollToForum"
-                                    class="px-8 py-4 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all flex items-center gap-2">
+                                <button @click="activeTab = 'discussion'; scrollToForum()"
+                                    class="px-8 py-4 bg-white text-gray-700 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all flex items-center gap-2 shadow-sm">
                                     <ChatBubbleLeftRightIcon class="w-5 h-5 text-gray-400" />
                                     Join Discussion
                                 </button>
@@ -139,135 +139,179 @@
                 </div>
             </section>
 
+            <!-- Tabs Navigation -->
+            <div class="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
+                <div class="max-w-6xl mx-auto px-8">
+                    <div class="flex items-center gap-10">
+                        <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id" :class="[
+                            'py-6 text-sm font-bold uppercase tracking-widest border-b-2 transition-all relative group',
+                            activeTab === tab.id
+                                ? 'text-teal-600 border-teal-600'
+                                : 'text-gray-400 border-transparent hover:text-gray-600'
+                        ]">
+                            {{ tab.label }}
+                            <span v-if="tab.id === 'participants' && participants.length > 0"
+                                class="ml-2 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">
+                                {{ participants.length }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Main Sections -->
-            <div class="max-w-6xl mx-auto px-8 py-20 space-y-24">
-                <!-- Program Benefits -->
-                <section>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Program Benefits</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div v-for="benefit in (program.benefits || defaultBenefits)" :key="benefit"
-                            class="flex items-center gap-4 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:border-teal-200 hover:shadow-md transition-all group">
-                            <div
-                                class="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center shrink-0 group-hover:bg-teal-600 transition-colors">
-                                <CheckIcon class="w-3.5 h-3.5 text-teal-600 group-hover:text-white transition-colors" />
+            <div class="max-w-6xl mx-auto px-8 py-12 pb-32">
+                <!-- Overview Tab -->
+                <div v-if="activeTab === 'overview'"
+                    class="space-y-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <!-- Program Benefits -->
+                    <section>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-8 tracking-tight">Program Benefits</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div v-for="benefit in (program.benefits || defaultBenefits)" :key="benefit"
+                                class="flex items-center gap-4 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:border-teal-200 hover:shadow-md transition-all group">
+                                <div
+                                    class="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center shrink-0 group-hover:bg-teal-600 transition-colors">
+                                    <CheckIcon
+                                        class="w-3.5 h-3.5 text-teal-600 group-hover:text-white transition-colors" />
+                                </div>
+                                <span class="font-bold text-gray-700 text-sm">{{ benefit }}</span>
                             </div>
-                            <span class="font-bold text-gray-700 text-sm">{{ benefit }}</span>
+                        </div>
+                    </section>
+
+                    <!-- Eligibility -->
+                    <section>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-8 tracking-tight">Eligibility Requirements</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div v-for="req in defaultEligibility" :key="req"
+                                class="flex items-center gap-4 p-5 bg-white border border-gray-200 rounded-xl hover:border-teal-200 hover:shadow-sm transition-all">
+                                <div class="w-8 h-8 flex items-center justify-center shrink-0 text-teal-600">
+                                    <UserCircleIcon class="w-6 h-6 opacity-40" />
+                                </div>
+                                <span class="text-gray-700 font-bold text-sm leading-snug">{{ req }}</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Outcomes -->
+                    <section>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-8 tracking-tight">Expected Outcomes</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div v-for="outcome in defaultOutcomes" :key="outcome"
+                                class="flex flex-col gap-4 p-8 bg-white border border-gray-200 rounded-2xl hover:border-teal-200 hover:shadow-md transition-all text-center">
+                                <div
+                                    class="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mx-auto text-teal-600">
+                                    <BriefcaseIcon class="w-6 h-6" />
+                                </div>
+                                <span class="text-gray-900 font-bold leading-tight">{{ outcome }}</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Participants Tab -->
+                <div v-if="activeTab === 'participants'" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Program Participants</h2>
+                            <p class="text-gray-500 text-sm mt-1">Network and collaborate with other businesses in this
+                                cohort.</p>
                         </div>
                     </div>
-                </section>
 
-                <!-- Eligibility -->
-                <section>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Eligibility Requirements</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div v-for="req in defaultEligibility" :key="req"
-                            class="flex items-center gap-4 p-5 bg-white border border-gray-200 rounded-xl hover:border-teal-200 hover:shadow-sm transition-all">
-                            <div class="w-8 h-8 flex items-center justify-center shrink-0 text-teal-600">
-                                <UserCircleIcon class="w-6 h-6 opacity-40" />
-                            </div>
-                            <span class="text-gray-700 font-bold text-sm leading-snug">{{ req }}</span>
+                    <div v-if="program.enrollmentStatus === 'None'"
+                        class="bg-gray-50 border border-dashed border-gray-200 rounded-3xl p-20 text-center">
+                        <div
+                            class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-gray-100">
+                            <UserGroupIcon class="w-10 h-10 text-gray-300" />
                         </div>
-                    </div>
-                </section>
-
-                <!-- Participants -->
-                <section>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Program Participants</h2>
-
-                    <div v-if="program.enrollmentStatus === 'None'" class="max-w-2xl bg-white border border-gray-100 rounded-2xl p-8">
-                        <p class="text-gray-500 mb-6">
-                            Join this program to view participant list.
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Participant List Protected</h3>
+                        <p class="text-gray-500 mb-8 max-w-sm mx-auto">
+                            Join this program to interact with other participants and access exclusive cohort
+                            opportunities.
                         </p>
                         <button @click="enroll"
-                            class="px-8 py-4 bg-teal-600 text-white font-bold rounded-xl shadow-xl shadow-teal-600/20 hover:bg-teal-700 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                            class="px-8 py-4 bg-teal-600 text-white font-bold rounded-xl shadow-xl shadow-teal-600/20 hover:bg-teal-700 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 mx-auto"
                             :disabled="isApplying">
                             {{ isApplying ? 'Joining...' : 'Join as Participant' }}
                         </button>
                     </div>
 
                     <div v-else>
-                        <div v-if="participantsLoading" class="max-w-2xl bg-white border border-gray-100 rounded-2xl p-8 text-gray-500">
-                            Loading participants...
+                        <div v-if="participantsLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div v-for="i in 6" :key="i" class="h-28 bg-gray-50 animate-pulse rounded-2xl"></div>
                         </div>
 
-                        <div v-else-if="participants.length === 0" class="max-w-2xl bg-white border border-gray-100 rounded-2xl p-8 text-gray-500">
-                            No participants yet.
+                        <div v-else-if="participants.length === 0"
+                            class="bg-gray-50 border border-dashed border-gray-200 rounded-3xl p-20 text-center">
+                            <UserGroupIcon class="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                            <p class="text-gray-500 font-bold">No participants yet in this cohort.</p>
                         </div>
 
-                        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div v-for="p in participants" :key="p.id || p.user_id || p.name"
-                                class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                                <div class="flex items-start justify-between gap-4">
-                                    <div>
-                                        <div class="font-bold text-gray-900">
-                                            {{ p.name || 'Participant' }}
-                                        </div>
-                                        <div class="text-sm text-gray-500 mt-1">
-                                            {{ p.role || 'SME' }} • {{ p.status || '' }}
-                                        </div>
-                                        <div v-if="p.industry" class="text-xs text-gray-400 mt-2">
-                                            {{ p.industry }}
-                                        </div>
+                                class="flex items-center justify-between p-5 rounded-2xl border border-gray-100 hover:border-teal-100 transition-all bg-white group shadow-sm">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-sm font-black text-gray-400 group-hover:bg-teal-50 group-hover:text-teal-600 transition-all shadow-sm">
+                                        {{ (p.name || 'P').charAt(0) }}
                                     </div>
-                                    <div class="px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-600 uppercase tracking-wider">
-                                        {{ p.role || 'SME' }}
+                                    <div>
+                                        <h4 class="text-sm font-bold text-gray-900">{{ p.name || 'Participant' }}</h4>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span
+                                                :class="p.role === 'INVESTOR' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-teal-50 text-teal-600 border-teal-100'"
+                                                class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider">{{
+                                                p.role || 'SME' }}</span>
+                                            <span v-if="p.industry"
+                                                class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{
+                                                p.industry }}</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div :class="[
+                                    'text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-sm',
+                                    p.status === 'Accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                ]">{{ p.status || 'Active' }}</div>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <!-- Timeline -->
-                <section>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Program Timeline</h2>
-                    <div class="space-y-4 max-w-3xl">
-                        <div v-for="(step, index) in defaultTimeline" :key="index" class="flex gap-6 items-start">
+                <!-- Timeline Tab -->
+                <div v-if="activeTab === 'timeline'" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-10 tracking-tight">Program Timeline</h2>
+                    <div class="space-y-4 max-w-4xl">
+                        <div v-for="(step, index) in defaultTimeline" :key="index" class="flex gap-8 items-start">
                             <div class="flex flex-col items-center shrink-0">
                                 <div
-                                    class="w-12 h-12 rounded-2xl bg-teal-800 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-teal-900/10">
+                                    class="w-14 h-14 rounded-2xl bg-teal-800 text-white flex items-center justify-center font-black text-lg shadow-xl shadow-teal-900/10">
                                     {{ String(index + 1).padStart(2, '0') }}
                                 </div>
                                 <div v-if="index < defaultTimeline.length - 1"
-                                    class="w-0.5 flex-grow bg-gray-100 my-2 min-h-[32px]"></div>
+                                    class="w-0.5 flex-grow bg-gray-100 my-2 min-h-[48px]"></div>
                             </div>
                             <div
-                                class="bg-gray-50/50 border border-gray-100 rounded-2xl p-6 flex-grow mb-4 hover:bg-white hover:border-teal-100 hover:shadow-sm transition-all group">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <h4 class="text-lg font-bold text-gray-900">{{ step.title }}</h4>
+                                class="bg-gray-50/50 border border-gray-100 rounded-3xl p-8 flex-grow mb-6 hover:bg-white hover:border-teal-100 hover:shadow-md transition-all group">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-xl font-bold text-gray-900">{{ step.title }}</h4>
                                     <span
-                                        class="px-2.5 py-0.5 bg-teal-50 rounded-full text-[10px] font-black text-teal-700 uppercase tracking-widest">
+                                        class="px-3 py-1 bg-teal-50 rounded-lg text-xs font-black text-teal-700 uppercase tracking-widest border border-teal-100">
                                         {{ step.week }}
                                     </span>
                                 </div>
-                                <p class="text-sm text-gray-500 leading-relaxed">{{ step.description }}</p>
+                                <p class="text-gray-500 leading-relaxed">{{ step.description }}</p>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <!-- Outcomes -->
-                <section>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Expected Outcomes</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div v-for="outcome in defaultOutcomes" :key="outcome"
-                            class="flex flex-col gap-4 p-8 bg-white border border-gray-200 rounded-2xl hover:border-teal-200 hover:shadow-md transition-all text-center">
-                            <div
-                                class="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mx-auto text-teal-600">
-                                <BriefcaseIcon class="w-6 h-6" />
-                            </div>
-                            <span class="text-gray-900 font-bold leading-tight">{{ outcome }}</span>
-                        </div>
-                    </div>
-                </section>
-
-                <hr class="border-gray-100" />
-
-                <!-- Discussion Forum -->
-                <section id="discussion-forum" class="pb-24">
+                <!-- Discussion Tab -->
+                <div v-if="activeTab === 'discussion'" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div class="flex items-center justify-between mb-10">
                         <div>
-                            <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Discussion Thread</h2>
+                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Discussion Thread</h2>
                             <p class="text-gray-500 mt-1">Connect with program managers and fellow participants.</p>
                         </div>
                         <div
@@ -285,7 +329,7 @@
                                 class="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all text-sm mb-4"></textarea>
                             <div class="flex justify-end">
                                 <button @click="postComment" :disabled="!newComment.trim() || isPosting"
-                                    class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2">
+                                    class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-sm">
                                     <span v-if="isPosting">Posting...</span>
                                     <span v-else>Post Comment</span>
                                     <PaperAirplaneIcon class="w-4 h-4" />
@@ -299,8 +343,8 @@
                                 class="flex gap-4 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-purple-100 transition-colors">
                                 <div
                                     class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-100 to-teal-50 flex items-center justify-center shrink-0 border border-purple-100">
-                                    <span class="text-purple-700 font-black text-xs">{{ comment.user_name?.charAt(0) ||
-                                        'U' }}</span>
+                                    <span class="text-purple-700 font-black text-xs">{{ (comment.user_name ||
+                                        'U').charAt(0) }}</span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between mb-2">
@@ -318,7 +362,7 @@
                                 conversation!</p>
                         </div>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
 
@@ -368,7 +412,8 @@ import {
     RocketLaunchIcon,
     HeartIcon,
     BuildingOfficeIcon,
-    BeakerIcon
+    BeakerIcon,
+    UserGroupIcon
 } from '@heroicons/vue/24/outline'
 import { smeService } from '~/modules/sme/sme.service'
 import { formatDate, formatRelativeTime } from '~/utils/format'
@@ -385,6 +430,15 @@ const isApplying = ref(false)
 const isPosting = ref(false)
 const newComment = ref('')
 const showToast = ref(false)
+
+// Tabs State
+const activeTab = ref('overview')
+const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'participants', label: 'Participants' },
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'discussion', label: 'Discussion' }
+]
 
 // Default Data (matching the landing page)
 const defaultBenefits = ['1-on-1 mentorship', 'Investor introductions', 'Assessment coaching', 'Pitch preparation']
@@ -459,6 +513,8 @@ const enroll = async () => {
         program.value.enrollmentStatus = enrollment?.status || 'Enrolled'
         showToast.value = true
         setTimeout(() => showToast.value = false, 5000)
+        // Refresh data to get participants
+        await fetchData()
     } catch (e) {
         console.error('Enrollment failed', e)
         alert('Failed to submit application. Please try again.')
@@ -485,7 +541,7 @@ const postComment = async () => {
 
 const scrollToForum = () => {
     const el = document.getElementById('discussion-forum')
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 onMounted(fetchData)
@@ -527,5 +583,21 @@ definePageMeta({
 
 .animate-bounce-subtle {
     animation: bounce-subtle 3s infinite ease-in-out;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
