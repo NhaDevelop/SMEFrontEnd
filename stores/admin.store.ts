@@ -134,14 +134,19 @@ interface Question {
 interface SmeProfile {
   id: number | string
   name: string
+  company_name?: string
   industry: string
   location: string
   lastAssessed: string
+  last_assessed?: string
   riskLevel: 'Low' | 'Medium' | 'High'
+  latest_risk_level?: 'Low' | 'Medium' | 'High'
   readinessStatus: string
   score: number
+  latest_score?: number
   growthPotential: number
   programIds: (number | string)[]
+  programs?: any[]
   readinessHistory?: number[]
   status?: string // e.g. 'Invited', 'Enrolled', etc.
   pillars?: any[]
@@ -429,6 +434,19 @@ export const useAdminStore = defineStore('admin', {
       try {
         const participants = await service.fetchParticipants(programId)
         this.participants = Array.isArray(participants) ? participants : []
+        
+        // Update the program's counts in the local state if it exists
+        const programIndex = this.programs.findIndex(p => String(p.id) === String(programId))
+        if (programIndex !== -1 && this.participants.length > 0) {
+          const smesCount = this.participants.filter(p => p.role === 'SME').length
+          const investorsCount = this.participants.filter(p => p.role === 'INVESTOR').length
+          
+          this.programs[programIndex] = {
+            ...this.programs[programIndex],
+            smesCount,
+            investorsCount
+          } as Program
+        }
       } catch (err: any) {
         this.error = err.message
         console.error('Failed to fetch participants', err)
@@ -484,10 +502,10 @@ export const useAdminStore = defineStore('admin', {
         }
     },
 
-    async fetchSmesData() {
+    async fetchSmesData(programId?: string | number) {
         const service = new AdminService()
         try {
-            const response = await service.fetchSmes() as any[]
+            const response = await service.fetchSmes(programId) as any[]
             if (response) {
                 this.smes = response
             }

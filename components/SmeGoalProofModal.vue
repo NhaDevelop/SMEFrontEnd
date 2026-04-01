@@ -124,7 +124,7 @@ const errors = reactive({
 
 const form = reactive({
     proofNote: '',
-    proofDocument: '', // Simulated Base64 or URL
+    proofDocument: null as File | string | null, // Real File object or path
     proofDocumentName: ''
 })
 
@@ -153,9 +153,7 @@ const handleFileUpload = (event: Event) => {
         if (!file) return
 
         form.proofDocumentName = file.name
-        // Mock file upload: we just store the name as a mock "URL" 
-        // In reality, this would trigger an upload to a bucket (Phase 7)
-        form.proofDocument = `mock_url_${file.name.replace(/\s/g, '_')}`
+        form.proofDocument = file // Real File object
     }
 }
 

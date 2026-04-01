@@ -27,7 +27,7 @@
                                     and recommendations</p>
                             </div>
                         </div>
-                        <button @click="generateReport('Investment Readiness Report', 'PDF')" :disabled="isGenerating"
+                        <button @click="generateReport('Investment Readiness Report', 'PDF', null, selectedTableProgramId)" :disabled="isGenerating"
                             class="mt-4 text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start disabled:opacity-50">
                             {{ isGenerating ? 'Generating...' : 'Generate PDF' }}
                             <ArrowLongRightIcon class="w-4 h-4" />
@@ -66,7 +66,7 @@
                                 <p class="text-sm text-gray-500 mt-1">Compare SME performance across the portfolio</p>
                             </div>
                         </div>
-                        <button @click="generateReport('Portfolio Comparison', 'PDF')" :disabled="isGenerating"
+                        <button @click="generateReport('Portfolio Comparison', 'PDF', null, selectedTableProgramId)" :disabled="isGenerating"
                             class="mt-4 text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start disabled:opacity-50">
                             {{ isGenerating ? 'Rendering...' : 'Generate Report' }}
                             <ArrowLongRightIcon class="w-4 h-4" />
@@ -144,7 +144,7 @@
                             </div>
 
                             <!-- Program Filter (real data) -->
-                            <select v-model="selectedTableProgramId"
+                            <select v-model="selectedTableProgramId" @change="onProgramFilterChange"
                                 class="py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 bg-white">
                                 <option :value="null">All Programs</option>
                                 <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
@@ -154,9 +154,10 @@
                             <select v-model="selectedRiskFilter"
                                 class="py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 bg-white">
                                 <option value="">All Risks</option>
-                                <option value="Low">Low Risk</option>
-                                <option value="Medium">Medium Risk</option>
-                                <option value="High">High Risk</option>
+                                <option value="Safe to Invest">Safe to Invest</option>
+                                <option value="Low Risk">Low Risk</option>
+                                <option value="Medium Risk">Medium Risk</option>
+                                <option value="High Risk">High Risk</option>
                             </select>
 
                             <!-- Active filter badge -->
@@ -218,20 +219,16 @@
                                     {{ sme.score !== null ? Math.round(sme.score) : '—' }}
                                 </td>
                                 <td class="px-8 py-5 whitespace-nowrap">
-                                    <span
-                                        :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border', getRiskBadgeStyles(sme.risk)]">
-                                        <span :class="['w-1.5 h-1.5 rounded-full', getRiskDotStyles(sme.risk)]"></span>
-                                        {{ sme.risk }} Risk
-                                    </span>
+                                    <BaseRiskBadge :level="sme.risk" />
                                 </td>
                                 <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.date }}</td>
                                 <td class="px-8 py-5 whitespace-nowrap text-right text-sm">
                                     <div class="flex justify-end gap-2">
-                                        <button @click="generateReport('PDF Report', sme.name, sme.id)"
+                                        <button @click="generateReport('PDF Report', sme.name, sme.id, selectedTableProgramId)"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
                                             <DocumentTextIcon class="w-3.5 h-3.5" /> PDF
                                         </button>
-                                        <button @click="generateReport('CSV Export', sme.name, sme.id)"
+                                        <button @click="generateReport('CSV Export', sme.name, sme.id, selectedTableProgramId)"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
                                             <TableCellsIcon class="w-3.5 h-3.5" /> CSV
                                         </button>
@@ -292,6 +289,8 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import BaseRiskBadge from '~/components/BaseRiskBadge.vue'
+import { getFinancialRiskLevel } from '~/utils/helpers'
 import {
     DocumentTextIcon,
     ArrowDownTrayIcon,
@@ -379,17 +378,34 @@ const loadReportLogs = async () => {
 
 // Map store data to local format
 const smes = computed(() => {
-    return adminStore.smes.map(sme => ({
-        id: sme.id,
-        name: sme.name,
-        sector: sme.industry,
-        score: sme.score,
-        risk: sme.riskLevel,
-        date: sme.lastAssessed
-            ? new Date(sme.lastAssessed).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-            : '—',
-        programIds: sme.programIds ?? []
-    }))
+    return adminStore.smes.map(sme => {
+        let dateStr = '—'
+        const assessDate = sme.last_assessed || sme.lastAssessed;
+        if (assessDate && String(assessDate) !== 'null' && String(assessDate) !== 'undefined') {
+            const parsedDate = new Date(assessDate)
+            if (!isNaN(parsedDate.getTime())) {
+                dateStr = parsedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+            }
+        }
+
+        let displayScore: number | null = sme.latest_score !== undefined && sme.latest_score !== null ? sme.latest_score : (sme.score ?? null)
+        let displayRisk = sme.latest_risk_level || getFinancialRiskLevel(displayScore || 0, adminStore.frameworkThresholds)
+
+        if (selectedTableProgramId.value && sme.latest_score === null) {
+            displayScore = null
+            displayRisk = 'Not Assessed'
+        }
+
+        return {
+            id: sme.id,
+            name: sme.company_name || sme.name,
+            sector: sme.industry,
+            score: displayScore as any,
+            risk: displayRisk,
+            date: dateStr,
+            programIds: sme.programs ? sme.programs.map((p: any) => p.program_id) : (sme.programIds ?? [])
+        } as any
+    })
 })
 
 const searchQuery = ref('')
@@ -428,27 +444,16 @@ const currentProgramName = computed(() => {
     return programs.value.find(p => p.id === id)?.name ?? ''
 })
 
-const clearRouteProgram = () => {
+const onProgramFilterChange = async () => {
+    await adminStore.fetchSmesData(selectedTableProgramId.value || undefined)
+}
+
+const clearRouteProgram = async () => {
     router.replace({ query: {} })
+    await onProgramFilterChange()
 }
 
-const getRiskBadgeStyles = (risk: string) => {
-    switch (risk) {
-        case 'Low': return 'bg-emerald-50 text-emerald-600 border-emerald-100'
-        case 'Medium': return 'bg-amber-50 text-amber-600 border-amber-100'
-        case 'High': return 'bg-rose-50 text-rose-600 border-rose-100'
-        default: return 'bg-gray-50 text-gray-600 border-gray-100'
-    }
-}
-
-const getRiskDotStyles = (risk: string) => {
-    switch (risk) {
-        case 'Low': return 'bg-emerald-500'
-        case 'Medium': return 'bg-amber-500'
-        case 'High': return 'bg-rose-500'
-        default: return 'bg-gray-500'
-    }
-}
+// Badge styling logic removed in favor of BaseRiskBadge.vue
 
 const isGenerating = ref(false)
 

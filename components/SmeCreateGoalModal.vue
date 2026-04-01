@@ -146,9 +146,41 @@ watch(() => form.targetScore, (newVal) => {
     const diff = newVal - currentAvg
 
     if (Math.abs(diff) >= 0.5) {
-        form.pillars.forEach(p => {
-            p.target = Math.round(Math.min(100, Math.max(0, p.target + diff)))
-        })
+        // Find total points to distribute
+        let remainingPointsToDistribute = diff * form.pillars.length
+        
+        // Loop up to 5 times to distribute points that hit the 100 cap
+        let passes = 0
+        while (Math.abs(remainingPointsToDistribute) > 0.1 && passes < 5) {
+            let activePillars = 0
+            if (remainingPointsToDistribute > 0) {
+                activePillars = form.pillars.filter(p => p.target < 100).length
+            } else {
+                activePillars = form.pillars.filter(p => p.target > 0).length
+            }
+
+            if (activePillars === 0) break // All capped! Unsolvable limit
+
+            const share = remainingPointsToDistribute / activePillars
+            remainingPointsToDistribute = 0
+
+            form.pillars.forEach((p) => {
+                if ((share > 0 && p.target < 100) || (share < 0 && p.target > 0)) {
+                    let newScore = p.target + share
+                    if (newScore > 100) {
+                        remainingPointsToDistribute += newScore - 100
+                        newScore = 100
+                    } else if (newScore < 0) {
+                        remainingPointsToDistribute += newScore
+                        newScore = 0
+                    }
+                    p.target = newScore
+                }
+            })
+            passes++
+        }
+        
+        form.pillars.forEach((p) => { p.target = Math.max(0, Math.min(100, Math.round(p.target))) })
     }
 
     setTimeout(() => { isSyncing = false }, 10)
@@ -159,7 +191,7 @@ watch(() => form.pillars, (newPillars) => {
     isSyncing = true
 
     const avg = newPillars.reduce((sum, p) => sum + p.target, 0) / newPillars.length
-    form.targetScore = Math.round(avg)
+    form.targetScore = Math.max(0, Math.min(100, Math.round(avg)))
 
     setTimeout(() => { isSyncing = false }, 10)
 }, { deep: true })

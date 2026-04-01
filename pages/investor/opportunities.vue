@@ -4,8 +4,8 @@
         <header class="bg-white border-b border-gray-200 px-8 py-6 flex-shrink-0">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Program Management</h1>
-                    <p class="text-gray-500 mt-1">Manage investment readiness programs and track progress</p>
+                    <h1 class="text-2xl font-bold text-gray-900 text-teal-600">Investment Programs</h1>
+                    <p class="text-gray-500 mt-1">Discover and enroll in investment readiness programs</p>
                 </div>
             </div>
         </header>
@@ -35,17 +35,11 @@
 
                 <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <ProgramCard v-for="program in programs" :key="program.id" :program="program"
-                        @view="handleViewProgram" @edit="handleEditProgram" @delete="handleDeleteProgram"
-                        @manage-smes="handleManageSmes" @discuss="handleDiscussProgram" />
+                        @view="handleViewProgram" @discuss="handleDiscussProgram" @enroll="handleEnrollProgram" />
                 </div>
             </div>
         </main>
 
-        <CreateProgramModal :is-open="isCreateModalOpen" :loading="loading" :initial-data="editingProgram"
-            @close="isCreateModalOpen = false" @create="handleCreateProgram" @update="handleUpdateProgram" />
-
-        <ManageSmeEnrollmentModal :is-open="isManageSmesModalOpen" :program="selectedProgram"
-            @close="isManageSmesModalOpen = false" />
 
         <!-- View Details Slide-Over -->
         <Teleport to="body">
@@ -57,7 +51,7 @@
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
                                 <span class="text-teal-700 font-bold text-lg">{{ viewingProgram.name?.charAt(0) || 'P'
-                                }}</span>
+                                    }}</span>
                             </div>
                             <div>
                                 <h2 class="font-bold text-gray-900 text-lg">{{ viewingProgram.name }}</h2>
@@ -141,6 +135,18 @@
                                 <ChatBubbleLeftRightIcon class="w-4 h-4 text-purple-400" /> Open Discussion Thread
                             </button>
                         </div>
+
+                        <!-- Participants Section -->
+                        <div class="border-t border-gray-100 pt-6">
+                            <h3
+                                class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center justify-between">
+                                Enrolled Participants
+                                <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-[10px]">{{
+                                    investorStore.programParticipants.length }}</span>
+                            </h3>
+
+                            <ProgramParticipantList :participants="investorStore.programParticipants" :loading="investorStore.loading" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,11 +184,10 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdminStore } from '~/stores/admin.store'
+import { useInvestorStore } from '~/stores/investor.store'
 import StatCard from '~/components/AdminStatCard.vue'
-import ProgramCard from '~/components/AdminProgramCard.vue'
-import CreateProgramModal from '~/components/AdminCreateProgramModal.vue'
-import ManageSmeEnrollmentModal from '~/components/AdminManageSmeEnrollmentModal.vue'
+import ProgramCard from '~/components/ProgramCard.vue'
+import ProgramParticipantList from '~/components/ProgramParticipantList.vue'
 import ProgramCommentThread from '~/components/ProgramCommentThread.vue'
 import {
     PlusIcon,
@@ -198,63 +203,44 @@ import {
     DocumentDuplicateIcon
 } from '@heroicons/vue/24/outline'
 
-const adminStore = useAdminStore()
+const investorStore = useInvestorStore()
 
-const stats = computed(() => adminStore.programStats)
-const loading = computed(() => adminStore.loading)
+const stats = computed(() => investorStore.programStats)
+const loading = computed(() => investorStore.loading)
 const searchQuery = ref('')
-const isCreateModalOpen = ref(false)
-const isManageSmesModalOpen = ref(false)
-const selectedProgram = ref(null)
 const viewingProgram = ref<any>(null)
 const discussingProgram = ref<any>(null)
 const router = useRouter()
 
-// Use the getter for filtering
-const programs = computed(() => adminStore.filteredPrograms(searchQuery.value))
-const editingProgram = ref(null)
-
-const openCreateModal = () => {
-    editingProgram.value = null
-    isCreateModalOpen.value = true
-}
-
-const handleEditProgram = (program: any) => {
-    editingProgram.value = program
-    isCreateModalOpen.value = true
-}
-
-const handleManageSmes = (program: any) => {
-    selectedProgram.value = program
-    isManageSmesModalOpen.value = true
-}
+// Filter programs locally for search
+const programs = computed(() => {
+    if (!searchQuery.value) return investorStore.programs
+    const q = searchQuery.value.toLowerCase()
+    return investorStore.programs.filter(p =>
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+    )
+})
 
 const handleViewProgram = (program: any) => {
     viewingProgram.value = program
+    investorStore.fetchParticipants(program.id)
 }
 
 const handleDiscussProgram = (program: any) => {
     discussingProgram.value = program
 }
 
-const handleCreateProgram = async (programData: any) => {
-    await adminStore.createProgram(programData)
-    isCreateModalOpen.value = false
-}
-
-const handleUpdateProgram = async (programData: any) => {
-    await adminStore.updateProgram(programData)
-    isCreateModalOpen.value = false
-}
-
-const handleDeleteProgram = async (id: string | number) => {
-    if (confirm('Are you sure you want to delete this program?')) {
-        await adminStore.deleteProgram(id)
+const handleEnrollProgram = async (id: string | number) => {
+    try {
+        await investorStore.enrollInProgram(id)
+    } catch (e) {
+        console.error('Enrollment failed', e)
     }
 }
 
 onMounted(() => {
-    adminStore.fetchProgramsData()
+    investorStore.fetchPrograms()
 })
 
 definePageMeta({

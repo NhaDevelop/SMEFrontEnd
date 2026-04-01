@@ -44,11 +44,11 @@
         <div v-if="user"
           class="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-gray-700 transition-smooth cursor-pointer">
           <div class="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-            <span class="text-sm font-semibold">{{ user.avatar }}</span>
+            <span class="text-sm font-semibold">{{ (user?.full_name || user?.name || user?.role || 'U').charAt(0).toUpperCase() }}</span>
           </div>
           <div v-if="!isCollapsed" class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate">{{ user.name }}</p>
-            <p class="text-xs text-gray-400 truncate">{{ user.role }}</p>
+            <p class="text-sm font-medium truncate">{{ user?.full_name || user?.name || user?.role }}</p>
+            <p class="text-xs text-gray-400 truncate">{{ user?.role }}</p>
           </div>
         </div>
 
@@ -71,6 +71,7 @@
 <script>
 import { ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useDashboardStore } from '~/stores/dashboard.store'
 import {
   ChartBarSquareIcon,
   ChartPieIcon,
@@ -108,6 +109,7 @@ export default {
   },
   setup() {
     const { user, logout } = useAuth()
+    const dashboardStore = useDashboardStore()
     const isCollapsed = ref(false)
     const isInvestor = computed(() => {
       const role = user.value?.role?.toUpperCase()
@@ -276,6 +278,7 @@ export default {
     })
 
     const sidebarClasses = computed(() => {
+      if (dashboardStore.isAssessmentActive) return 'w-0 overflow-hidden opacity-0 invisible'
       return isCollapsed.value ? 'w-20' : 'w-64'
     })
 

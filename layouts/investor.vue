@@ -78,10 +78,10 @@
                     <div class="flex items-center gap-3 mb-3">
                         <div
                             class="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold">
-                            {{ user?.name?.charAt(0) || 'S' }}
+                            {{ (user?.full_name || user?.name || 'S').charAt(0).toUpperCase() }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-white truncate">{{ user?.name || 'Sokha Chan' }}</p>
+                            <p class="text-sm font-medium text-white truncate">{{ user?.full_name || user?.name || 'Sokha Chan' }}</p>
                             <p class="text-xs text-gray-400 uppercase">{{ user?.role || 'INVESTOR' }}</p>
                         </div>
                     </div>

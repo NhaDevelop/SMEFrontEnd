@@ -62,7 +62,7 @@
             <div
               class="inline-flex items-center gap-1.5 font-medium text-teal-600 transition-colors group-hover:text-teal-700">
               <ArrowTrendingUpIcon class="w-3.5 h-3.5" />
-              <span>+{{ pillar.improvementPotential }}</span>
+              <span>+{{ pillar.improvementPotential }}%</span>
             </div>
           </td>
         </tr>

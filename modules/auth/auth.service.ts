@@ -20,6 +20,18 @@ export class AuthService {
     return this.repository.getUser()
   }
 
+  async updateGeneralProfile(data: any): Promise<User> {
+    return this.repository.updateGeneralProfile(data)
+  }
+
+  async updateSmeProfile(data: any): Promise<User> {
+    return this.repository.updateSmeProfile(data)
+  }
+
+  async updateInvestorProfile(data: any): Promise<User> {
+    return this.repository.updateInvestorProfile(data)
+  }
+
   async register(data: any): Promise<void> {
     return this.repository.register(data)
   }

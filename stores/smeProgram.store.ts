@@ -12,17 +12,29 @@ export interface SmeProgram {
   endDate: string
   templateName: string
   templateId: number
-  enrollmentStatus: 'None' | 'Applied' | 'Enrolled' | 'Accepted' | 'Rejected'
+  enrollmentStatus: 'None' | 'Applied' | 'Enrolled' | 'Accepted' | 'Rejected' | 'Approved' | 'APPROVED'
   progress: number
   avgScore: number
   smesCount?: number
+  investorsCount?: number
+}
+
+export interface ProgramParticipant {
+  id: number
+  name: string
+  role: 'SME' | 'INVESTOR'
+  industry?: string
+  status: string
+  enrolled_at: string
 }
 
 export const useSmeProgramStore = defineStore('smeProgram', {
   state: () => ({
     programs: [] as SmeProgram[],
     enrolledPrograms: [] as SmeProgram[],
+    participants: [] as ProgramParticipant[],
     loading: false,
+    participantsLoading: false,
     error: null as string | null
   }),
 
@@ -74,8 +86,22 @@ export const useSmeProgramStore = defineStore('smeProgram', {
       } catch (err: any) {
         this.error = err.data?.message || err.message || 'Failed to apply to program'
         throw err
-      } finally {
+        } finally {
         this.loading = false
+      }
+    },
+
+    async fetchParticipants(programId: number | string) {
+      this.participantsLoading = true
+      const api = useApi()
+      try {
+        const response = await api<any>(`/sme/programs/${programId}/participants`)
+        this.participants = response.data || response || []
+      } catch (err: any) {
+        console.error('[SmeProgramStore] Fetch participants error:', err)
+        this.participants = []
+      } finally {
+        this.participantsLoading = false
       }
     }
   }

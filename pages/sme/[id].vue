@@ -354,7 +354,9 @@ const fetchSmeDetails = async () => {
     const api = useApi()
     try {
         const role = authStore.user?.role
-        const prefix = role === 'ADMIN' ? '/admin' : ''
+        let prefix = ''
+        if (role === 'ADMIN') prefix = '/admin'
+        else if (role === 'INVESTOR') prefix = '/investor'
         const response = await api<any>(`${prefix}/smes/${smeId.value}`)
         apiSmeData.value = response.data || response
     } catch (e) {
@@ -515,7 +517,7 @@ const fetchRealActions = async () => {
     try {
         const role = authStore.user?.role
         let endpoint = '/sme/dashboard'
-        if (role === 'INVESTOR') endpoint = '/investor/dashboard'
+        if (role === 'INVESTOR') endpoint = `/investor/smes/${smeId.value}/dashboard`
         if (role === 'ADMIN') endpoint = `/admin/smes/${smeId.value}/dashboard`
 
         const response = await api<any>(endpoint)

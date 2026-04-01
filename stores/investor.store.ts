@@ -66,8 +66,14 @@ interface FilterState {
 interface InvestorState {
   dealFlow: SME[]
   goals: Goal[]
+  programs: any[]
+  programStats: any | null
+  programParticipants: any[]
   watchlist: (string | number)[]
   filters: FilterState
+  lastDealFlowFetch: number | null
+  lastProgramsFetch: number | null
+  lastAnalyticsFetch: number | null
   loading: boolean
 }
 
@@ -75,6 +81,9 @@ export const useInvestorStore = defineStore('investor', {
   state: (): InvestorState => ({
     dealFlow: [],
     goals: [],
+    programs: [],
+    programStats: null,
+    programParticipants: [],
     watchlist: [],
     filters: {
       search: '',
@@ -83,14 +92,19 @@ export const useInvestorStore = defineStore('investor', {
       minScore: 0,
       risk: 'All Risks'
     },
+    lastDealFlowFetch: null,
+    lastProgramsFetch: null,
+    lastAnalyticsFetch: null,
     loading: false
   }),
 
   getters: {
     filteredDealFlow: (state) => {
+      if (!Array.isArray(state.dealFlow)) return []
+      
       return state.dealFlow.filter(sme => {
-        const matchesSearch = sme.name.toLowerCase().includes(state.filters.search.toLowerCase()) || 
-                              sme.description.toLowerCase().includes(state.filters.search.toLowerCase())
+        const matchesSearch = (sme.name || '').toLowerCase().includes(state.filters.search.toLowerCase()) || 
+                              (sme.description || '').toLowerCase().includes(state.filters.search.toLowerCase())
         
         const matchesIndustry = state.filters.industry === 'All Sectors' || sme.industry === state.filters.industry
         
@@ -110,37 +124,116 @@ export const useInvestorStore = defineStore('investor', {
     },
     
     watchlistItems: (state) => {
+        if (!Array.isArray(state.dealFlow)) return []
         return state.dealFlow.filter(sme => state.watchlist.includes(sme.id))
     },
 
     stats: (state) => {
+        const dealFlow = Array.isArray(state.dealFlow) ? state.dealFlow : []
+        const goals = Array.isArray(state.goals) ? state.goals : []
+
         return {
-            totalDeals: state.dealFlow.length,
-            readyToInvest: state.dealFlow.filter(s => s.score >= 80).length,
-            highRisk: state.dealFlow.filter(s => s.score < 60).length,
-            totalFunding: state.dealFlow.reduce((sum, s) => sum + s.fundingNeeded, 0),
-            avgScore: state.dealFlow.length ? Math.round(state.dealFlow.reduce((sum, s) => sum + s.score, 0) / state.dealFlow.length) : 0,
-            activeGoals: state.goals.filter(g => g.status === 'Active').length,
-            achievedGoals: state.goals.filter(g => g.status === 'Achieved').length
+            totalDeals: dealFlow.length,
+            readyToInvest: dealFlow.filter(s => s.score >= 80).length,
+            highRisk: dealFlow.filter(s => s.score < 60).length,
+            totalFunding: dealFlow.reduce((sum, s) => sum + (s.fundingNeeded || 0), 0),
+            avgScore: dealFlow.length ? Math.round(dealFlow.reduce((sum, s) => sum + s.score, 0) / dealFlow.length) : 0,
+            activeGoals: goals.filter(g => g.status === 'Active').length,
+            achievedGoals: goals.filter(g => g.status === 'Achieved').length
         }
     }
   },
 
   actions: {
-    async fetchDealFlow() {
+    async fetchDealFlow(force = false, programId?: string | number) {
+        // Cache for 2 minutes unless forced
+        if (!force && this.lastDealFlowFetch && (Date.now() - this.lastDealFlowFetch < 120000)) {
+            return
+        }
+
         this.loading = true
         const api = useApi()
         try {
-            const data = await api<any>('/investor/dealflow', {
-                params: {
-                    industry: this.filters.industry !== 'All Sectors' ? this.filters.industry : undefined,
-                    stage: this.filters.stage !== 'All Stages' ? this.filters.stage : undefined,
-                    minScore: this.filters.minScore > 0 ? this.filters.minScore : undefined
+            const [data, goalsRes] = await Promise.all([
+                api<any>('/investor/dealflow', {
+                    params: {
+                        industry: this.filters.industry !== 'All Sectors' ? this.filters.industry : undefined,
+                        stage: this.filters.stage !== 'All Stages' ? this.filters.stage : undefined,
+                        minScore: this.filters.minScore > 0 ? this.filters.minScore : undefined,
+                        program_id: programId
+                    }
+                }),
+                api<any>('/sme/goals')
+            ])
+            // Correctly parse data array from Laravel response wrapping
+            if (data.data && Array.isArray(data.data)) {
+                this.dealFlow = data.data
+            } else if (data.dealFlow && Array.isArray(data.dealFlow)) {
+                this.dealFlow = data.dealFlow
+            } else if (Array.isArray(data)) {
+                this.dealFlow = data
+            } else {
+                this.dealFlow = []
+            }
+            
+            const rawGoals = goalsRes.data || goalsRes || []
+            this.goals = rawGoals.map((g: any) => {
+                const dueDate = g.due_date ? new Date(g.due_date) : null
+                const now = new Date()
+                let overdue = false
+                let overdueDays = ''
+                let daysLeft = ''
+                let formattedDate = 'No date'
+
+                if (dueDate) {
+                    formattedDate = dueDate.toLocaleDateString()
+                    const diffTime = dueDate.getTime() - now.getTime()
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                    if (diffDays < 0) {
+                        overdue = true
+                        overdueDays = `${Math.abs(diffDays)}d`
+                    } else {
+                        daysLeft = `${diffDays}d left`
+                    }
+                }
+
+                const progress = g.progress_percentage || 0
+                const progressColor = progress >= 100 ? 'text-emerald-600' : 'text-teal-600'
+                const barColor = progress >= 100 ? 'bg-emerald-500' : 'bg-teal-500'
+                
+                let status = g.status || 'Active'
+                if (status === 'Not Started') status = 'Active'
+
+                return {
+                    id: g.id,
+                    smeId: g.sme_id,
+                    smeName: g.sme_name,
+                    sector: g.industry,
+                    location: g.location,
+                    title: g.title,
+                    description: g.description,
+                    status,
+                    isOffTrack: progress < 50 && overdue,
+                    progress,
+                    progressColor,
+                    barColor,
+                    targetScore: parseFloat(g.target_score) || 0,
+                    currentScore: parseFloat(g.current_score) || parseFloat(g.sme_profile?.readiness_score) || 0,
+                    expectedScore: parseFloat(g.expected_score) || parseFloat(g.target_score) || 0,
+                    overdue,
+                    overdueDays,
+                    daysLeft,
+                    dueDate: formattedDate,
+                    profilePillars: g.sme_profile?.pillars || [],
+                    goalPillars: g.pillar_targets || [],
+                    proofNote: g.proof_note || '',
+                    proofDocument: g.proof_document || '',
+                    rejectionNote: g.rejection_note,
+                    createdByRole: g.created_by_role,
+                    readinessHistory: g.readiness_history || []
                 }
             })
-            // Handle unwrapped data or original structure
-            this.dealFlow = data.dealFlow || data
-            this.goals = data.goals || []
+            this.lastDealFlowFetch = Date.now()
         } catch (error) {
             console.error('Failed to fetch deal flow:', error)
         } finally {
@@ -159,8 +252,6 @@ export const useInvestorStore = defineStore('investor', {
     
     setFilters(filters: Partial<FilterState>) {
         this.filters = { ...this.filters, ...filters }
-        // We could trigger a fetch here if we want server-side filtering, 
-        // but for now we are doing client-side filtering on the fetched set.
     },
 
     async createGoal(goalData: any) {
@@ -171,17 +262,17 @@ export const useInvestorStore = defineStore('investor', {
           method: 'POST',
           body: {
             smeId: goalData.smeId,
-            title: goalData.title || goalData.name, // handle mapping from UI
+            title: goalData.title || goalData.name, 
             description: goalData.description,
-            targetScore: goalData.targetScore,
-            deadline: goalData.dueDate || goalData.targetDate,
-            pillars: goalData.pillarTargets || [],
+            target_score: goalData.targetScore,
+            due_date: goalData.dueDate || goalData.targetDate,
+            pillar_targets: goalData.pillarTargets || [],
             createdBy: 'investor',
             investorName: authStore.user?.name,
             investorCompany: authStore.user?.company?.name
           }
         })
-        await this.fetchDealFlow()
+        await this.fetchDealFlow(true)
       } catch (error) {
         console.error('Failed to create goal:', error)
       }
@@ -194,11 +285,6 @@ export const useInvestorStore = defineStore('investor', {
         goal.status = status
         if (status === 'Achieved') {
           goal.progress = 100
-          goal.progressColor = 'text-green-600'
-          goal.barColor = 'bg-green-600'
-          goal.isOffTrack = false
-          goal.daysLeft = undefined
-          goal.dueDate = 'Completed'
         }
       }
       
@@ -211,8 +297,7 @@ export const useInvestorStore = defineStore('investor', {
             status: status === 'Achieved' ? 'COMPLETED' : status.toUpperCase()
           }
         })
-        // Refresh to guarantee sync
-        await this.fetchDealFlow()
+        await this.fetchDealFlow(true)
       } catch (error) {
         console.error('Failed to update goal status:', error)
       }
@@ -224,10 +309,83 @@ export const useInvestorStore = defineStore('investor', {
         await api(`/sme/goals?id=${id}`, {
           method: 'DELETE'
         })
-        await this.fetchDealFlow()
+        await this.fetchDealFlow(true)
       } catch (error) {
         console.error('Failed to delete goal:', error)
       }
+    },
+
+    async fetchPrograms(force = false) {
+        if (!force && this.lastProgramsFetch && (Date.now() - this.lastProgramsFetch < 300000)) {
+            return
+        }
+
+        this.loading = true
+        const api = useApi()
+        try {
+            const data = await api<any>('/investor/programs')
+            this.programs = data.programs || []
+            this.programStats = data.stats || null
+            this.lastProgramsFetch = Date.now()
+        } catch (error) {
+            console.error('Failed to fetch investor programs:', error)
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async fetchAnalytics(force = false, programId?: string | number) {
+        if (!force && this.lastAnalyticsFetch && (Date.now() - this.lastAnalyticsFetch < 300000)) {
+            return
+        }
+
+        this.loading = true
+        const api = useApi()
+        try {
+            const data = await api<any>('/investor/analytics', {
+                params: { program_id: programId }
+            })
+            if (data.smes) {
+                this.dealFlow = data.smes
+            }
+            this.lastAnalyticsFetch = Date.now()
+            return data
+        } catch (error) {
+            console.error('Failed to fetch investor analytics:', error)
+            throw error
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async enrollInProgram(programId: number | string) {
+        this.loading = true
+        const api = useApi()
+        try {
+            await api(`/investor/programs/${programId}/enroll`, {
+                method: 'POST'
+            })
+            await this.fetchPrograms(true)
+        } catch (error) {
+            console.error('Failed to enroll in program:', error)
+            throw error
+        } finally {
+            this.loading = false
+        }
+    },
+
+    async fetchParticipants(programId: number | string) {
+        this.loading = true
+        this.programParticipants = []
+        const api = useApi()
+        try {
+            const response = await api<any>(`/programs/${programId}/participants`)
+            this.programParticipants = response.data || response || []
+        } catch (error) {
+            console.error('Failed to fetch participants:', error)
+        } finally {
+            this.loading = false
+        }
     }
   }
 })

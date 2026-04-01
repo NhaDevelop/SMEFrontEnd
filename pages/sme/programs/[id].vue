@@ -239,43 +239,7 @@
                     </div>
 
                     <div v-else>
-                        <div v-if="participantsLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div v-for="i in 6" :key="i" class="h-28 bg-gray-50 animate-pulse rounded-2xl"></div>
-                        </div>
-
-                        <div v-else-if="participants.length === 0"
-                            class="bg-gray-50 border border-dashed border-gray-200 rounded-3xl p-20 text-center">
-                            <UserGroupIcon class="w-16 h-16 text-gray-200 mx-auto mb-4" />
-                            <p class="text-gray-500 font-bold">No participants yet in this cohort.</p>
-                        </div>
-
-                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div v-for="p in participants" :key="p.id || p.user_id || p.name"
-                                class="flex items-center justify-between p-5 rounded-2xl border border-gray-100 hover:border-teal-100 transition-all bg-white group shadow-sm">
-                                <div class="flex items-center gap-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-sm font-black text-gray-400 group-hover:bg-teal-50 group-hover:text-teal-600 transition-all shadow-sm">
-                                        {{ (p.name || 'P').charAt(0) }}
-                                    </div>
-                                    <div>
-                                        <h4 class="text-sm font-bold text-gray-900">{{ p.name || 'Participant' }}</h4>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span
-                                                :class="p.role === 'INVESTOR' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-teal-50 text-teal-600 border-teal-100'"
-                                                class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider">{{
-                                                p.role || 'SME' }}</span>
-                                            <span v-if="p.industry"
-                                                class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{
-                                                p.industry }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div :class="[
-                                    'text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-sm',
-                                    p.status === 'Accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                ]">{{ p.status || 'Active' }}</div>
-                            </div>
-                        </div>
+                        <ProgramParticipantList :participants="participants" :loading="participantsLoading" />
                     </div>
                 </div>
 
@@ -418,6 +382,7 @@ import {
 import { smeService } from '~/modules/sme/sme.service'
 import { formatDate, formatRelativeTime } from '~/utils/format'
 import { useRoute } from 'vue-router'
+import ProgramParticipantList from '~/components/ProgramParticipantList.vue'
 
 const route = useRoute()
 const programId = route.params.id as string

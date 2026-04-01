@@ -224,9 +224,10 @@ const emit = defineEmits(['sme-click'])
 
 const sectorsList = ref<any[]>([])
 
+const api = useApi()
 onMounted(async () => {
     try {
-        sectorsList.value = await $fetch<any[]>('/api/admin/sectors')
+        sectorsList.value = await api<any[]>('/sectors')
     } catch (e) { console.error('Failed to fetch sectors', e) }
 })
 
@@ -322,7 +323,7 @@ const startups = computed(() => {
 const isCreateGoalOpen = ref(false)
 const prefilledSme = ref(null)
 
-const smeList = computed(() => store.dealFlow.map(sme => ({ id: sme.id, name: sme.name })))
+const smeList = computed(() => store.dealFlow.map(sme => ({ id: sme.id, name: sme.name, score: sme.score, pillars: sme.pillars, programIds: sme.programIds || [] })))
 
 const openQuickView = (sme: any) => {
     emit('sme-click', sme)

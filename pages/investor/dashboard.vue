@@ -7,6 +7,18 @@
                     <h1 class="text-2xl font-bold text-gray-900">Portfolio Overview</h1>
                     <p class="text-gray-500 mt-1">Monitor and compare SME investment readiness across your portfolio</p>
                 </div>
+
+                <!-- Program Filter -->
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-medium text-gray-500">Program:</label>
+                    <select v-model="selectedProgramId" @change="handleProgramChange"
+                        class="pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 rounded-md bg-white shadow-sm transition-all hover:border-teal-400">
+                        <option :value="undefined">All Enrolled Programs</option>
+                        <option v-for="p in enrolledPrograms" :key="p.id" :value="p.id">
+                            {{ p.name }}
+                        </option>
+                    </select>
+                </div>
             </div>
         </header>
 
@@ -269,6 +281,10 @@ import {
 
 const store = useInvestorStore()
 
+// Filter state
+const selectedProgramId = ref<string | number | undefined>(undefined)
+const enrolledPrograms = computed(() => store.programs.filter(p => p.isEnrolled))
+
 // Modal state
 const selectedSme = ref<any | null>(null)
 
@@ -305,7 +321,15 @@ const handleCreateGoal = () => {
     console.log('Create goal for:', selectedSme.value)
 }
 
-onMounted(() => {
+const handleProgramChange = () => {
+    store.fetchDealFlow(true, selectedProgramId.value)
+}
+
+onMounted(async () => {
+    // Fetch programs first so we have the list
+    await store.fetchPrograms()
+    
+    // Fetch initial dealflow
     if (store.dealFlow.length === 0) {
         store.fetchDealFlow()
     }

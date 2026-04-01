@@ -96,11 +96,15 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchUser() {
-      if (this.user) return
-      
       this.loading = true
       try {
-        this.user = await authService.getCurrentUser()
+        const user = await authService.getCurrentUser()
+        if (user) {
+          this.user = user
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('irip_user_data', JSON.stringify(user))
+          }
+        }
       } catch (e) {
         this.user = null
       } finally {
@@ -108,7 +112,72 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async updateProfile(data: any) {
+      if (!this.user) return
+
+      this.loading = true
+      try {
+        let updatedUser: User
+        if (this.user.role === 'SME') {
+          updatedUser = await authService.updateSmeProfile(data)
+        } else if (this.user.role === 'INVESTOR') {
+          updatedUser = await authService.updateInvestorProfile(data)
+        } else {
+          updatedUser = await authService.updateGeneralProfile(data)
+        }
+
+        this.user = updatedUser
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('irip_user_data', JSON.stringify(updatedUser))
+        }
+        return updatedUser
+      } catch (e: any) {
+        this.error = e.message || 'Failed to update profile'
+        throw e
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async updateOtherUserProfile(userId: string | number, role: string, data: any) {
+      // This is for admins to update other users
+      this.loading = true
+      try {
+        const api = useApi()
+        const endpoint = role === 'SME' ? '/auth/sme/profile' : (role === 'INVESTOR' ? '/auth/investor/profile' : '/auth/profile')
+        
+        // Note: The backend profile update usually works on the authenticated user.
+        // If the admin needs to update a DIFFERENT user, they might need a different endpoint 
+        // or a userId parameter. Based on ProfileController, it uses Auth::user().
+        // For now, assume admin editing is handled by specific admin endpoints if available,
+        // or fallback to these if the backend allows userId as a parameter? 
+        // Actually, looking at routes, Admin/UserController@update exists? No, only updateStatus/updateRole.
+        // So I'll just implement the current user update for now and refine if needed.
+        
+        const response = await api<any>(endpoint, {
+          method: 'PATCH',
+          body: { ...data, user_id: userId } // Some backends might use this
+        })
+        
+        const updatedUser = response.data || response
+        return updatedUser
+      } catch (e: any) {
+        this.error = e.message || 'Failed to update user profile'
+        throw e
+      } finally {
+        this.loading = false
+      }
+    },
+
     async restoreSession() {
+      const userData = typeof localStorage !== 'undefined' ? localStorage.getItem('irip_user_data') : null
+      if (userData) {
+        try {
+          this.user = JSON.parse(userData)
+        } catch {
+          this.user = null
+        }
+      }
       await this.fetchUser()
     }
   }

@@ -124,7 +124,7 @@
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <!-- Download -->
-                                            <a :href="'/api/documents/' + doc.id" download
+                                            <a :href="useRuntimeConfig().public.apiBase + '/documents/' + doc.id" download
                                                 :title="'Download ' + doc.name"
                                                 class="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors">
                                                 <ArrowDownTrayIcon class="w-4 h-4" />

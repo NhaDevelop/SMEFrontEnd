@@ -49,15 +49,35 @@
 
                                 <!-- Basic Info Tab -->
                                 <div v-if="activeTab === 'basic'" class="space-y-5">
-                                    <!-- Select SME -->
+                                    <!-- Select Program -->
                                     <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Select Program
+                                            *</label>
+                                        <select v-model="form.programId"
+                                            class="w-full rounded-lg border-gray-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2.5 text-gray-900">
+                                            <option value="">Choose a Program</option>
+                                            <option v-for="program in investorStore.programs" :key="program.id"
+                                                :value="program.id">{{ program.name }}
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Select SME -->
+                                    <div v-if="form.programId">
                                         <label class="block text-sm font-bold text-gray-700 mb-1">Select SME *</label>
                                         <select v-model="form.smeId"
                                             class="w-full rounded-lg border-gray-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2.5 text-gray-900">
                                             <option value="">Choose an SME</option>
-                                            <option v-for="sme in smeList" :key="sme.id" :value="sme.id">{{ sme.name }}
+                                            <option v-for="sme in filteredSmeList" :key="sme.id" :value="sme.id">{{
+                                                sme.name }}
                                             </option>
                                         </select>
+                                        <p v-if="filteredSmeList.length === 0" class="text-xs text-orange-500 mt-1">No
+                                            SMEs from your dealflow are enrolled in the selected program.</p>
+                                    </div>
+                                    <div v-else
+                                        class="text-xs text-gray-500 italic p-2 bg-gray-50 rounded border border-gray-100">
+                                        Please select a program first to assign a goal.
                                     </div>
 
                                     <!-- Quick Templates -->
@@ -70,7 +90,7 @@
                                                 class="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-all text-left">
                                                 <span class="text-xl">{{ template.icon }}</span>
                                                 <span class="text-xs font-medium text-gray-700">{{ template.label
-                                                    }}</span>
+                                                }}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -138,7 +158,7 @@
                                                     <div class="text-xs text-gray-500 mb-1 font-medium">Target Score
                                                     </div>
                                                     <div class="text-3xl font-bold text-emerald-600">{{ form.targetScore
-                                                    }}</div>
+                                                        }}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -156,10 +176,10 @@
                                                 <span class="text-sm font-bold text-gray-900">{{ pillar.name }}</span>
                                                 <div class="flex items-center gap-2 text-xs">
                                                     <span class="text-gray-500 font-medium">{{ pillar.currentScore
-                                                    }}</span>
+                                                        }}</span>
                                                     <span class="text-gray-300">→</span>
                                                     <span class="text-[#0F766E] font-bold">{{ pillar.targetScore
-                                                    }}</span>
+                                                        }}</span>
                                                     <span v-if="pillar.targetScore > pillar.currentScore"
                                                         class="text-orange-500 font-medium">
                                                         (+{{ pillar.targetScore - pillar.currentScore }})
@@ -196,9 +216,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { ArrowLongRightIcon, XMarkIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { useInvestorStore } from '~/stores/investor.store'
+
+const investorStore = useInvestorStore()
+
+onMounted(() => {
+    if (investorStore.programs.length === 0) {
+        investorStore.fetchPrograms()
+    }
+})
 
 const props = defineProps<{
     isOpen: boolean
@@ -210,17 +239,53 @@ const emit = defineEmits(['close', 'create'])
 
 const activeTab = ref('basic')
 const form = ref<{
+    programId: string | number
     smeId: string | number
     name: string
     description: string
     targetDate: string
     targetScore: number
 }>({
+    programId: '',
     smeId: '',
     name: '',
     description: '',
     targetDate: '',
     targetScore: 80
+})
+
+watch(() => form.value.programId, async (newProgramId) => {
+    if (newProgramId) {
+        await investorStore.fetchParticipants(newProgramId)
+        if (form.value.smeId) {
+            const isValid = filteredSmeList.value.some(sme => String(sme.id) === String(form.value.smeId))
+            if (!isValid) form.value.smeId = ''
+        }
+    } else {
+        investorStore.programParticipants = []
+        form.value.smeId = ''
+    }
+})
+
+const filteredSmeList = computed(() => {
+    if (!form.value.programId) return []
+
+    // Use the backend participants list so we get exact enrollments
+    const participants = investorStore.programParticipants || []
+    const smeParticipants = participants.filter((p: any) => p.role === 'SME')
+
+    return smeParticipants.map((p: any) => {
+        // Link to existing dealflow data to maintain score and pillars
+        const found = props.smeList?.find(s => String(s.id) === String(p.profile_id))
+        if (found) return found
+
+        return {
+            id: p.profile_id,
+            name: p.name,
+            score: 0,
+            pillars: []
+        }
+    })
 })
 
 // Compute current SME score for display
@@ -233,33 +298,87 @@ const currentSmeScore = computed(() => {
     return 0
 })
 
-// Quick template options
-const quickTemplates = [
-    {
-        id: 'investor-ready',
-        label: 'Investor Ready',
-        icon: '🎯',
-        getGoalName: (smeName: string) => `Investor Ready by Q4 2024`,
-        getDescription: (smeName: string) => `Achieve investor-ready status with 80+ overall score for ${smeName}`,
-        targetScore: 80
-    },
-    {
-        id: 'strengthen-weak',
-        label: 'Strengthen Weak',
-        icon: '💪',
-        getGoalName: (smeName: string) => `Strengthen Weak Areas`,
-        getDescription: (smeName: string) => `Focus on improving the weakest pillars to boost overall readiness`,
-        targetScore: 75
-    },
-    {
-        id: 'financial-focus',
-        label: 'Financial Focus',
-        icon: '💰',
-        getGoalName: (smeName: string) => `Financial Excellence`,
-        getDescription: (smeName: string) => `Improve financial metrics and reduce financial risk for ${smeName}`,
-        targetScore: 85
+// Quick template options based on selected SME risk areas
+const quickTemplates = computed(() => {
+    if (!form.value.smeId || !props.smeList) return []
+    const sme = props.smeList.find(s => s.id === form.value.smeId)
+    if (!sme || !sme.pillars || sme.pillars.length === 0) return []
+
+    const templates = []
+    
+    // Find high risk pillars (score < 60)
+    const highRiskPillars = sme.pillars.filter((p: any) => p.score < 60)
+    if (highRiskPillars.length > 0) {
+        templates.push({
+            id: 'address-critical',
+            label: 'Address Critical Risks',
+            icon: '🛡️',
+            getGoalName: (smeName: string) => `Mitigate High Risks for ${smeName}`,
+            getDescription: (smeName: string) => `Bring early-stage and pre-investment risk areas up to near-ready safe points.`,
+            apply: () => {
+                let sum = 0
+                pillarTargets.value.forEach(pt => {
+                    const original = sme.pillars.find((p: any) => (p.name || p.pillar_name) === pt.name)
+                    const score = original ? original.score : 0
+                    if (score < 60) {
+                        pt.targetScore = Math.max(score + 15, 65) // Push to safe near-ready
+                    } else {
+                        pt.targetScore = score // Keep as is
+                    }
+                    sum += pt.targetScore
+                })
+                form.value.targetScore = Math.round(sum / pillarTargets.value.length)
+            }
+        })
     }
-]
+
+    // Find near ready pillars (60 <= score < 80)
+    const nearReadyPillars = sme.pillars.filter((p: any) => p.score >= 60 && p.score < 80)
+    if (nearReadyPillars.length > 0) {
+        templates.push({
+            id: 'push-to-ready',
+            label: 'Push to Investor Ready',
+            icon: '🚀',
+            getGoalName: (smeName: string) => `Achieve Investor Readiness`,
+            getDescription: (smeName: string) => `Elevate near-ready pillars above the 80-point threshold for full investment readiness.`,
+            apply: () => {
+                let sum = 0
+                pillarTargets.value.forEach(pt => {
+                    const original = sme.pillars.find((p: any) => (p.name || p.pillar_name) === pt.name)
+                    const score = original ? original.score : 0
+                    if (score >= 60 && score < 80) {
+                        pt.targetScore = Math.max(score + 10, 85) // Push to investor ready
+                    } else {
+                        pt.targetScore = score > 80 ? score : pt.targetScore // Keep as is or existing target
+                    }
+                    sum += pt.targetScore
+                })
+                form.value.targetScore = Math.round(sum / pillarTargets.value.length)
+            }
+        })
+    }
+
+    // Always include overall template
+    templates.push({
+        id: 'overall-growth',
+        label: 'Overall Growth Target',
+        icon: '📈',
+        getGoalName: (smeName: string) => `Overall Growth & Readiness`,
+        getDescription: (smeName: string) => `A balanced goal to improve the overall readiness score across all pillars.`,
+        apply: () => {
+            let sum = 0
+            pillarTargets.value.forEach(pt => {
+                const original = sme.pillars.find((p: any) => (p.name || p.pillar_name) === pt.name)
+                const score = original ? original.score : 0
+                pt.targetScore = Math.min(100, score + 15) // Blanket +15 boost
+                sum += pt.targetScore
+            })
+            form.value.targetScore = Math.round(sum / pillarTargets.value.length)
+        }
+    })
+
+    return templates.slice(0, 3) // Max 3 templates fit in grid
+})
 
 
 
@@ -286,6 +405,11 @@ const updatePillarsForSme = (sme: any) => {
 // Watch for prefilled SME data
 watch(() => props.prefilledSme, (newSme) => {
     if (newSme) {
+        // Auto-select program if available
+        if (newSme.programIds && newSme.programIds.length > 0) {
+            form.value.programId = newSme.programIds[0]
+        }
+
         // Auto-fill the form with SME data
         form.value.smeId = String(newSme.id)
 
@@ -334,9 +458,43 @@ watch(() => form.value.targetScore, (newVal) => {
     const diff = newVal - currentAvg
 
     if (Math.abs(diff) >= 0.5) {
-        pillarTargets.value.forEach(p => {
-            p.targetScore = Math.round(Math.min(100, Math.max(0, p.targetScore + diff)))
-        })
+        // Find total points to distribute
+        let remainingPointsToDistribute = diff * pillarTargets.value.length
+        
+        // Loop up to 5 times to distribute points that hit the 100 cap
+        let passes = 0
+        while (Math.abs(remainingPointsToDistribute) > 0.1 && passes < 5) {
+            let activePillars = 0
+            // Count how many pillars CAN still be targeted
+            if (remainingPointsToDistribute > 0) {
+                activePillars = pillarTargets.value.filter(p => p.targetScore < 100).length
+            } else {
+                activePillars = pillarTargets.value.filter(p => p.targetScore > 0).length
+            }
+
+            if (activePillars === 0) break // All capped! Unsolvable limit
+
+            const share = remainingPointsToDistribute / activePillars
+            remainingPointsToDistribute = 0
+
+            pillarTargets.value.forEach((p) => {
+                if ((share > 0 && p.targetScore < 100) || (share < 0 && p.targetScore > 0)) {
+                    let newScore = p.targetScore + share
+                    if (newScore > 100) {
+                        remainingPointsToDistribute += newScore - 100
+                        newScore = 100
+                    } else if (newScore < 0) {
+                        remainingPointsToDistribute += newScore
+                        newScore = 0
+                    }
+                    p.targetScore = newScore
+                }
+            })
+            passes++
+        }
+        
+        // Round accurately inside bounds
+        pillarTargets.value.forEach((p) => { p.targetScore = Math.max(0, Math.min(100, Math.round(p.targetScore))) })
     }
 
     setTimeout(() => { isSyncing = false }, 10)
@@ -347,7 +505,7 @@ watch(pillarTargets, (newPillars) => {
     isSyncing = true
 
     const avg = newPillars.reduce((sum, p) => sum + p.targetScore, 0) / newPillars.length
-    form.value.targetScore = Math.round(avg)
+    form.value.targetScore = Math.max(0, Math.min(100, Math.round(avg)))
 
     setTimeout(() => { isSyncing = false }, 10)
 }, { deep: true })
@@ -357,10 +515,19 @@ const applyTemplate = (template: any) => {
     const smeName = sme?.name || 'SME'
     form.value.name = template.getGoalName(smeName)
     form.value.description = template.getDescription(smeName)
-    form.value.targetScore = template.targetScore
+    
+    // Disable syncing temporarily while applying template explicitly
+    isSyncing = true
+    if (template.apply) {
+        template.apply()
+    } else if (template.targetScore !== undefined) {
+        form.value.targetScore = template.targetScore
+    }
+    setTimeout(() => { isSyncing = false }, 50)
 }
 
 const errors = ref({
+    programId: false,
     smeId: false,
     name: false,
     targetDate: false
@@ -372,11 +539,12 @@ const closeModal = () => {
 
 const createGoal = () => {
     // Basic validation
+    errors.value.programId = !form.value.programId
     errors.value.smeId = !form.value.smeId
     errors.value.name = !form.value.name
     errors.value.targetDate = !form.value.targetDate
 
-    if (errors.value.smeId || errors.value.name || errors.value.targetDate) {
+    if (errors.value.programId || errors.value.smeId || errors.value.name || errors.value.targetDate) {
         activeTab.value = 'basic'
         return
     }

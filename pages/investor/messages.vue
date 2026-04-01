@@ -305,7 +305,7 @@ const enrolledPrograms = ref<any[]>([])
 
 const fetchEnrolledPrograms = async () => {
     try {
-        const res = await useApi()('/investor/programs')
+        const res = await useApi()('/investor/programs') as any
         enrolledPrograms.value = Array.isArray(res) ? res : (res?.programs || [])
     } catch (e) {
         console.error('[Investor Messages] Failed to fetch programs:', e)

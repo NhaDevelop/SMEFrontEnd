@@ -9,10 +9,7 @@
 
         <!-- Logo -->
         <div class="flex flex-col items-center mb-8">
-            <div
-                class="w-14 h-14 bg-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-600/25 mb-3">
-                <ChartBarIcon class="w-7 h-7 text-white" />
-            </div>
+            <img src="/logo.png" alt="IRIP Logo" class="h-20 w-20 object-contain shadow-xl rounded-full mb-3" />
             <span class="text-2xl font-bold text-gray-900 tracking-tight">IRIP</span>
             <h1 class="text-3xl font-bold text-gray-900 mt-4 mb-1">Create Account</h1>
             <p class="text-gray-500 text-sm">Complete your verification to access the Investment Readiness Platform</p>

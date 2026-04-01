@@ -31,6 +31,7 @@ interface DashboardState {
   actions: Action[]
   primaryGoal: any | null
   frameworkThresholds: any[]
+  isAssessmentActive: boolean
   loading: boolean
   error: string | null
 }
@@ -43,13 +44,18 @@ export const useDashboardStore = defineStore('dashboard', {
     actions: [],
     primaryGoal: null,
     frameworkThresholds: [],
+    isAssessmentActive: false,
     loading: false,
     error: null
   }),
 
   getters: {
     overallScore: (state) => state.company?.overallScore ?? calculateOverallScore(state.pillars),
-    growthPotential: (state) => calculateGrowthPotential(state.pillars),
+    growthPotential: (state) => {
+      // Calculate growth potential strictly based on the recommended actions
+      const sum = state.actions.reduce((acc, a) => acc + (a.impact || 0), 0)
+      return parseFloat(sum.toFixed(2))
+    },
     overallRiskLevel(): string {
       return getRiskLevel(this.overallScore, this.frameworkThresholds)
     },

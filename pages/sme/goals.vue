@@ -17,7 +17,7 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
             <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
                 <div class="w-12 h-12 rounded-md bg-gray-50 flex items-center justify-center text-gray-400">
                     <FlagIcon class="w-6 h-6" />
@@ -49,9 +49,20 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-gray-900">{{goals.filter(g => g.status === 'Achieved').length
+                    <div class="text-2xl font-bold text-gray-900">{{goals.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED').length
                     }}</div>
                     <div class="text-sm text-gray-500">Achieved</div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-md bg-purple-50 flex items-center justify-center text-purple-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ goals.filter(g => g.status === 'Pending Verification').length }}</div>
+                    <div class="text-sm text-gray-500">Pending Review</div>
                 </div>
             </div>
             <div class="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex items-center gap-4">
@@ -117,7 +128,7 @@
                 </div>
 
                 <template v-else>
-                    <div v-for="goal in filteredGoals" :key="goal.id" @click="selectedGoal = goal" :class="[
+                    <div v-for="goal in filteredGoals" :key="goal.id" @click="selectGoal(goal)" :class="[
                         'rounded-lg p-6 border transition-all cursor-pointer',
                         goal.status === 'Achieved' ? 'bg-emerald-50 border-emerald-200' :
                             goal.overdue ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm',
@@ -129,20 +140,20 @@
                                     <h3 class="text-lg font-bold text-gray-900">{{ goal.title }}</h3>
                                     <span :class="[
                                         'px-2 py-0.5 text-xs font-semibold rounded-full border',
-                                        goal.status === 'Active' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                        goal.status === 'Active' || goal.status === 'ACTIVE' || goal.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-100' :
                                             goal.status === 'Achieved' ? 'bg-green-50 text-green-700 border-green-100' :
+                                            goal.status === 'Pending Verification' ? 'bg-purple-50 text-purple-700 border-purple-100' :
                                                 'bg-orange-50 text-orange-700 border-orange-100'
-                                    ]">{{ goal.status }}</span>
+                                    ]">{{ goal.status === 'COMPLETED' ? 'Achieved' : goal.status }}</span>
                                 </div>
-                                <div v-if="goal.createdBy === 'investor' && goal.investorName"
+                                <div v-if="goal.createdBy === 'investor' && (goal.investorCompany || goal.investorName)"
                                     class="flex items-center gap-1.5 text-xs text-indigo-700 font-medium bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100 w-fit">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
                                         class="w-3.5 h-3.5">
                                         <path
                                             d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
                                     </svg>
-                                    Assigned by {{ goal.investorName }} <span v-if="goal.investorCompany"
-                                        class="text-indigo-500 font-normal">at {{ goal.investorCompany }}</span>
+                                    Assigned by {{ goal.investorCompany || goal.investorName }}
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
@@ -161,13 +172,13 @@
                                         <MenuItems
                                             class="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
                                             <div class="px-1 py-1">
-                                                <MenuItem v-slot="{ active }">
+                                                <MenuItem v-slot="{ active }" v-if="goal.status !== 'Pending Verification' && goal.status !== 'Achieved' && goal.status !== 'COMPLETED'">
                                                 <button @click.stop="openProofModal(goal.id)" :class="[
                                                     active ? 'bg-teal-50 text-teal-700' : 'text-gray-700',
                                                     'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
                                                 ]">
                                                     <CheckCircleIcon class="mr-2 h-4 w-4" />
-                                                    Mark as Achieved
+                                                    Submit Proof & Complete
                                                 </button>
                                                 </MenuItem>
                                                 <MenuItem v-slot="{ active }">
@@ -248,32 +259,51 @@
                 <div v-if="selectedGoal" class="space-y-6">
                     <!-- Status & Actions -->
                     <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="font-bold text-gray-900">Goal Achievement</h3>
-                            <span v-if="selectedGoal.status === 'Achieved'"
-                                class="flex items-center gap-1 text-green-600 font-bold text-sm bg-green-50 px-3 py-1 rounded-full border border-green-100 italic">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    class="w-4 h-4">
-                                    <path fill-rule="evenodd"
-                                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75 0 00-1.06 1.06l2.25 2.25a.75 0 001.14-.094l3.74-5.24z"
-                                        clip-rule="evenodd" />
+                        <h3 class="font-bold text-gray-900 mb-6">Goal Achievement</h3>
+
+                        <!-- Pending Verification State -->
+                        <div v-if="selectedGoal.status === 'Pending Verification'" class="text-center py-4 space-y-3">
+                            <div class="w-12 h-12 mx-auto bg-purple-50 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-purple-600">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                Achieved
-                            </span>
+                            </div>
+                            <p class="text-sm font-semibold text-purple-700">Awaiting Investor Review</p>
+                            <p class="text-xs text-gray-500">Your proof has been submitted. The investor will review and approve or reject it.</p>
                         </div>
 
-                        <div v-if="selectedGoal.status !== 'Achieved'" class="space-y-4">
-                            <p class="text-sm text-gray-500">Ready to finalize this goal? Ensure all priority actions
-                                are complete and proof is uploaded.</p>
+                        <!-- Achieved State -->
+                        <div v-else-if="selectedGoal.status === 'Achieved' || selectedGoal.status === 'COMPLETED'" class="text-center py-4 space-y-2">
+                            <div class="w-12 h-12 mx-auto bg-emerald-50 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-emerald-600">
+                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.74-5.24z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-semibold text-emerald-700">Investor Verified!</p>
+                            <p class="text-xs text-gray-500">This goal was successfully verified and completed.</p>
+                        </div>
+
+                        <!-- Active — can submit proof -->
+                        <div v-else class="space-y-4">
+                            <!-- Rejection Notice -->
+                            <div v-if="selectedGoal.rejectionNote" class="p-3 rounded-lg bg-rose-50 border border-rose-100 mb-2">
+                                <div class="flex gap-2 items-start">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-rose-600 mt-0.5 flex-shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-xs font-bold text-rose-700 uppercase">Proof Not Accepted</p>
+                                        <p class="text-[11px] text-rose-600 italic mt-0.5">"{{ selectedGoal.rejectionNote }}"</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-sm text-gray-500">Ready to finalize this goal? Upload your proof and the investor will verify it.</p>
                             <button @click="openProofModal(selectedGoal.id)" :disabled="loading"
                                 class="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50">
                                 <BoltIcon class="w-5 h-5" />
-                                <span>Mark as Achieved</span>
+                                <span>Submit Proof for Review</span>
                             </button>
-                        </div>
-                        <div v-else class="text-center py-2">
-                            <p class="text-sm text-gray-600 font-medium">This goal was successfully completed on {{
-                                selectedGoal.deadline }}.</p>
                         </div>
                     </div>
 
@@ -464,6 +494,7 @@ interface Goal {
     createdBy: string
     investorName?: string
     investorCompany?: string
+    rejectionNote?: string
 }
 
 definePageMeta({
@@ -473,7 +504,7 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const activeFilter = ref('Active (0)')
-const filters = ref(['Active (0)', 'Achieved (0)'])
+const filters = ref(['Active (0)', 'Pending Review (0)', 'Achieved (0)'])
 const creatorFilters = ref(['All Goals', 'Assigned by Investor', 'Self-Created'])
 const activeCreatorFilter = ref('All Goals')
 const selectedGoal = ref<Goal | null>(null)
@@ -490,15 +521,61 @@ const fetchGoals = async () => {
     const api = useApi()
     try {
         const data = await api<any[]>('/sme/goals')
-        goals.value = data || []
+        // Data Mapping
+        goals.value = (data || []).map((g: any) => {
+            const dueDate = g.due_date ? new Date(g.due_date) : null
+            const now = new Date()
+            let overdue: number | null = null
+            let formattedDate = 'No date'
+
+            if (dueDate) {
+                formattedDate = dueDate.toLocaleDateString()
+                const diffDays = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+                if (diffDays > 0) {
+                    overdue = diffDays
+                }
+            }
+
+            let status = g.status || 'Active'
+            if (status === 'Not Started') status = 'Active'
+
+            let mappedPillars = []
+            if (g.pillar_targets && Array.isArray(g.pillar_targets)) {
+                mappedPillars = g.pillar_targets.map((pt: any) => ({
+                    name: pt.name,
+                    score: pt.currentScore || 0,
+                    target: pt.targetScore || 0
+                }))
+            }
+
+            return {
+                id: g.id,
+                title: g.title,
+                status: status,
+                description: g.description,
+                targetScore: parseFloat(g.target_score) || 0,
+                currentScore: parseFloat(g.current_score) || 0,
+                deadline: formattedDate,
+                overdue: overdue,
+                progress: g.progress_percentage || 0,
+                pillars: mappedPillars,
+                gaps: [],
+                actions: [],
+                createdBy: g.created_by_role || (g.created_by === currentSmeId.value ? 'sme' : 'investor'),
+                investorName: g.investor_name,
+                investorCompany: g.investor_company,
+                rejectionNote: g.rejection_note
+            }
+        })
 
         // Auto-select first goal if none selected
         if (goals.value.length > 0 && !selectedGoal.value) {
-            selectedGoal.value = goals.value[0] || null
+            const first = goals.value[0]
+            if (first) selectGoal(first)
         } else if (selectedGoal.value) {
             // Update selected goal from new data
             const updated = goals.value.find(g => g.id === selectedGoal.value?.id)
-            if (updated) selectedGoal.value = updated
+            if (updated) selectGoal(updated)
         }
 
         updateFilterCounts()
@@ -510,23 +587,78 @@ const fetchGoals = async () => {
 }
 
 const updateFilterCounts = () => {
-    const active = goals.value.filter(g => ['Active', 'ACTIVE', 'Paused', 'PAUSED'].includes(g.status)).length
-    const achieved = goals.value.filter(g => ['Achieved', 'COMPLETED'].includes(g.status)).length
+    const active = goals.value.filter(g => ['active', 'paused', 'in progress', 'not started'].includes(g.status?.toLowerCase())).length
+    const pending = goals.value.filter(g => g.status?.toLowerCase() === 'pending verification').length
+    const achieved = goals.value.filter(g => ['achieved', 'completed'].includes(g.status?.toLowerCase())).length
 
     filters.value[0] = `Active (${active})`
-    filters.value[1] = `Achieved (${achieved})`
+    filters.value[1] = `Pending Review (${pending})`
+    filters.value[2] = `Achieved (${achieved})`
 
     // Maintain active filter if possible
     if (activeFilter.value.startsWith('Active')) activeFilter.value = filters.value[0]
-    else if (activeFilter.value.startsWith('Achieved')) activeFilter.value = filters.value[1]
+    else if (activeFilter.value.startsWith('Pending')) activeFilter.value = filters.value[1]
+    else if (activeFilter.value.startsWith('Achieved')) activeFilter.value = filters.value[2]
+}
+
+const selectGoal = async (goal: Goal) => {
+    selectedGoal.value = { ...goal }
+    const api = useApi()
+    try {
+        const detail = await api<any>(`/sme/goals/${goal.id}`)
+        if (detail && selectedGoal.value?.id === goal.id) {
+
+            // Reconcile current pillars from details with target pillars
+            const currentPillars = detail.current_pillars || []
+            const targetPillars = detail.goal_pillars || []
+
+            const mappedPillars = targetPillars.map((tp: any) => {
+                const current = currentPillars.find((cp: any) => cp.name === tp.name || cp.pillar_name === tp.name)
+                return {
+                    name: tp.name,
+                    score: current ? (current.score || 0) : (tp.currentScore || 0),
+                    target: tp.targetScore || 0
+                }
+            })
+
+            // Generate actions implicitly based on gaps
+            const actions = mappedPillars
+                .map((p: any) => ({ title: `Improve ${p.name}`, points: Math.max(0, p.target - p.score) }))
+                .filter((a: any) => a.points > 0)
+                .sort((a: any, b: any) => b.points - a.points)
+                .slice(0, 3)
+
+            selectedGoal.value = {
+                ...selectedGoal.value,
+                pillars: mappedPillars,
+                actions: actions
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load goal details', e)
+    }
 }
 
 const handleCreateGoal = async (goalData: any) => {
     const api = useApi()
+    
+    // Map frontend modal structure to backend structure
+    const payload = {
+        title: goalData.title,
+        description: goalData.description,
+        targetDate: goalData.deadline,
+        targetScore: goalData.targetScore,
+        pillarTargets: goalData.pillars?.map((p: any) => ({
+            name: p.name,
+            currentScore: p.score,
+            targetScore: p.target
+        }))
+    }
+
     try {
         const result = await api<any>('/sme/goals', {
             method: 'POST',
-            body: goalData
+            body: payload
         })
 
         if (result) {
@@ -544,17 +676,24 @@ const openProofModal = (id: number) => {
     showProofModal.value = true
 }
 
-const submitProofAndAchieve = async (payload: { id: number, proofNote: string, proofDocument: string }) => {
+const submitProofAndAchieve = async (payload: { id: number, proofNote: string, proofDocument: any }) => {
     loading.value = true
     const api = useApi()
+
+    // Use FormData for file upload support
+    const formData = new FormData()
+    formData.append('_method', 'PATCH') // Workaround for PHP PATCH with multipart/form-data
+    formData.append('status', 'Pending Verification')
+    formData.append('proof_note', payload.proofNote)
+
+    if (payload.proofDocument instanceof File) {
+        formData.append('proof_document', payload.proofDocument)
+    }
+
     try {
         await api(`/sme/goals/${payload.id}`, {
-            method: 'PATCH',
-            body: {
-                status: 'COMPLETED',
-                proof_note: payload.proofNote,
-                proof_document: payload.proofDocument
-            }
+            method: 'POST', // POST with _method PATCH
+            body: formData
         })
 
         await fetchGoals()
@@ -618,9 +757,11 @@ const filteredGoals = computed(() => {
 
     // 1. Status Filter
     if (activeFilter.value.startsWith('Active')) {
-        result = result.filter(g => g.status === 'Active' || g.status === 'ACTIVE' || g.status === 'Paused' || g.status === 'PAUSED')
+        result = result.filter(g => ['active', 'paused', 'in progress', 'not started'].includes(g.status?.toLowerCase()))
+    } else if (activeFilter.value.startsWith('Pending')) {
+        result = result.filter(g => g.status?.toLowerCase() === 'pending verification')
     } else if (activeFilter.value.startsWith('Achieved')) {
-        result = result.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED')
+        result = result.filter(g => ['achieved', 'completed'].includes(g.status?.toLowerCase()))
     }
 
     // 2. Creator Filter
@@ -633,6 +774,25 @@ const filteredGoals = computed(() => {
     return result
 })
 
+const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+        case 'active':
+        case 'active':
+        case 'in progress':
+        case 'not started':
+            return 'bg-blue-100 text-blue-700'
+        case 'achieved':
+        case 'completed':
+            return 'bg-emerald-100 text-emerald-700'
+        case 'pending verification':
+            return 'bg-purple-100 text-purple-700'
+        case 'paused':
+            return 'bg-orange-100 text-orange-700'
+        default:
+            return 'bg-gray-100 text-gray-700'
+    }
+}
+
 const avgProgress = computed(() => {
     if (goals.value.length === 0) return 0
     const sum = goals.value.reduce((acc, g) => acc + g.progress, 0)
@@ -640,7 +800,7 @@ const avgProgress = computed(() => {
 })
 
 const radarData = computed(() => {
-    if (!selectedGoal.value) return null
+    if (!selectedGoal.value || !selectedGoal.value.pillars || selectedGoal.value.pillars.length === 0) return null
     return {
         labels: selectedGoal.value.pillars.map((p: any) => p.name),
         datasets: [

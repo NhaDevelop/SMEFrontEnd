@@ -65,7 +65,7 @@
                         <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ doc.size }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ doc.date }}</td>
                         <td class="px-6 py-4 text-right">
-                            <a :href="'/api/documents/' + doc.id" download :title="'Download ' + doc.name"
+                            <a :href="useRuntimeConfig().public.apiBase + '/documents/' + doc.id" download :title="'Download ' + doc.name"
                                 class="inline-flex p-2 text-teal-600 hover:text-white hover:bg-teal-600 bg-teal-50 rounded-lg transition-all shadow-sm border border-teal-100 items-center justify-center focus:ring-2 focus:ring-teal-500 outline-none">
                                 <ArrowDownTrayIcon class="w-4 h-4" />
                             </a>
@@ -93,10 +93,11 @@ const props = defineProps<{
 const documents = ref<any[]>([])
 const loading = ref(true)
 
+const api = useApi()
 const loadDocuments = async () => {
     loading.value = true
     try {
-        const data = await $fetch<{ documents: any[] }>(`/api/documents?smeId=${props.smeId}`)
+        const data = await api<{ documents: any[] }>(`/documents?smeId=${props.smeId}`)
         documents.value = data.documents || []
     } catch (e) {
         console.error('Failed to load SME documents:', e)

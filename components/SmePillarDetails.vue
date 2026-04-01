@@ -70,8 +70,9 @@ defineProps<{
 
 const thresholds = ref<any[]>([])
 
+const api = useApi()
 onMounted(async () => {
-    const settings = await $fetch<any>('/api/admin/settings').catch(() => null)
+    const settings = await api<any>('/settings').catch(() => null)
     if (settings && settings.thresholds) thresholds.value = settings.thresholds
 })
 

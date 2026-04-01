@@ -320,6 +320,7 @@ const inbox = ref<Message[]>([])
 const sent = ref<Message[]>([])
 const loading = ref(false)
 const authStore = useAuthStore()
+const api = useApi()
 
 // Programs Discussion
 const selectedProgramId = ref<string | null>(null)
@@ -327,7 +328,7 @@ const enrolledPrograms = ref<any[]>([])
 
 const fetchEnrolledPrograms = async () => {
     try {
-        const res = await $fetch<any>('/api/programs')
+        const res = await api<any>('/programs')
         const allPrograms = Array.isArray(res) ? res : (res?.programs || [])
         const smeId = authStore.user?.company?.id || authStore.user?.id
         enrolledPrograms.value = allPrograms.filter((p: any) => {
@@ -355,7 +356,6 @@ const isValidMessage = computed(() => {
 // Fetch Data
 const fetchMessages = async () => {
     loading.value = true
-    const api = useApi()
     try {
         const response = await api<any>('/messages')
         const allMessages = response.data || response || []
@@ -399,12 +399,11 @@ onMounted(() => {
 
 // Actions
 const sendMessage = async () => {
-    const api = useApi()
     try {
         const userId = authStore.user?.id
         
         // Attempt to find recipient user ID
-        const usersRes = await api<any>('/admin/users')
+        const usersRes = await api<any>('/users/discovery')
         const allUsers = usersRes.data || usersRes || []
         const targetUser = allUsers.find((u: any) => u.email === newMessage.value.recipient)
 

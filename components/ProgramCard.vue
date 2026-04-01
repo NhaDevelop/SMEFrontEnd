@@ -50,7 +50,7 @@
                 View Details
               </button>
               </MenuItem>
-              <MenuItem v-slot="{ active }" v-if="!isInvestor">
+              <MenuItem v-slot="{ active }" v-if="!isInvestor && !isSme">
               <button :class="[
                 active ? 'bg-gray-50' : '',
                 'group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900'
@@ -59,7 +59,7 @@
                 Edit
               </button>
               </MenuItem>
-              <MenuItem v-slot="{ active }" v-if="!isInvestor">
+              <MenuItem v-slot="{ active }" v-if="!isInvestor && !isSme">
               <button :class="[
                 active ? 'bg-gray-50' : '',
                 'group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900'
@@ -69,7 +69,7 @@
               </button>
               </MenuItem>
             </div>
-            <div class="px-1 py-1">
+            <div class="px-1 py-1" v-if="!isInvestor && !isSme">
               <MenuItem v-slot="{ active }">
               <button :class="[
                 active ? 'bg-red-50' : '',
@@ -82,7 +82,7 @@
             </div>
 
             <!-- Status Actions -->
-            <div class="px-1 py-1" v-if="!isInvestor">
+            <div class="px-1 py-1" v-if="isAdmin">
               <MenuItem v-slot="{ active }" v-if="program.status !== 'Published'">
               <button :class="[
                 active ? 'bg-green-50' : '',
@@ -116,11 +116,11 @@
       </Menu>
     </div>
 
-    <div v-if="!program.template"
+    <div v-if="!program.template && !program.templateName"
       class="flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg text-xs font-medium text-orange-700 mb-6 border border-orange-100">
       <DocumentTextIcon class="w-4 h-4" />
       <span>No template assigned</span>
-      <button v-if="!isInvestor" @click="$emit('edit', program)"
+      <button v-if="isAdmin" @click="$emit('edit', program)"
         class="ml-1 text-orange-800 hover:text-orange-900 font-semibold hover:underline">
         Assign now
       </button>
@@ -231,6 +231,7 @@
 import { computed } from 'vue'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useAuthStore } from '~/stores/auth.store'
+import { useAdminStore } from '~/stores/admin.store'
 import {
   EllipsisHorizontalIcon,
   DocumentDuplicateIcon,

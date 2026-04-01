@@ -175,7 +175,30 @@ export class AdminService {
 
   async fetchParticipants(programId: number | string) {
     const response = await this.repo.getParticipants(programId) as any
-    return response?.data || response || []
+    const data = response?.data || response || []
+    
+    if (Array.isArray(data)) {
+      return data.map((p: any) => {
+        const role = (p.role?.toUpperCase() === 'INVESTOR' || p.user_role?.toUpperCase() === 'INVESTOR') ? 'INVESTOR' : 'SME'
+        
+        let status = p.status || 'Active'
+        if (['accepted', 'approved', 'enrolled', 'active'].includes(status.toLowerCase())) {
+          status = 'Enrolled'
+        } else if (['applied', 'pending'].includes(status.toLowerCase())) {
+          status = 'Applied'
+        }
+
+        return {
+          ...p,
+          id: String(p.id),
+          name: p.name || p.user?.name || 'Unknown',
+          role: role,
+          status: status,
+          enrolled_at: p.enrolled_at || p.created_at
+        }
+      })
+    }
+    return data
   }
 
   async deleteProgram(id: number | string) {

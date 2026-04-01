@@ -36,32 +36,38 @@
                 <div class="grid grid-cols-2 gap-6 mb-8">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                        <input type="text" v-model="form.name"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        <input type="text" v-model="form.name" :disabled="isReadOnly"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm disabled:bg-gray-50">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                        <input type="email" v-model="form.email"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        <input type="email" v-model="form.email" disabled
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm bg-gray-50 cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <input type="text" v-model="form.phone"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        <input type="text" v-model="form.phone" :disabled="isReadOnly"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm disabled:bg-gray-50">
                     </div>
-                    <div>
+                    <div v-if="authStore.user?.role !== 'ADMIN'">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Company / Organization</label>
-                        <input type="text" v-model="form.company"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        <input type="text" v-model="form.company" :disabled="isReadOnly"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm disabled:bg-gray-50">
                     </div>
                 </div>
 
-                <div class="flex justify-end pt-4 border-t border-gray-100">
-                    <button @click="saveProfile"
-                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-                        <BookmarkIcon class="w-4 h-4" />
-                        Save Changes
+                <div v-if="!isReadOnly" class="flex justify-end pt-4 border-t border-gray-100">
+                    <button @click="saveProfile" :disabled="loading"
+                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                        <component :is="loading ? ArrowPathIcon : BookmarkIcon" class="w-4 h-4" :class="{ 'animate-spin': loading }" />
+                        {{ loading ? 'Saving...' : 'Save Changes' }}
                     </button>
+                </div>
+                <div v-else class="flex justify-start pt-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-400 italic flex items-center gap-1.5 font-normal">
+                        <ShieldCheckIcon class="w-4 h-4 text-gray-300" />
+                        Only system administrators can edit profile information.
+                    </p>
                 </div>
             </div>
 
@@ -224,22 +230,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { Switch } from '@headlessui/vue'
-
-definePageMeta({
-    layout: 'admin'
-})
+import { useAuthStore } from '~/stores/auth.store'
 import {
     UserIcon,
     BellIcon,
     GlobeAltIcon,
     ShieldCheckIcon,
     BookmarkIcon,
-    DocumentCheckIcon
+    DocumentCheckIcon,
+    ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 
+definePageMeta({
+    layout: 'admin'
+})
+
+const authStore = useAuthStore()
 const currentTab = ref('profile')
+const loading = ref(false)
 
 const tabs = [
     { id: 'profile', label: 'Profile', icon: UserIcon },
@@ -249,11 +259,32 @@ const tabs = [
 ]
 
 const form = ref({
-    name: 'Super Admin',
-    email: 'stsmey@gmail.com',
-    phone: '+855 12 345 678',
+    name: '',
+    email: '',
+    phone: '',
     company: ''
 })
+
+const isReadOnly = computed(() => authStore.user?.role !== 'ADMIN')
+
+const syncProfile = () => {
+    if (authStore.user) {
+        form.value.name = authStore.user.full_name || authStore.user.name || ''
+        form.value.email = authStore.user.email || ''
+        form.value.phone = authStore.user.phone || ''
+        // Admin usually doesn't have a company field in their profile structure, but we keep it for consistency if needed
+        form.value.company = ''
+    }
+}
+
+onMounted(async () => {
+    if (!authStore.user) {
+        await authStore.fetchUser()
+    }
+    syncProfile()
+})
+
+watch(() => authStore.user, syncProfile, { deep: true })
 
 const notifications = ref({
     email: true,
@@ -274,8 +305,21 @@ const security = ref({
     confirmPassword: ''
 })
 
-const saveProfile = () => {
-    alert('Profile saved successfully!')
+const saveProfile = async () => {
+    if (isReadOnly.value) return
+    
+    loading.value = true
+    try {
+        await authStore.updateProfile({
+            full_name: form.value.name,
+            phone: form.value.phone
+        })
+        alert('Profile updated successfully!')
+    } catch (e: any) {
+        alert(e.message || 'Failed to update profile')
+    } finally {
+        loading.value = false
+    }
 }
 
 const savePreferences = () => {

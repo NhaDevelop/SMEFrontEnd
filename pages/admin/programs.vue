@@ -404,7 +404,7 @@
 import { onMounted, computed, ref, watch } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
 import StatCard from '~/components/AdminStatCard.vue'
-import ProgramCard from '~/components/AdminProgramCard.vue'
+import ProgramCard from '~/components/ProgramCard.vue'
 import CreateProgramModal from '~/components/AdminCreateProgramModal.vue'
 import ManageSmeEnrollmentModal from '~/components/AdminManageSmeEnrollmentModal.vue'
 import {

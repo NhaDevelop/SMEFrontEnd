@@ -15,10 +15,16 @@
       <component :is="getIcon(program.name)" class="w-6 h-6 text-teal-600" />
     </div>
 
-    <!-- Enrolled count badge -->
-    <div v-if="program.smesCount" class="absolute top-16 right-6 flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-md">
-      <UserGroupIcon class="w-3 h-3 text-gray-400" />
-      <span class="text-[10px] font-bold text-gray-600">{{ program.smesCount }} Enrolled</span>
+    <!-- Enrolled count badges -->
+    <div class="absolute top-16 right-6 flex flex-col items-end gap-1.5">
+      <div v-if="program.smesCount" class="flex items-center gap-1.5 px-2 py-0.5 bg-teal-50 border border-teal-100 rounded-md shadow-sm">
+        <UserGroupIcon class="w-3 h-3 text-teal-500" />
+        <span class="text-[10px] font-bold text-teal-700">{{ program.smesCount }} SMEs</span>
+      </div>
+      <div v-if="program.investorsCount" class="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-md shadow-sm">
+        <SparklesIcon class="w-3 h-3 text-indigo-500" />
+        <span class="text-[10px] font-bold text-indigo-700">{{ program.investorsCount }} Investors</span>
+      </div>
     </div>
 
     <!-- Name & description -->
@@ -82,7 +88,7 @@
     <!-- Progress Bar (If Enrolled) -->
     <div v-if="program.enrollmentStatus !== 'None' && program.enrollmentStatus !== 'Applied'" class="mb-8">
       <div class="flex justify-between text-[10px] mb-1.5 font-bold uppercase tracking-wider">
-        <span class="text-gray-400">Program Progress</span>
+        <span class="text-gray-400">SME Progress (Avg)</span>
         <span class="text-teal-600">{{ program.progress || 0 }}%</span>
       </div>
       <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -159,6 +165,7 @@ const props = defineProps<{
     enrollmentStatus: string
     progress?: number
     smesCount?: number
+    investorsCount?: number
   }
 }>()
 

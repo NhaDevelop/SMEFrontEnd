@@ -83,6 +83,7 @@
                 <div v-for="goal in filteredGoals" :key="goal.id"
                   class="rounded-lg border p-6 transition-shadow cursor-pointer" :class="[
                     goal.status === 'Achieved' ? 'bg-emerald-50 border-emerald-200 hover:shadow-md' :
+                      goal.status === 'Pending Verification' ? 'bg-purple-50 border-purple-200 hover:shadow-md' :
                       goal.overdue ? 'bg-red-50 border-red-200 hover:shadow-md' : 'bg-white border-gray-200 hover:shadow-md hover:border-gray-300'
                   ]" @click="openGoalDetail(goal)">
                   <div class="flex items-center justify-between mb-4">
@@ -203,13 +204,51 @@
                         Team
                       </div>
                     </div>
+
+                    <!-- Proof Review Panel — visible to investor when SME submitted proof -->
+                    <div v-if="goal.status?.toLowerCase() === 'pending verification'" @click.stop
+                      class="mt-4 p-4 rounded-lg border border-purple-200 bg-white shadow-sm space-y-3 relative overflow-hidden">
+                      <div class="absolute top-0 right-0 p-1 bg-purple-50 rounded-bl-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-purple-400">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-purple-600 flex-shrink-0">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-xs font-semibold text-purple-700 uppercase tracking-wide">Proof Submitted — Awaiting Your Review</span>
+                      </div>
+                      <p v-if="goal.proofNote" class="text-sm text-gray-700 italic border-l-2 border-purple-200 pl-3">
+                        "{{ goal.proofNote }}"
+                      </p>
+                      <a v-if="goal.proofDocument"
+                        :href="getDocumentUrl(goal.proofDocument)" target="_blank"
+                        class="text-xs text-teal-600 hover:underline flex items-center gap-1 font-medium bg-teal-50/50 px-2 py-1 rounded border border-teal-100 w-fit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                        View & Download Proof
+                      </a>
+                      <div class="flex gap-2 pt-1">
+                        <button @click="handleVerifyGoal(goal.id)"
+                          :disabled="verifyingGoalId === goal.id"
+                          class="flex-1 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          {{ verifyingGoalId === goal.id ? 'Approving...' : 'Approve' }}
+                        </button>
+                        <button @click="openRejectModal(goal.id)"
+                          :disabled="verifyingGoalId === goal.id"
+                          class="flex-1 py-2 text-xs font-semibold rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- ... existing Distribution Tab code ... -->
-
 
             <!-- Distribution Tab -->
             <div v-else-if="activeTab === 'distribution'" class="space-y-6">
@@ -379,6 +418,22 @@
       @create="handleCreateGoal" />
     <SmeSummaryModal v-if="selectedSme" :sme="selectedSme" @close="selectedSme = null"
       @create-goal="selectedSme = null; isCreateGoalOpen = true" />
+
+    <!-- Reject Modal -->
+    <div v-if="rejectModalGoalId !== null" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4">
+        <h3 class="text-lg font-bold text-gray-900">Reject Proof</h3>
+        <p class="text-sm text-gray-500">Provide a note explaining why the proof was rejected. The SME will need to resubmit.</p>
+        <textarea v-model="rejectionNote" rows="3" placeholder="e.g. The document provided is not sufficient..."
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-400 focus:outline-none resize-none"></textarea>
+        <div class="flex gap-3">
+          <button @click="rejectModalGoalId = null; rejectionNote = ''"
+            class="flex-1 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button @click="handleRejectGoal"
+            class="flex-1 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors">Confirm Reject</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -408,18 +463,21 @@ import SmeSummaryModal from '~/components/InvestorSmeSummaryModal.vue'
 const store = useInvestorStore()
 const stats = computed(() => store.stats)
 
-const activeTab = ref('comparison') // Default to comparison
+const activeTab = ref('comparison')
 const activeGoalFilter = ref('all')
 const isDetailOpen = ref(false)
 const isCreateGoalOpen = ref(false)
 const selectedGoal = ref<any>(null)
 const selectedSme = ref<any>(null)
+const verifyingGoalId = ref<number | null>(null)
+const rejectModalGoalId = ref<number | null>(null)
+const rejectionNote = ref('')
 
 const openSmeModal = (sme: any) => {
   selectedSme.value = sme
 }
 
-const smeList = computed(() => store.dealFlow.map(sme => ({ id: sme.id, name: sme.name, score: sme.score, pillars: sme.pillars })))
+const smeList = computed(() => store.dealFlow.map(sme => ({ id: sme.id, name: sme.name, score: sme.score, pillars: sme.pillars, programIds: sme.programIds || [] })))
 
 const tabs = computed(() => [
   { id: 'comparison', label: 'SME Comparison' },
@@ -443,11 +501,13 @@ const readinessDistribution = computed(() => {
 
 const goalFilters = computed(() => {
   const allCount = goals.value.length
-  const activeCount = goals.value.filter(g => g.status === 'Active').length
-  const achievedCount = goals.value.filter(g => g.status === 'Achieved').length
+  const activeCount = goals.value.filter(g => ['Active', 'ACTIVE', 'In Progress', 'Not Started'].includes(g.status)).length
+  const pendingCount = goals.value.filter(g => g.status === 'Pending Verification').length
+  const achievedCount = goals.value.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED').length
 
   return [
     { id: 'active', label: 'Active', count: activeCount },
+    { id: 'pending', label: 'Pending Review', count: pendingCount },
     { id: 'achieved', label: 'Achieved', count: achievedCount },
     { id: 'all', label: 'All', count: allCount }
   ]
@@ -455,17 +515,19 @@ const goalFilters = computed(() => {
 
 const filteredGoals = computed(() => {
   if (activeGoalFilter.value === 'all') return goals.value
-  if (activeGoalFilter.value === 'active') return goals.value.filter(g => g.status === 'Active')
-  if (activeGoalFilter.value === 'achieved') return goals.value.filter(g => g.status === 'Achieved')
+  if (activeGoalFilter.value === 'active') return goals.value.filter(g => ['Active', 'ACTIVE', 'In Progress', 'Not Started'].includes(g.status))
+  if (activeGoalFilter.value === 'pending') return goals.value.filter(g => g.status === 'Pending Verification')
+  if (activeGoalFilter.value === 'achieved') return goals.value.filter(g => g.status === 'Achieved' || g.status === 'COMPLETED')
   return goals.value
 })
 
 // Methods
 const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'active': return 'bg-blue-100 text-blue-700'
-    case 'achieved': return 'bg-emerald-100 text-emerald-700'
-    case 'paused': return 'bg-gray-100 text-gray-700'
+  switch (status?.toLowerCase()) {
+    case 'active': case 'in progress': case 'not started': return 'bg-blue-100 text-blue-700'
+    case 'achieved': case 'completed': return 'bg-emerald-100 text-emerald-700'
+    case 'pending verification': return 'bg-purple-100 text-purple-700'
+    case 'paused': return 'bg-orange-100 text-orange-700'
     default: return 'bg-gray-100 text-gray-700'
   }
 }
@@ -475,6 +537,15 @@ const openGoalDetail = (goal: any) => {
   isDetailOpen.value = true
 }
 
+const getDocumentUrl = (path: string) => {
+  if (!path) return '#'
+  if (path.startsWith('http')) return path
+  
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBase.replace('/api', '')
+  return `${apiBase}/storage/${path}`
+}
+
 const handleCreateGoal = async (goalData: any) => {
   await store.createGoal(goalData)
   isCreateGoalOpen.value = false
@@ -482,14 +553,63 @@ const handleCreateGoal = async (goalData: any) => {
 
 const handleUpdateGoalStatus = async ({ id, status }: { id: number, status: string }) => {
   await store.updateGoalStatus(id, status)
-  // Close modal if achieved, or update local referencing
   isDetailOpen.value = false
-  // Optional: show notification
 }
 
 const handleDeleteGoal = async (id: number) => {
   if (confirm('Are you sure you want to delete this goal?')) {
     await store.deleteGoal(id)
+  }
+}
+
+const handleVerifyGoal = async (id: number) => {
+  if (verifyingGoalId.value) return
+  verifyingGoalId.value = id
+  const api = useApi()
+  try {
+    const res = await api<any>(`/sme/goals/${id}/verify`, { method: 'PATCH' })
+    if (res?.success) {
+      // Refresh deal flow to update statuses
+      await store.fetchDealFlow(true)
+      // If we are in the detail modal, update it or close it
+      if (selectedGoal.value?.id === id) {
+        selectedGoal.value.status = 'Achieved'
+        selectedGoal.value.progress = 100
+      }
+    }
+  } catch (e: any) {
+    console.error('Verify error:', e)
+    const msg = e.data?.message || 'Failed to approve goal. This usually happens if the goal status changed recently.'
+    alert(msg)
+    // Refresh deal flow anyway to sync state
+    await store.fetchDealFlow(true)
+  } finally {
+    verifyingGoalId.value = null
+  }
+}
+
+const openRejectModal = (id: number) => {
+  rejectModalGoalId.value = id
+  rejectionNote.value = ''
+}
+
+const handleRejectGoal = async () => {
+  const id = rejectModalGoalId.value
+  if (!id) return
+  verifyingGoalId.value = id
+  const api = useApi()
+  try {
+    await api(`/sme/goals/${id}/reject`, {
+      method: 'PATCH',
+      body: { rejection_note: rejectionNote.value }
+    })
+    await store.fetchDealFlow()
+    rejectModalGoalId.value = null
+    rejectionNote.value = ''
+  } catch (e: any) {
+    alert(e?.data?.message || 'Failed to reject goal.')
+  } finally {
+    verifyingGoalId.value = null
   }
 }
 

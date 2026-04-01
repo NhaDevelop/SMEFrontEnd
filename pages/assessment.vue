@@ -622,8 +622,8 @@ definePageMeta({
   middleware: ['auth', 'sme']
 })
 
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import {
   ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
@@ -1209,6 +1209,11 @@ onMounted(async () => {
     // 2. Fetch Framework Settings
     frameworkSettings.value = await smeService.fetchFrameworkSettings()
     await loadTemplateMeta()
+
+    // --- NEW: Set focus mode if assessment is already active in URL ---
+    if (currentTemplateId.value) {
+      dashboardStore.isAssessmentActive = true
+    }
   } catch (e) {
     console.error('Failed to fetch initial assessment data:', e)
   } finally {
@@ -1245,6 +1250,27 @@ onMounted(async () => {
   }
 })
 
+// --- NEW: Navigation Guard ---
+onBeforeRouteLeave((to, from, next) => {
+  if (dashboardStore.isAssessmentActive && !isSubmitted.value) {
+    const confirmLeave = confirm('Are you sure you want to leave the assessment? Your unsaved progress will be lost.')
+    if (confirmLeave) {
+      dashboardStore.isAssessmentActive = false // Reset state on leave
+      next()
+    } else {
+      next(false) // Stay on page
+    }
+  } else {
+    dashboardStore.isAssessmentActive = false // Reset state if finishing/submitting normally
+    next()
+  }
+})
+
+// Clean up if component is unmounted unexpectedly
+onBeforeUnmount(() => {
+  dashboardStore.isAssessmentActive = false
+})
+
 watch(
   () => currentTemplateId.value,
   async (newTemplateId, oldTemplateId) => {
@@ -1252,11 +1278,13 @@ watch(
     if (!newTemplateId) {
       assessmentQuestions.value = []
       currentSection.value = 0
+      dashboardStore.isAssessmentActive = false // Reset state
       return
     }
 
     if (newTemplateId !== oldTemplateId) {
       currentSection.value = 0
+      dashboardStore.isAssessmentActive = true // Activate focus mode
       await fetchQuestions()
     }
   }

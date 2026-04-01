@@ -113,12 +113,7 @@
                                     <td class="px-6 py-4 text-sm text-gray-900">{{ companyIndustry }}</td>
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ overallScore }}</td>
                                     <td class="px-6 py-4">
-                                        <span
-                                            class="px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 w-fit"
-                                            :class="riskBadgeClass">
-                                            <span class="w-1.5 h-1.5 rounded-full" :class="riskDotClass"></span>
-                                            {{ overallRiskLabel }}
-                                        </span>
+                                        <BaseRiskBadge :level="overallFinancialRisk" />
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ lastAssessmentDate }}</td>
                                     <td class="px-6 py-4 text-sm text-right">
@@ -190,6 +185,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '~/stores/auth.store'
 import { useDashboardStore } from '~/stores/dashboard.store'
+import { getFinancialRiskLevel } from '~/utils/helpers'
+import BaseRiskBadge from '~/components/BaseRiskBadge.vue'
 
 definePageMeta({
     layout: 'default',
@@ -208,21 +205,12 @@ const overallRiskLabel = computed(() => {
     return risk.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
 })
 
+// Financial risk level derived from score via framework thresholds
+const overallFinancialRisk = computed(() => {
+    return getFinancialRiskLevel(dashboardStore.overallScore, dashboardStore.frameworkThresholds)
+})
+
 const lastAssessmentDate = computed(() => dashboardStore.company?.lastAssessed || 'Never')
-
-const riskBadgeClass = computed(() => {
-    const risk = dashboardStore.overallRiskLevel.toLowerCase()
-    if (risk === 'low') return 'bg-green-100 text-green-800'
-    if (risk === 'medium') return 'bg-yellow-100 text-yellow-800'
-    return 'bg-red-100 text-red-800'
-})
-
-const riskDotClass = computed(() => {
-    const risk = dashboardStore.overallRiskLevel.toLowerCase()
-    if (risk === 'low') return 'bg-green-400'
-    if (risk === 'medium') return 'bg-yellow-400'
-    return 'bg-red-400'
-})
 
 onMounted(async () => {
     try {

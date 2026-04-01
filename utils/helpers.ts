@@ -48,6 +48,34 @@ export const getReadinessStatus = (score: number, thresholds?: ScoreThreshold[])
   getRiskLevel(score, thresholds)
 
 /**
+ * Maps a numeric score or a standard framework readiness status string to Financial Risk (Safe, Low, Medium, High).
+ * It dynamically maps to the sorted framework thresholds (e.g. 1st threshold = Safe, 4th = High)
+ */
+export const getFinancialRiskLevel = (scoreOrStatus: number | string, thresholds?: ScoreThreshold[]): string => {
+  if (typeof scoreOrStatus === 'string') {
+    const l = scoreOrStatus.toLowerCase()
+    if (l.includes('investor ready') || l.includes('safe')) return 'Safe to Invest'
+    if (l.includes('near ready') || l.includes('low')) return 'Low Risk'
+    if (l.includes('early stage') || l.includes('medium')) return 'Medium Risk'
+    return 'High Risk'
+  }
+
+  const score = scoreOrStatus
+  if (thresholds && thresholds.length >= 4) {
+    const sorted = [...thresholds].sort((a, b) => b.min - a.min)
+    if (score >= (sorted[0]?.min ?? 80)) return 'Safe to Invest'
+    if (score >= (sorted[1]?.min ?? 60)) return 'Low Risk'
+    if (score >= (sorted[2]?.min ?? 40)) return 'Medium Risk'
+    return 'High Risk'
+  }
+  // Fallbacks if no thresholds provided
+  if (score >= 80) return 'Safe to Invest'
+  if (score >= 60) return 'Low Risk'
+  if (score >= 40) return 'Medium Risk'
+  return 'High Risk'
+}
+
+/**
  * Calculate overall score from an array of pillar objects.
  * Uses weighted average when weight is available, otherwise simple average.
  */

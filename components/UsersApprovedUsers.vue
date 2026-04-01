@@ -78,9 +78,20 @@
                     class="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
                     <div class="px-1 py-1">
                       <MenuItem v-slot="{ active }">
+                      <button @click="openEditModal(user)" :class="[
+                        active ? 'bg-cyan-50 text-cyan-700' : 'text-gray-900',
+                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors'
+                      ]">
+                        <UserIcon class="w-4 h-4 text-cyan-500 ml-1" />
+                        Edit Profile
+                      </button>
+                      </MenuItem>
+                    </div>
+                    <div class="px-1 py-1 text-gray-900">
+                      <MenuItem v-slot="{ active }">
                       <button @click="changeUserRole(user, 'sme')" :class="[
-                        active ? 'bg-gray-50' : '',
-                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-gray-900'
+                        active ? 'bg-gray-100' : '',
+                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm'
                       ]">
                         <span
                           class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider bg-white text-gray-700 border-gray-200 min-w-[60px] text-center">SME</span>
@@ -89,8 +100,8 @@
                       </MenuItem>
                       <MenuItem v-slot="{ active }">
                       <button @click="changeUserRole(user, 'investor')" :class="[
-                        active ? 'bg-gray-50' : '',
-                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-gray-900'
+                        active ? 'bg-gray-100' : '',
+                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm'
                       ]">
                         <span
                           class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider bg-emerald-50 text-emerald-700 border-emerald-100 min-w-[60px] text-center">Investor</span>
@@ -99,8 +110,8 @@
                       </MenuItem>
                       <MenuItem v-slot="{ active }">
                       <button @click="changeUserRole(user, 'admin')" :class="[
-                        active ? 'bg-gray-50' : '',
-                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-gray-900'
+                        active ? 'bg-gray-100' : '',
+                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm'
                       ]">
                         <span
                           class="px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider bg-[#198754] text-white border-[#198754] min-w-[60px] text-center">Admin</span>
@@ -111,8 +122,8 @@
                     <div class="px-1 py-1">
                       <MenuItem v-slot="{ active }">
                       <button @click="resetUserPassword(user)" :class="[
-                        active ? 'bg-gray-50' : '',
-                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-gray-900'
+                        active ? 'bg-gray-100' : '',
+                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm'
                       ]">
                         <KeyIcon class="w-4 h-4 text-gray-500 ml-1" />
                         Reset Password
@@ -140,19 +151,44 @@
         <p class="text-gray-500">No users found</p>
       </div>
     </div>
+
+    <!-- Edit User Modal -->
+    <EditUserProfileModal 
+      :is-open="isEditModalOpen" 
+      :loading="saving" 
+      :user="selectedUser" 
+      @close="isEditModalOpen = false" 
+      @save="handleSaveProfile" 
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
-import { MagnifyingGlassIcon, TrashIcon, ArrowPathIcon, EllipsisHorizontalIcon, KeyIcon, UserMinusIcon } from '@heroicons/vue/24/outline'
+import { 
+  MagnifyingGlassIcon, 
+  TrashIcon, 
+  ArrowPathIcon, 
+  EllipsisHorizontalIcon, 
+  KeyIcon, 
+  UserMinusIcon,
+  UserIcon
+} from '@heroicons/vue/24/outline'
 import { useAdminStore } from '~/stores/admin.store'
+import { useAuthStore } from '~/stores/auth.store'
+import EditUserProfileModal from '~/components/EditUserProfileModal.vue'
 
 const adminStore = useAdminStore()
+const authStore = useAuthStore()
 const searchQuery = ref('')
 const roleFilter = ref('all')
 const loading = computed(() => adminStore.loading)
+
+// Edit Modal State
+const isEditModalOpen = ref(false)
+const selectedUser = ref<any>(null)
+const saving = ref(false)
 
 const fetchApproved = async () => {
   try {
@@ -210,6 +246,31 @@ const resetUserPassword = async (user: any) => {
       console.error('Failed to reset password:', e)
       alert(`Failed to reset password for ${user.email}`);
     }
+  }
+}
+
+const openEditModal = (user: any) => {
+  selectedUser.value = user
+  isEditModalOpen.value = true
+}
+
+const handleSaveProfile = async (formData: any) => {
+  if (!selectedUser.value) return
+  
+  saving.value = true
+  try {
+    const role = selectedUser.value.role
+    await authStore.updateOtherUserProfile(selectedUser.value.id, role, formData)
+    
+    // Refresh the list to show updated data
+    await adminStore.fetchUsersData()
+    
+    isEditModalOpen.value = false
+    alert('User profile updated successfully!')
+  } catch (e: any) {
+    alert(e.message || 'Failed to update user profile')
+  } finally {
+    saving.value = false
   }
 }
 

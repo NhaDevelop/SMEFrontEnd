@@ -19,7 +19,7 @@
                     <div>
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Overview</p>
                         <NuxtLink to="/admin"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <Squares2X2Icon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Dashboard
                         </NuxtLink>
@@ -29,12 +29,12 @@
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">User
                             Management</p>
                         <NuxtLink to="/admin/users"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <UsersIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Users
                         </NuxtLink>
                         <NuxtLink to="/admin/programs"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <FolderIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Programs
                         </NuxtLink>
@@ -44,27 +44,27 @@
                     <div>
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Framework</p>
                         <NuxtLink to="/admin/framework-settings"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <Cog6ToothIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Framework Settings
                         </NuxtLink>
                         <NuxtLink to="/admin/templates"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <DocumentDuplicateIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Templates
                         </NuxtLink>
                         <NuxtLink to="/admin/questions"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <QuestionMarkCircleIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Question Builder
                         </NuxtLink>
                         <NuxtLink to="/admin/rules"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <BoltIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Scoring Rules
                         </NuxtLink>
                         <NuxtLink to="/admin/custom-fields"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <QueueListIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Custom Fields
                         </NuxtLink>
@@ -75,7 +75,7 @@
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Reports &
                             Analytics</p>
                         <NuxtLink to="/admin/reports"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <ChartBarIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Reports
                         </NuxtLink>
@@ -85,12 +85,12 @@
                     <div>
                         <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Settings</p>
                         <NuxtLink to="/admin/notifications"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <BellIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Notifications
                         </NuxtLink>
                         <NuxtLink to="/admin/settings"
-                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors">
+                            class="flex items-center px-4 py-2 text-gray-300 rounded-lg hover:bg-gray-700 group transition-colors text-sm">
                             <Cog8ToothIcon class="w-5 h-5 mr-3 text-gray-400 group-hover:text-teal-400" />
                             Settings
                         </NuxtLink>
@@ -102,10 +102,10 @@
                     <div class="flex items-center gap-3 mb-3">
                         <div
                             class="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold">
-                            {{ user?.name?.charAt(0) || 'A' }}
+                            {{ (user?.full_name || user?.name || 'A').charAt(0) }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-white truncate">{{ user?.name || 'Admin' }}</p>
+                            <p class="text-sm font-medium text-white truncate">{{ user?.full_name || user?.name || 'Admin' }}</p>
                             <p class="text-xs text-gray-400 uppercase">{{ user?.role || 'ADMIN' }}</p>
                         </div>
                     </div>

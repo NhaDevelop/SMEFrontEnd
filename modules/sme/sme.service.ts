@@ -159,7 +159,34 @@ export class SmeService {
 
   async fetchProgramParticipants(id: string | number) {
     const response = await this.repo.getProgramParticipants(id) as any
-    return response?.data || response
+    const data = response?.data || response || []
+    
+    if (Array.isArray(data)) {
+      return data.map((p: any) => {
+        // Map roles safely
+        let role = p.role || 'SME'
+        if (p.user_role === 'INVESTOR' || p.role === 'INVESTOR') role = 'INVESTOR'
+        
+        // Map statuses to user's requirements: "Enrolled" or "Invested"
+        // If status is 'Accepted' or 'Applied', it means they enrolled.
+        // If it's something else or manually added, it might be "Invested".
+        let status = 'Enrolled'
+        if (p.status === 'Invested' || p.is_invested || p.enrollment_type === 'admin') {
+          status = 'Invested'
+        } else if (p.status === 'Accepted' || p.status === 'Applied') {
+          status = 'Enrolled'
+        }
+
+        return {
+          ...p,
+          role,
+          status,
+          name: p.name || p.user?.name || 'Participant',
+          industry: p.industry || p.user?.sme_profile?.industry || p.user?.investor_profile?.industry || '-'
+        }
+      })
+    }
+    return data
   }
 
   async addProgramComment(id: string | number, content: string) {

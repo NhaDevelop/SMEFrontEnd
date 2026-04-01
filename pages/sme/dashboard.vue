@@ -76,8 +76,8 @@
                 <h3 class="text-sm font-medium text-gray-600">Growth Potential</h3>
                 <ChartBarIcon class="w-5 h-5 text-gray-400" />
               </div>
-              <div class="text-5xl font-semibold text-gray-900">{{ formatNumber(growthPotential) }}</div>
-              <p class="text-sm text-gray-500 mt-2">Total improvement potential across all pillars</p>
+              <div class="text-5xl font-semibold text-gray-900">{{ formatNumber(growthPotential) }}<span class="text-3xl text-gray-400">%</span></div>
+              <p class="text-sm text-gray-500 mt-2">Potential score growth from completing recommended actions</p>
             </div>
 
             <!-- Actions Needed -->
