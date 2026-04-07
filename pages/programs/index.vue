@@ -47,19 +47,23 @@
                                         ? 'bg-gray-100 text-gray-400'
                                         : 'bg-teal-50 text-teal-700'
                             ]">
-                                {{ program.isComingSoon ? 'Coming Soon' : program.isFinished ? 'Ended' : program.status }}
+                                {{ program.isComingSoon ? 'Coming Soon' : program.isFinished ? 'Ended' : program.status
+                                }}
                             </span>
 
                             <!-- Icon -->
-                            <div class="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center mb-6 group-hover:bg-teal-100 group-hover:scale-110 transition-all">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center mb-6 group-hover:bg-teal-100 group-hover:scale-110 transition-all">
                                 <component :is="getIcon(program.name)" class="w-6 h-6 text-teal-600" />
                             </div>
 
                             <!-- Name & description -->
-                            <h3 class="text-lg font-bold text-gray-900 mb-2 tracking-tight group-hover:text-teal-600 transition-colors leading-snug">
+                            <h3
+                                class="text-lg font-bold text-gray-900 mb-2 tracking-tight group-hover:text-teal-600 transition-colors leading-snug">
                                 {{ program.name }}
                             </h3>
-                            <p class="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-2">{{ program.description }}</p>
+                            <p class="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-2">{{ program.description }}
+                            </p>
 
                             <!-- Meta -->
                             <div class="space-y-2.5 mb-6">
@@ -74,13 +78,18 @@
                                 <div class="flex flex-col gap-2 mt-2 pt-2 border-t border-gray-50">
                                     <div class="flex items-center gap-2.5 text-xs text-gray-500">
                                         <ClockIcon class="w-4 h-4 text-teal-400 shrink-0" />
-                                        <span class="font-medium uppercase text-[10px] tracking-wider text-teal-600">Registration:</span>
-                                        <span class="text-gray-700 font-bold tracking-tight">{{ formatDate(program.startDate) }} → {{ formatDate(program.enrollmentDeadline || program.endDate) }}</span>
+                                        <span
+                                            class="font-medium uppercase text-[10px] tracking-wider text-teal-600">Registration:</span>
+                                        <span class="text-gray-700 font-bold tracking-tight">{{
+                                            formatDate(program.startDate) }} → {{ formatDate(program.enrollmentDeadline
+                                            || program.endDate) }}</span>
                                     </div>
                                     <div class="flex items-center gap-2.5 text-xs text-gray-500">
                                         <CalendarIcon class="w-4 h-4 text-indigo-400 shrink-0" />
-                                        <span class="font-medium uppercase text-[10px] tracking-wider text-indigo-600">Duration:</span>
-                                        <span class="text-gray-700 font-bold tracking-tight">{{ formatDate(program.startDate) }} → {{ formatDate(program.endDate) }}</span>
+                                        <span
+                                            class="font-medium uppercase text-[10px] tracking-wider text-indigo-600">Duration:</span>
+                                        <span class="text-gray-700 font-bold tracking-tight">{{
+                                            formatDate(program.startDate) }} → {{ formatDate(program.endDate) }}</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2.5 text-sm text-gray-500">
@@ -140,8 +149,7 @@
                                 <!-- SME: Apply or Enrolled -->
                                 <button v-else-if="auth.user?.role === 'SME'"
                                     @click="checkEnrolled(program) ? null : handleApply(program)"
-                                    :disabled="checkEnrolled(program) || isApplying"
-                                    :class="[
+                                    :disabled="checkEnrolled(program) || isApplying" :class="[
                                         'flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all',
                                         checkEnrolled(program)
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
@@ -155,8 +163,7 @@
                                 <!-- Investor: Enroll or Joined -->
                                 <button v-else-if="auth.user?.role === 'INVESTOR'"
                                     @click="checkEnrolled(program) ? null : handleApply(program)"
-                                    :disabled="checkEnrolled(program) || isApplying"
-                                    :class="[
+                                    :disabled="checkEnrolled(program) || isApplying" :class="[
                                         'flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all',
                                         checkEnrolled(program)
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
@@ -216,14 +223,13 @@
 
         <!-- Toast Notification -->
         <transition name="toast">
-            <div v-if="toast.show"
-                :class="[
-                    'fixed bottom-6 right-6 border text-white px-5 py-4 rounded-xl shadow-2xl flex items-start gap-3 z-50 max-w-sm transition-all duration-300',
-                    toast.type === 'success' ? 'bg-gray-900 border-teal-500/30' : 'bg-gray-900 border-red-500/30'
-                ]">
+            <div v-if="toast.show" :class="[
+                'fixed bottom-6 right-6 border text-white px-5 py-4 rounded-xl shadow-2xl flex items-start gap-3 z-50 max-w-sm transition-all duration-300',
+                toast.type === 'success' ? 'bg-gray-900 border-teal-500/30' : 'bg-gray-900 border-red-500/30'
+            ]">
                 <CheckCircleIcon v-if="toast.type === 'success'" class="w-6 h-6 text-teal-400 flex-shrink-0" />
                 <ExclamationTriangleIcon v-else class="w-6 h-6 text-red-400 flex-shrink-0" />
-                
+
                 <div class="flex-1">
                     <h4 class="text-sm font-semibold text-white mb-1">
                         {{ toast.type === 'success' ? 'Success!' : 'Action Failed' }}
@@ -237,8 +243,7 @@
                         </NuxtLink>
                     </div>
                 </div>
-                <button @click="toast.show = false"
-                    class="text-gray-500 hover:text-gray-300 transition-colors p-1">
+                <button @click="toast.show = false" class="text-gray-500 hover:text-gray-300 transition-colors p-1">
                     <XMarkIcon class="w-5 h-5" />
                 </button>
             </div>
@@ -351,7 +356,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 
 const checkEnrolled = (program: any) => {
     if (!auth.isAuthenticated || !program) return false
-    
+
     // Always trust the backend isEnrolled flag if it exists
     if (program.isEnrolled !== undefined) {
         return !!program.isEnrolled
@@ -366,7 +371,7 @@ const checkEnrolled = (program: any) => {
     } else if (userRole === 'INVESTOR') {
         profileId = auth.user?.investor_profile?.id
     }
-    
+
     if (!profileId) return false
 
     return (program.enrolled_smes?.some((id: any) => String(id) === String(profileId))) ||
@@ -402,8 +407,8 @@ const handleApply = async (program: any) => {
 
     isApplying.value = true
     try {
-        const endpoint = isInvestor 
-            ? `/investor/programs/${program.id}/enroll` 
+        const endpoint = isInvestor
+            ? `/investor/programs/${program.id}/enroll`
             : `/programs/${program.id}/apply`
 
         await api(endpoint, {
@@ -413,8 +418,8 @@ const handleApply = async (program: any) => {
         // Refresh programs to trigger reactivity in checkEnrolled
         await fetchPrograms()
 
-        showToast(isInvestor 
-            ? "You have successfully enrolled in this program." 
+        showToast(isInvestor
+            ? "You have successfully enrolled in this program."
             : "Application submitted! The assessment is now unlocked in your dashboard.")
 
     } catch (e: any) {

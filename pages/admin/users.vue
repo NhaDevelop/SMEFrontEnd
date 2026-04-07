@@ -276,13 +276,13 @@
             </div>
           </div>
 
-          <ApprovedUsers v-if="activeTab === 'approved'" />
-          <AuditLogTab v-if="activeTab === 'audit'" />
+          <LazyUsersApprovedUsers v-if="activeTab === 'approved'" />
+          <LazyUsersAuditLogTab v-if="activeTab === 'audit'" />
         </div>
       </div>
     </main>
 
-    <CreateUserModal :is-open="isCreateModalOpen" :loading="loading" @close="isCreateModalOpen = false"
+    <LazyUsersCreateUserModal :is-open="isCreateModalOpen" :loading="loading" @close="isCreateModalOpen = false"
       @create="handleCreateUserSubmit" />
 
     <!-- Success/Error Toast -->
@@ -303,9 +303,6 @@ import { onMounted, computed, ref, reactive } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
 import { useConfirm } from '~/composables/useConfirm'
 import StatCard from '~/components/AdminStatCard.vue'
-import ApprovedUsers from '~/components/UsersApprovedUsers.vue'
-import AuditLogTab from '~/components/UsersAuditLogTab.vue'
-import CreateUserModal from '~/components/UsersCreateUserModal.vue'
 import {
   PlusIcon,
   ClockIcon,

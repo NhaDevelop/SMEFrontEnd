@@ -234,8 +234,9 @@
                 :class="activeTab === 'participants' ? 'text-cyan-600 border-cyan-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
                 class="pb-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2">
                 Participants
-                <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg text-xs">{{ viewingProgram.smesCount ?? 0
-                  }}</span>
+                <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg text-xs">
+                  {{ (viewingProgram.smesCount ?? 0) + (viewingProgram.investorsCount ?? 0) }}
+                </span>
               </button>
             </div>
 
@@ -249,9 +250,8 @@
               <!-- Stats Grid -->
               <div class="grid grid-cols-3 gap-4">
                 <div class="bg-gray-50 rounded-2xl p-5 text-center border border-gray-100">
-                  <div class="text-2xl font-bold text-gray-900">{{ viewingProgram.smesCount ?? viewingProgram.smes ?? 0
-                    }}</div>
-                  <div class="text-xs text-gray-500 mt-1 font-medium">SMEs Enrolled</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ (viewingProgram.smesCount ?? 0) + (viewingProgram.investorsCount ?? 0) }}</div>
+                  <div class="text-xs text-gray-500 mt-1 font-medium">Total Participants</div>
                 </div>
                 <div class="bg-gray-50 rounded-2xl p-5 text-center border border-gray-100">
                   <div class="text-2xl font-bold text-cyan-600">{{ viewingProgram.avgScore ?? 0 }}</div>
@@ -359,7 +359,7 @@
                   </div>
                   <div :class="[
                     'text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-sm',
-                    p.status === 'Accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    ['Accepted', 'Enrolled', 'Active'].includes(p.status) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
                   ]">{{ p.status }}</div>
                 </div>
               </div>
@@ -447,6 +447,10 @@ const handleViewProgram = async (program: any) => {
   viewingProgram.value = program
   activeTab.value = 'general'
   await adminStore.fetchParticipants(program.id)
+  
+  // Refresh the viewingProgram reference to get updated counts from store
+  const updated = adminStore.programs.find(p => p.id == program.id)
+  if (updated) viewingProgram.value = updated
 }
 
 watch(activeTab, async (newTab) => {

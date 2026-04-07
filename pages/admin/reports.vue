@@ -494,7 +494,7 @@ const generateReport = async (
 ) => {
     isGenerating.value = true
     const config = useRuntimeConfig()
-    const apiBase = config.public.apiBase || 'http://127.0.0.1:8001/api'
+    const apiBase = config.public.apiBase as string
     const token = getToken()
 
     const buildQuery = (params: Record<string, any>) => {

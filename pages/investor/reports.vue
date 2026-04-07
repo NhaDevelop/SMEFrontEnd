@@ -236,7 +236,7 @@ import { useInvestorStore } from '~/stores/investor.store'
 
 const investorStore = useInvestorStore()
 const config = useRuntimeConfig()
-const apiBase = computed(() => (config.public.apiBase as string) || 'http://127.0.0.1:8001/api')
+const apiBase = computed(() => (config.public.apiBase as string))
 
 // ── Programs ────────────────────────────────────────────────────────────────
 const selectedProgramId = ref<number | null>(null)
