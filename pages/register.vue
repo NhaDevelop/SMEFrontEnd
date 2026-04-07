@@ -325,7 +325,8 @@ const form = reactive({
     regNo: '',
     address: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    file: null as File | null
 })
 
 const roleOptions = [
@@ -353,7 +354,10 @@ const uploadedFile = ref('')
 
 const handleFileUpload = (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0]
-    if (file) uploadedFile.value = file.name
+    if (file) {
+        uploadedFile.value = file.name
+        form.file = file
+    }
 }
 
 const handleSubmit = async () => {
@@ -364,21 +368,26 @@ const handleSubmit = async () => {
     error.value = ''
     loading.value = true
     try {
-        await authService.register({
-            full_name: form.name,
-            email: form.email,
-            role: form.role,
-            company_name: form.company,
-            phone: form.phone,
-            website_url: form.website,
-            industry: form.industry,
-            employees: form.employees,
-            years_in_business: form.years,
-            registration_no: form.regNo,
-            address: form.address,
-            password: form.password,
-            password_confirmation: form.confirmPassword
-        })
+        const formData = new FormData()
+        formData.append('full_name', form.name)
+        formData.append('email', form.email)
+        formData.append('role', form.role)
+        formData.append('company_name', form.company)
+        formData.append('phone', form.phone)
+        formData.append('website_url', form.website)
+        formData.append('industry', form.industry)
+        formData.append('team_size', form.employees)
+        formData.append('years_in_business', form.years)
+        formData.append('registration_number', form.regNo)
+        formData.append('address', form.address)
+        formData.append('password', form.password)
+        formData.append('password_confirmation', form.confirmPassword)
+        
+        if (form.file) {
+            formData.append('registration_document', form.file)
+        }
+
+        await authService.register(formData)
         submitted.value = true
     } catch (e: any) {
         error.value = e?.data?.message || e?.message || 'Something went wrong. Please try again.'

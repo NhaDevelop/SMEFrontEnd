@@ -67,7 +67,7 @@
                                             <div class="flex justify-between items-end mb-2">
                                                 <span class="text-sm font-bold text-gray-900">Goal Progress</span>
                                                 <span class="text-2xl font-bold text-orange-500">{{ goal.progress
-                                                }}%</span>
+                                                    }}%</span>
                                             </div>
                                             <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                                                 <div class="h-full bg-emerald-600 rounded-full"
@@ -110,7 +110,7 @@
                                                 </div>
                                                 <div class="flex-1 px-4">
                                                     <p class="text-3xl font-bold text-orange-500">{{ goal.currentScore
-                                                    }}</p>
+                                                        }}</p>
                                                     <p
                                                         class="text-[10px] uppercase tracking-wider text-gray-500 mt-1 font-medium">
                                                         Actual Score</p>
@@ -240,13 +240,13 @@
                                                             {{ Number(idx) + 1 }}
                                                         </span>
                                                         <span class="text-sm font-medium text-gray-900">{{ imp.name
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="flex items-center gap-6 text-xs">
                                                         <div class="text-gray-500 font-medium font-mono">
                                                             {{ imp.current }} <span class="mx-1 text-gray-300">→</span>
                                                             <span class="text-emerald-600 font-bold">{{ imp.target
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <span
                                                             class="px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-700 font-bold shadow-sm min-w-[3rem] text-center">
@@ -258,7 +258,7 @@
                                         </div>
 
                                         <!-- Proof of Achievement (Rendered when completed) -->
-                                        <div v-if="goal.status === 'Achieved' && goal.proofNote"
+                                        <div v-if="(goal.status?.toLowerCase() === 'achieved' || goal.status?.toLowerCase() === 'pending verification') && (goal.proofNote || goal.proofDocument)"
                                             class="bg-emerald-50 rounded-xl shadow-sm border border-emerald-100 p-6 mb-6">
                                             <h4 class="text-sm font-bold text-emerald-900 mb-2 flex items-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -269,7 +269,8 @@
                                                 </svg>
                                                 Proof of Achievement
                                             </h4>
-                                            <p class="text-sm text-emerald-800 mb-4">{{ goal.proofNote }}</p>
+                                            <p v-if="goal.proofNote" class="text-sm text-emerald-800 mb-4 italic">"{{
+                                                goal.proofNote }}"</p>
 
                                             <div v-if="goal.proofDocument"
                                                 class="flex items-center gap-3 p-3 bg-white rounded-lg border border-emerald-100 shadow-sm">
@@ -284,14 +285,20 @@
                                                 </div>
                                                 <div class="flex-1 min-w-0">
                                                     <p class="text-sm font-medium text-gray-900 truncate">{{
-                                                        goal.proofDocument }}</p>
+                                                        goal.proofDocument ? goal.proofDocument.split('/').pop() :
+                                                        'Attached Document' }}</p>
                                                     <p class="text-xs text-gray-500">Attached Evidence</p>
                                                 </div>
-                                                <button
-                                                    class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors"
-                                                    @click="handleMockDownload">
-                                                    Download
-                                                </button>
+                                                <a :href="getDocumentUrl(goal.proofDocument)" target="_blank"
+                                                    class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors flex items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                                        class="w-3 h-3">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                    </svg>
+                                                    View & Download
+                                                </a>
                                             </div>
                                         </div>
 
@@ -341,6 +348,14 @@ import {
     CalendarIcon,
     ArrowRightIcon
 } from '@heroicons/vue/24/outline'
+
+const getDocumentUrl = (path: string) => {
+    if (!path) return '#'
+    if (path.startsWith('http')) return path
+    const config = useRuntimeConfig()
+    const apiBase = config.public.apiBase.replace('/api', '')
+    return `${apiBase}/storage/${path}`
+}
 
 // Chart.js imports
 import {

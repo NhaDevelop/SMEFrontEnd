@@ -296,8 +296,16 @@ const handleCreateTemplate = async (form: any) => {
     showCreateModal.value = false
 }
 
+const { ask } = useConfirm()
 const deleteTemplate = async (id: string) => {
-    if (confirm('Are you sure you want to delete this template?')) {
+    const isConfirmed = await ask({
+        title: 'Delete Assessment Template?',
+        message: 'This will archive the template and all its associated questions. This action can only be reversed by a system administrator.',
+        confirmText: 'Delete Template',
+        type: 'danger'
+    })
+
+    if (isConfirmed) {
         await adminStore.deleteTemplate(id)
     }
     activeMenuId.value = null
@@ -319,7 +327,14 @@ const unpublishTemplate = async (id: string) => {
 }
 
 const archiveTemplate = async (id: string) => {
-    if (confirm('Are you sure you want to archive this template?')) {
+    const isConfirmed = await ask({
+        title: 'Archive Template?',
+        message: 'Are you sure you want to archive this template? It will no longer be available for new programs.',
+        confirmText: 'Archive',
+        type: 'warning'
+    })
+    
+    if (isConfirmed) {
         await adminStore.updateTemplateStatus(id, 'Archived')
     }
     activeMenuId.value = null

@@ -54,6 +54,10 @@ export class AuthRepository {
 
   async register(data: any): Promise<void> {
     const api = useApi()
+    
+    // If it's FormData, let $fetch handle headers/body automatically
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+    
     await api('/auth/register', {
       method: 'POST',
       body: data

@@ -7,7 +7,7 @@
                 <div class="p-6 border-b border-gray-700">
                     <div class="flex flex-col items-center justify-center gap-3">
                         <img src="/logo.png" alt="CAM INVESTMENT"
-                            class="h-28 w-28 object-cover rounded-full shadow-lg" />
+                            class="h-20 w-20 object-cover rounded-full shadow-lg" />
                         <div class="text-center mt-2">
                             <p class="text-gray-400 text-xs tracking-widest uppercase">Admin Portal</p>
                         </div>
@@ -105,7 +105,8 @@
                             {{ (user?.full_name || user?.name || 'A').charAt(0) }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-white truncate">{{ user?.full_name || user?.name || 'Admin' }}</p>
+                            <p class="text-sm font-medium text-white truncate">{{ user?.full_name || user?.name ||
+                                'Admin' }}</p>
                             <p class="text-xs text-gray-400 uppercase">{{ user?.role || 'ADMIN' }}</p>
                         </div>
                     </div>
@@ -145,9 +146,19 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const authStore = useAuthStore()
+const { ask } = useConfirm()
 const user = computed(() => authStore.user)
 
 const logout = async () => {
-    await authStore.logout()
+    const confirmed = await ask({
+        title: 'Confirm Logout',
+        message: 'Are you sure you want to sign out?',
+        confirmText: 'Sign Out',
+        type: 'warning'
+    })
+
+    if (confirmed) {
+        await authStore.logout()
+    }
 }
 </script>

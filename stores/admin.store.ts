@@ -34,6 +34,7 @@ interface Program {
   deadline?: string
   investmentAmount?: string
   benefits?: string[]
+  thresholds?: any[]
   enrolledSMEs?: number[]
   createdAt?: string
   createdBy?: string
@@ -534,7 +535,7 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async updateFrameworkSettings(payloadData: { pillars: PillarWeight[], thresholds?: any[] }) {
+    async updateFrameworkSettings(payloadData: { pillars?: any[], thresholds?: any[] }) {
       this.loading = true
       const service = new AdminService()
       try {

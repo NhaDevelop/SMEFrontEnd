@@ -96,63 +96,6 @@
                         </div>
                     </div>
 
-                    <!-- Score Thresholds Tab -->
-                    <div v-if="activeTab === 'thresholds'" class="p-8">
-                        <div class="mb-8">
-                            <h3 class="text-lg font-bold text-gray-900">Readiness Level Thresholds</h3>
-                            <p class="text-sm text-gray-500 mt-1">Define score ranges for each readiness level</p>
-                        </div>
-
-                        <div class="space-y-6 max-w-3xl">
-                            <div v-for="level in thresholds" :key="level.id" class="flex items-center gap-6">
-                                <div class="w-4 h-4 rounded-md flex-shrink-0" :class="level.colorBg"></div>
-                                <span class="text-sm font-medium text-gray-900 w-40">{{ level.label }}</span>
-
-                                <div class="flex items-center gap-3">
-                                    <input type="number" v-model="level.min"
-                                        class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                    <span class="text-gray-400 text-sm">to</span>
-                                    <input type="number" v-model="level.max"
-                                        class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="!isThresholdsValid" class="mt-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-3">
-                            <ExclamationTriangleIcon class="w-5 h-5 mt-0.5 flex-shrink-0" />
-                            <p class="text-sm font-medium">{{ thresholdErrorMessage }}</p>
-                        </div>
-
-                        <div class="mt-12 pt-8 border-t border-gray-100" v-if="thresholds.length >= 4">
-                            <h4 class="font-semibold text-gray-900 mb-6">Score Scale Preview</h4>
-                            <div
-                                class="relative h-12 w-full flex rounded-lg overflow-hidden font-medium text-white text-xs">
-                                <div class="bg-red-500 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[3]) }">
-                                    0 - {{ thresholds[3]?.max }}
-                                </div>
-                                <div class="bg-teal-500 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[2]) }">
-                                    {{ thresholds[2]?.min }} - {{ thresholds[2]?.max }}
-                                </div>
-                                <div class="bg-amber-500 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[1]) }">
-                                    {{ thresholds[1]?.min }} - {{ thresholds[1]?.max }}
-                                </div>
-                                <div class="bg-emerald-600 flex items-center justify-center"
-                                    :style="{ width: getWidth(thresholds[0]) }">
-                                    {{ thresholds[0]?.min }} - 100
-                                </div>
-                            </div>
-                            <div class="flex justify-between text-xs text-gray-400 mt-2">
-                                <span>0</span>
-                                <span>25</span>
-                                <span>50</span>
-                                <span>75</span>
-                                <span>100</span>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Indicators Tab -->
                     <div v-if="activeTab === 'indicators'" class="p-8">
@@ -288,6 +231,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { CloudArrowUpIcon, ArrowPathIcon, InformationCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { useAdminStore } from '~/stores/admin.store'
+import { useConfirm } from '~/composables/useConfirm'
 import EditIndicatorsModal from '~/components/AdminEditIndicatorsModal.vue'
 
 definePageMeta({
@@ -296,6 +240,7 @@ definePageMeta({
 })
 
 const adminStore = useAdminStore()
+const { ask } = useConfirm()
 const activeTab = ref('weights')
 const isSaving = ref(false)
 
@@ -324,7 +269,6 @@ const handleSaveIndicators = (indicators: string[]) => {
 
 const tabs = [
     { id: 'weights', label: 'Pillar Weights' },
-    { id: 'thresholds', label: 'Score Thresholds' },
     { id: 'indicators', label: 'Indicators' },
     { id: 'sectors', label: 'Industry Sectors' },
 ]
@@ -335,53 +279,7 @@ const pillars = ref<{ id?: string, name: string, weight: number, indicators: str
 const totalWeight = computed(() => pillars.value.reduce((sum: number, p: any) => sum + (p.enabled ? p.weight : 0), 0))
 const isTotalValid = computed(() => Math.abs(totalWeight.value - 100) < 0.1)
 
-const thresholds = ref<{ id: string, label: string, min: number, max: number, colorBg: string }[]>([])
- 
-const thresholdErrorMessage = ref('')
-const isThresholdsValid = computed(() => {
-    if (thresholds.value.length === 0) return true
-    
-    const sorted = [...thresholds.value].sort((a, b) => Number(a.min) - Number(b.min))
-    const first = sorted[0]
-    const last = sorted[sorted.length - 1]
-    
-    // 1. Must start at 0
-    if (!first || Number(first.min) !== 0) {
-        thresholdErrorMessage.value = 'Thresholds must start from 0'
-        return false
-    }
-    
-    // 2. Must end at 100
-    if (!last || Number(last.max) !== 100) {
-        thresholdErrorMessage.value = 'Thresholds must end at 100'
-        return false
-    }
-    
-    // 3. Must be contiguous and min < max for each
-    for (let i = 0; i < sorted.length; i++) {
-        const current = sorted[i];
-        if (!current) continue;
-
-        if (Number(current.min) >= Number(current.max)) {
-            thresholdErrorMessage.value = `Invalid range for ${current.label}: min must be less than max`;
-            return false;
-        }
-        if (i < sorted.length - 1) {
-            const next = sorted[i + 1];
-            if (!next) continue;
-
-            if (Number(current.max) !== Number(next.min) - 1) {
-                thresholdErrorMessage.value = `Gaps or overlaps detected between ${current.label} and ${next.label}. Ranges must be contiguous (e.g., 0-39, 40-59).`;
-                return false;
-            }
-        }
-    }
-    
-    thresholdErrorMessage.value = ''
-    return true
-})
- 
-const canSave = computed(() => isTotalValid.value && isThresholdsValid.value)
+const canSave = computed(() => isTotalValid.value)
 
 onMounted(async () => {
     // 1. Fetch live DB settings
@@ -399,17 +297,6 @@ onMounted(async () => {
         pillars.value = []
     }
 
-    // 3. Hydrate Thresholds
-    if (adminStore.frameworkThresholds && adminStore.frameworkThresholds.length > 0) {
-        thresholds.value = JSON.parse(JSON.stringify(adminStore.frameworkThresholds))
-    } else {
-        thresholds.value = [
-            { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
-            { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
-            { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
-            { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
-        ]
-    }
 })
 
 
@@ -428,8 +315,7 @@ const handleSave = async () => {
                 name: p.name,
                 weight: p.weight,
                 indicators: p.indicators || []
-            })),
-            thresholds: thresholds.value
+            }))
         })
         alert('Settings saved successfully')
     } catch (e) {
@@ -439,8 +325,15 @@ const handleSave = async () => {
     }
 }
 
-const handleReset = () => {
-    if (confirm('Reset changes to last saved state?')) {
+const handleReset = async () => {
+    const confirmed = await ask({
+        title: 'Reset Changes?',
+        message: 'Are you sure you want to discard all unsaved changes to pillar weights and thresholds?',
+        confirmText: 'Reset State',
+        type: 'warning'
+    })
+    
+    if (confirmed) {
         pillars.value = JSON.parse(JSON.stringify(adminStore.frameworkSettings)).map((p: any) => ({
             ...p,
             enabled: true
@@ -449,10 +342,6 @@ const handleReset = () => {
 }
 
 const colors = ['#3b82f6', '#10b981', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1']
-const getWidth = (t: any) => {
-    if (!t) return '0%'
-    return ((t.max - t.min + 1) / 100 * 100) + '%'
-}
 const getColor = (i: number) => colors[i % colors.length]
 
 // ─── SECTORS CRUD ──────────────────────────────────────────
@@ -516,11 +405,19 @@ const saveSector = async () => {
 }
 
 const deleteSector = async (sector: any) => {
-    if (!confirm(`Delete sector "${sector.name}"? This cannot be undone.`)) return
-    try {
-        await adminStore.deleteSector(sector.id)
-    } catch (e) { 
-        console.error(e) 
+    const confirmed = await ask({
+        title: 'Delete Industry Sector?',
+        message: `Are you sure you want to delete the "${sector.name}" sector? This action cannot be undone and may affect SME categorization.`,
+        confirmText: 'Delete Sector',
+        type: 'danger'
+    })
+    
+    if (confirmed) {
+        try {
+            await adminStore.deleteSector(sector.id)
+        } catch (e) { 
+            console.error(e) 
+        }
     }
 }
 // ────────────────────────────────────────────────────────────

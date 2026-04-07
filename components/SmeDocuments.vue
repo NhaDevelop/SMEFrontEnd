@@ -65,7 +65,9 @@
                         <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ doc.size }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ doc.date }}</td>
                         <td class="px-6 py-4 text-right">
-                            <a :href="useRuntimeConfig().public.apiBase + '/documents/' + doc.id" download :title="'Download ' + doc.name"
+                            <a :href="doc.is_virtual ? getStorageUrl(doc.url) : useRuntimeConfig().public.apiBase + '/documents/' + doc.id" 
+                                :download="doc.is_virtual ? 'registration_certificate.pdf' : true" 
+                                :title="'Download ' + doc.name"
                                 class="inline-flex p-2 text-teal-600 hover:text-white hover:bg-teal-600 bg-teal-50 rounded-lg transition-all shadow-sm border border-teal-100 items-center justify-center focus:ring-2 focus:ring-teal-500 outline-none">
                                 <ArrowDownTrayIcon class="w-4 h-4" />
                             </a>
@@ -87,18 +89,46 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
-    smeId: string | number
+    smeId: string | number,
+    registrationDocument?: string | null
 }>()
 
 const documents = ref<any[]>([])
 const loading = ref(true)
 
 const api = useApi()
+
+const getStorageUrl = (path: string) => {
+    if (!path) return '#'
+    const config = useRuntimeConfig()
+    const baseUrl = config.public.apiBase.replace(/\/api$/, '')
+    return `${baseUrl}/storage/${path}`
+}
+
 const loadDocuments = async () => {
     loading.value = true
     try {
         const data = await api<{ documents: any[] }>(`/documents?smeId=${props.smeId}`)
-        documents.value = data.documents || []
+        let docs = data.documents || []
+
+        // If registration document exists, prepend it as a virtual document
+        if (props.registrationDocument) {
+            docs = [
+                {
+                    id: 'reg_cert',
+                    name: 'Registration Certificate',
+                    category: 'Legal Documents',
+                    description: 'Official registration document uploaded during registration.',
+                    size: 'N/A',
+                    date: 'Registration',
+                    is_virtual: true,
+                    url: props.registrationDocument
+                },
+                ...docs
+            ]
+        }
+
+        documents.value = docs
     } catch (e) {
         console.error('Failed to load SME documents:', e)
         documents.value = []
@@ -120,6 +150,10 @@ const categoryBadgeClass = (category: string) => {
 }
 
 onMounted(() => {
+    loadDocuments()
+})
+
+watch(() => props.registrationDocument, () => {
     loadDocuments()
 })
 </script>

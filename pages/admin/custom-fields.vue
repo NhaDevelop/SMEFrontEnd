@@ -106,6 +106,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
+import { useConfirm } from '~/composables/useConfirm'
 import CustomFieldModal from '~/components/AdminCustomFieldModal.vue'
 import {
     PlusIcon,
@@ -120,6 +121,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const adminStore = useAdminStore()
+const { ask } = useConfirm()
 const activeTab = ref('SME')
 const showModal = ref(false)
 const selectedField = ref<any>(null)
@@ -180,7 +182,14 @@ const toggleFieldStatus = async (field: any) => {
 }
 
 const deleteField = async (id: string) => {
-    if (confirm('Are you sure you want to delete this custom field?')) {
+    const confirmed = await ask({
+        title: 'Delete Custom Field?',
+        message: 'Are you sure you want to delete this custom field? This will permanently remove it from the platform records.',
+        confirmText: 'Delete Field',
+        type: 'danger'
+    })
+    
+    if (confirmed) {
         await adminStore.deleteCustomField(id)
     }
 }

@@ -17,6 +17,12 @@ export interface SmeProgram {
   avgScore: number
   smesCount?: number
   investorsCount?: number
+  isEnrollmentClosed?: boolean
+  isAssessmentPeriodOver?: boolean
+  isFinished?: boolean
+  isComingSoon?: boolean
+  enrollmentDeadline?: string
+  createdAt?: string
 }
 
 export interface ProgramParticipant {

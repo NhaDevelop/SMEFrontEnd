@@ -71,6 +71,7 @@
 <script>
 import { ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useConfirm } from '~/composables/useConfirm'
 import { useDashboardStore } from '~/stores/dashboard.store'
 import {
   ChartBarSquareIcon,
@@ -307,8 +308,19 @@ export default {
       isCollapsed.value = !isCollapsed.value
     }
 
-    const handleSignOut = () => {
-      logout()
+    const { ask } = useConfirm()
+
+    const handleSignOut = async () => {
+      const confirmed = await ask({
+        title: 'Confirm Logout',
+        message: 'Are you sure you want to sign out? Your session will be ended.',
+        confirmText: 'Sign Out',
+        type: 'warning'
+      })
+
+      if (confirmed) {
+        logout()
+      }
     }
 
     return {

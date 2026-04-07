@@ -403,6 +403,7 @@
 <script setup lang="ts">
 import { onMounted, computed, ref, watch } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
+import { useConfirm } from '~/composables/useConfirm'
 import StatCard from '~/components/AdminStatCard.vue'
 import ProgramCard from '~/components/ProgramCard.vue'
 import CreateProgramModal from '~/components/AdminCreateProgramModal.vue'
@@ -429,6 +430,7 @@ import {
 import ProgramCommentThread from '~/components/ProgramCommentThread.vue'
 
 const adminStore = useAdminStore()
+const { ask } = useConfirm()
 
 const stats = computed(() => adminStore.programStats)
 const loading = computed(() => adminStore.loading)
@@ -495,7 +497,13 @@ const handleUpdateProgram = async (programData: any) => {
 }
 
 const handleDeleteProgram = async (id: number | string) => {
-  if (confirm('Are you sure you want to delete this program?')) {
+  const confirmed = await ask({
+    title: 'Delete Program?',
+    message: 'Are you sure you want to delete this investment program? This action will remove all associated participant records and cannot be undone.',
+    confirmText: 'Delete Program',
+    type: 'danger'
+  })
+  if (confirmed) {
     await adminStore.deleteProgram(id)
   }
 }

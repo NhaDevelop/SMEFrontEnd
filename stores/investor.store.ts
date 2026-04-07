@@ -197,12 +197,12 @@ export const useInvestorStore = defineStore('investor', {
                     }
                 }
 
-                const progress = g.progress_percentage || 0
-                const progressColor = progress >= 100 ? 'text-emerald-600' : 'text-teal-600'
-                const barColor = progress >= 100 ? 'bg-emerald-500' : 'bg-teal-500'
-                
                 let status = g.status || 'Active'
                 if (status === 'Not Started') status = 'Active'
+
+                const progress = (status.toLowerCase() === 'achieved' || status.toLowerCase() === 'completed') ? 100 : (g.progress_percentage || 0)
+                const progressColor = progress >= 100 ? 'text-emerald-600' : 'text-teal-600'
+                const barColor = progress >= 100 ? 'bg-emerald-500' : 'bg-teal-500'
 
                 return {
                     id: g.id,

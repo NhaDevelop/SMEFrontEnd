@@ -164,16 +164,26 @@
     </div>
 
     <!-- Universal Actions Footer -->
-    <div class="flex items-center justify-between text-xs text-gray-500 pt-5 border-t border-gray-50 mt-auto">
-      <div class="flex flex-col">
-          <span v-if="program.endDate" class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Deadline</span>
-          <span class="font-bold text-gray-700">{{ program.endDate || 'No deadline' }}</span>
+    <div class="flex flex-col gap-4 pt-5 border-t border-gray-50 mt-auto">
+      <div class="grid grid-cols-2 gap-4 text-[10px] uppercase tracking-widest font-black text-gray-400">
+        <div class="flex flex-col gap-1">
+          <span class="flex items-center gap-1.5"><ClockIcon class="w-3 h-3 text-teal-500" /> Registration</span>
+          <span class="text-xs text-gray-700 normal-case tracking-tight font-bold">
+            {{ formatDate(program.createdAt || program.startDate) }} <span class="text-gray-300 mx-1">→</span> {{ formatDate(program.enrollmentDeadline || program.endDate) }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-1 text-right">
+          <span class="flex items-center justify-end gap-1.5"><CalendarIcon class="w-3 h-3 text-indigo-500" /> Program Duration</span>
+          <span class="text-xs text-gray-700 normal-case tracking-tight font-bold">
+            {{ formatDate(program.startDate) }} <span class="text-gray-300 mx-1">→</span> {{ formatDate(program.endDate) }}
+          </span>
+        </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center justify-between">
         <!-- Discussion -->
         <button @click="$emit('discuss', program)"
-          class="font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1.5 px-3 py-1.5 hover:bg-purple-50 rounded-lg transition-colors">
+          class="font-bold text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1.5 px-3 py-2 hover:bg-purple-50 rounded-lg transition-colors">
           <ChatBubbleLeftRightIcon class="w-4 h-4" />
           Discussion
         </button>
@@ -231,6 +241,7 @@
 import { computed } from 'vue'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useAuthStore } from '~/stores/auth.store'
+import { formatDate } from '~/utils/format'
 import {
   EllipsisHorizontalIcon,
   DocumentDuplicateIcon,
@@ -270,6 +281,9 @@ const props = defineProps<{
     sector?: string
     isEnrolled?: boolean
     enrollmentStatus?: string
+    enrollmentDeadline?: string
+    isEnrollmentClosed?: boolean
+    createdAt?: string
   }
 }>()
 

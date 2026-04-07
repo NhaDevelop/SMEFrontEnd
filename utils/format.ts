@@ -13,9 +13,9 @@ export const formatDate = (dateString: string | Date | null | undefined): string
   // Check for invalid date
   if (isNaN(date.getTime())) return 'Invalid date'
   
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric'
   }).format(date)
 }

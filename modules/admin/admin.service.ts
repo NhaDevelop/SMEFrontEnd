@@ -6,6 +6,7 @@ export class AdminService {
   async fetchUsers() {
     const response = await this.repo.getUsers() as any
     const mapUser = (u: any) => ({
+      ...u,
       id: String(u.id),
       name: u.full_name || u.name,
       email: u.email,
@@ -30,6 +31,7 @@ export class AdminService {
   async fetchPendingUsers() {
     const response = await this.repo.getPendingUsers() as any
     const mapUser = (u: any) => ({
+      ...u,
       id: String(u.id),
       name: u.full_name || u.name,
       email: u.email,
@@ -108,6 +110,7 @@ export class AdminService {
       duration: p.duration,
       investmentAmount: p.investmentAmount || p.investment_amount,
       benefits: p.benefits || [],
+      thresholds: p.thresholds || null,
       enrolledSMEs: p.enrolledSMEs || p.enrolled_smes || [],
       createdAt: p.createdAt || p.created_at,
       createdBy: p.createdBy || p.created_by
@@ -141,7 +144,8 @@ export class AdminService {
       duration: data.duration,
       deadline: data.deadline,
       investmentAmount: data.investmentAmount,
-      benefits: data.benefits
+      benefits: data.benefits,
+      thresholds: data.thresholds
     }
     const response = await this.repo.createProgram(payload) as any
     const programData = response?.program || response
@@ -160,7 +164,8 @@ export class AdminService {
       duration: data.duration,
       deadline: data.deadline,
       investmentAmount: data.investmentAmount,
-      benefits: data.benefits
+      benefits: data.benefits,
+      thresholds: data.thresholds
     }
     const response = await this.repo.updateProgram(id, payload) as any
     const programData = response?.program || response

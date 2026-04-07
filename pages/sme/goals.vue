@@ -298,11 +298,11 @@
                                 </div>
                             </div>
 
-                            <p class="text-sm text-gray-500">Ready to finalize this goal? Upload your proof and the investor will verify it.</p>
+                            <p class="text-sm text-gray-500">Ready to finalize this goal? Upload your proof {{ selectedGoal.createdBy === 'investor' || selectedGoal.createdBy === 'admin' ? 'and the investor will verify it.' : 'to instantly complete it.' }}</p>
                             <button @click="openProofModal(selectedGoal.id)" :disabled="loading"
                                 class="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50">
                                 <BoltIcon class="w-5 h-5" />
-                                <span>Submit Proof for Review</span>
+                                <span>{{ selectedGoal.createdBy === 'investor' || selectedGoal.createdBy === 'admin' ? 'Submit Proof for Review' : 'Upload Proof & Complete Goal' }}</span>
                             </button>
                         </div>
                     </div>
@@ -454,7 +454,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
+import { useConfirm } from '~/composables/useConfirm'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { FlagIcon, BoltIcon, EllipsisHorizontalIcon, CheckCircleIcon, ClockIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import ComparisonRadarChart from '~/components/DashboardComparisonRadarChart.vue'
@@ -511,6 +512,7 @@ const selectedGoal = ref<Goal | null>(null)
 const showCreateGoalModal = ref(false)
 const showProofModal = ref(false)
 const goalIdToComplete = ref<number | string>('')
+const { ask } = useConfirm()
 const goals = ref<Goal[]>([])
 const loading = ref(false)
 
@@ -557,7 +559,7 @@ const fetchGoals = async () => {
                 currentScore: parseFloat(g.current_score) || 0,
                 deadline: formattedDate,
                 overdue: overdue,
-                progress: g.progress_percentage || 0,
+                progress: (status.toLowerCase() === 'achieved' || status.toLowerCase() === 'completed') ? 100 : (g.progress_percentage || 0),
                 pillars: mappedPillars,
                 gaps: [],
                 actions: [],
@@ -677,6 +679,14 @@ const openProofModal = (id: number) => {
 }
 
 const submitProofAndAchieve = async (payload: { id: number, proofNote: string, proofDocument: any }) => {
+    const confirmed = await ask({
+        title: 'Submit Evidence?',
+        message: 'Are you sure you want to submit this evidence for verification? The goal status will be set to Pending Verification.',
+        confirmText: 'Submit Now',
+        type: 'info'
+    })
+    if (!confirmed) return
+
     loading.value = true
     const api = useApi()
 
@@ -726,7 +736,13 @@ const pauseGoal = async (id: number, currentStatus: string) => {
 }
 
 const deleteGoal = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this goal? This action cannot be undone.')) return
+    const confirmed = await ask({
+        title: 'Delete Goal?',
+        message: 'Are you sure you want to delete this goal? This action will remove it from your tracker and cannot be undone.',
+        confirmText: 'Delete Goal',
+        type: 'danger'
+    })
+    if (!confirmed) return
 
     loading.value = true
     const api = useApi()

@@ -136,9 +136,9 @@
                             :class="[activeTab === 'documents' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
                             <DocumentIcon class="w-4 h-4" /> Documents
                         </button>
-                        <button @click="activeTab = 'notes'"
-                            :class="[activeTab === 'notes' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
-                            <DocumentTextIcon class="w-4 h-4" /> Notes
+                        <button @click="activeTab = 'goals'"
+                            :class="[activeTab === 'goals' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
+                            <DocumentTextIcon class="w-4 h-4" /> Goals History
                         </button>
                         <button @click="activeTab = 'history'"
                             :class="[activeTab === 'history' ? 'bg-gray-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'px-4 py-3 rounded-lg text-sm flex items-center gap-2 transition-all my-1']">
@@ -210,9 +210,11 @@
                 <SmePillarDetails v-if="activeTab === 'pillars'" :pillars="pillars" />
                 <SmeActions v-if="activeTab === 'actions'" :actions="actions" />
                 <div v-if="activeTab === 'documents'" class="mt-6">
-                    <SmeDocuments :sme-id="smeId || ''" />
+                    <SmeDocuments :sme-id="smeId || ''" :registration-document="smeData.registrationDocument" />
                 </div>
-                <SmeNotes v-if="activeTab === 'notes'" :smeName="smeData.name" />
+                <div v-if="activeTab === 'goals'" class="mt-6">
+                    <SmeGoalsHistory :sme-id="smeId || ''" />
+                </div>
 
                 <div v-if="activeTab === 'history'"
                     class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6">
@@ -305,6 +307,7 @@ import SmeCompInfo from '~/components/SmeCompInfo.vue'
 import SmePillarDetails from '~/components/SmePillarDetails.vue'
 import SmeActions from '~/components/SmeActions.vue'
 import SmeDocuments from '~/components/SmeDocuments.vue'
+import SmeGoalsHistory from '~/components/SmeGoalsHistory.vue'
 
 
 import { useInvestorStore } from '~/stores/investor.store'

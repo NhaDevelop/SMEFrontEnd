@@ -32,7 +32,7 @@
                                 class="flex items-center gap-2.5 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-colors focus:outline-none">
                                 <div
                                     class="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center text-white text-[11px] font-bold">
-                                    {{ auth.user.value?.avatar || 'U' }}
+                                    {{ auth.user.value?.avatar || 'You' }}
                                 </div>
                                 <span
                                     class="hidden sm:block text-[13px] font-medium text-gray-700 truncate max-w-[120px]">{{
@@ -96,6 +96,7 @@ import {
 
 const auth = useAuth()
 const route = useRoute()
+const { ask } = useConfirm()
 
 const dashboardRoute = computed(() => {
     const role = auth.user?.value?.role?.toUpperCase()
@@ -118,6 +119,15 @@ const goToDashboard = () => {
 
 const handleLogout = async () => {
     showDropdown.value = false
-    await auth.logout()
+    const confirmed = await ask({
+        title: 'Confirm Logout',
+        message: 'Are you sure you want to sign out?',
+        confirmText: 'Sign Out',
+        type: 'warning'
+    })
+
+    if (confirmed) {
+        await auth.logout()
+    }
 }
 </script>

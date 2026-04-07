@@ -226,7 +226,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useConfirm } from '~/composables/useConfirm'
 import {
     PlusIcon,
     EyeIcon,
@@ -268,6 +269,7 @@ const triggerEvents = [
     'Registration Rejected'
 ]
 
+const { ask } = useConfirm()
 // ── Fetch templates ──────────────────────────────────────────────────────────
 const loading = ref(true)
 const templates = ref<NotificationTemplate[]>([])
@@ -387,7 +389,13 @@ const saveTemplate = async () => {
 }
 
 const deleteTemplate = async (id: string) => {
-    if (!confirm('Delete this notification template?')) return
+    const confirmed = await ask({
+        title: 'Delete Notification Template?',
+        message: 'Are you sure you want to delete this notification template? This will prevent any further automated notifications using this template.',
+        confirmText: 'Delete Template',
+        type: 'danger'
+    })
+    if (!confirmed) return
 
     const api = useApi()
     try {

@@ -49,10 +49,17 @@
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700">End Date</label>
+                    <label class="block text-sm font-medium text-gray-700">End Date (Program Deadline)</label>
                     <input v-model="form.endDate" type="date"
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" />
                   </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Enrollment Deadline</label>
+                  <input v-model="form.enrollmentDeadline" type="date"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" />
+                  <p class="text-xs text-gray-500 mt-1">SMEs and Investors cannot enroll after this date. If blank, defaults to End Date.</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -88,6 +95,34 @@
                   <input v-model="form.benefitsRaw" type="text"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                     placeholder="Benefit 1, Benefit 2, etc" />
+                </div>
+
+                <!-- Readiness Thresholds Section -->
+                <div class="border-t border-gray-100 pt-6 mt-6">
+                  <h4 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <ChartBarIcon class="w-4 h-4 text-cyan-600" />
+                    Readiness Score Strategy (Thread Scores)
+                  </h4>
+                  <p class="text-xs text-gray-500 mb-4">Define the score ranges for this specific program. These will determine the SME's readiness status on their dashboard.</p>
+                  
+                  <div class="space-y-4">
+                    <div v-for="(t, idx) in form.thresholds" :key="t.id" 
+                      class="grid grid-cols-12 gap-3 items-center p-3 rounded-lg bg-gray-50 border border-gray-100">
+                      <div class="col-span-6">
+                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">{{ t.label }}</span>
+                      </div>
+                      <div class="col-span-3">
+                        <label class="text-[10px] text-gray-400 block uppercase">Min</label>
+                        <input v-model.number="t.min" type="number" 
+                          class="w-full border border-gray-200 rounded-md py-1 px-2 text-sm focus:ring-cyan-500 focus:border-cyan-500 outline-none" />
+                      </div>
+                      <div class="col-span-3">
+                        <label class="text-[10px] text-gray-400 block uppercase">Max</label>
+                        <input v-model.number="t.max" type="number" 
+                          class="w-full border border-gray-200 rounded-md py-1 px-2 text-sm focus:ring-cyan-500 focus:border-cyan-500 outline-none" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -149,10 +184,17 @@ const form = reactive({
   templateId: '',
   startDate: '',
   endDate: '',
+  enrollmentDeadline: '',
   sector: '',
   duration: '',
   investmentAmount: '',
-  benefitsRaw: ''
+  benefitsRaw: '',
+  thresholds: [
+    { id: 'investor', label: 'Investment Ready', min: 80, max: 100 },
+    { id: 'near', label: 'Near Ready', min: 60, max: 79 },
+    { id: 'early', label: 'Early Stage', min: 40, max: 59 },
+    { id: 'pre', label: 'Pre-Investment', min: 0, max: 39 }
+  ] as any[]
 })
 
 const isEditMode = computed(() => !!props.initialData)
@@ -183,10 +225,23 @@ watch(() => props.initialData, (newData) => {
     form.templateId = newData.templateId || ''
     form.startDate = newData.startDate || ''
     form.endDate = newData.endDate || ''
+    form.enrollmentDeadline = newData.enrollmentDeadline ? newData.enrollmentDeadline.split(' ')[0] : ''
     form.sector = newData.sector || ''
     form.duration = newData.duration || ''
     form.investmentAmount = newData.investmentAmount || ''
     form.benefitsRaw = newData.benefits ? newData.benefits.join(', ') : ''
+    
+    // Use thresholds from program if available, otherwise keep defaults
+    if (newData.thresholds && newData.thresholds.length > 0) {
+      form.thresholds = JSON.parse(JSON.stringify(newData.thresholds))
+    } else {
+      form.thresholds = [
+        { id: 'investor', label: 'Investment Ready', min: 80, max: 100 },
+        { id: 'near', label: 'Near Ready', min: 60, max: 79 },
+        { id: 'early', label: 'Early Stage', min: 40, max: 59 },
+        { id: 'pre', label: 'Pre-Investment', min: 0, max: 39 }
+      ]
+    }
   } else {
     // Reset
     form.id = undefined
@@ -195,10 +250,17 @@ watch(() => props.initialData, (newData) => {
     form.templateId = ''
     form.startDate = ''
     form.endDate = ''
+    form.enrollmentDeadline = ''
     form.sector = ''
     form.duration = ''
     form.investmentAmount = ''
     form.benefitsRaw = ''
+    form.thresholds = [
+        { id: 'investor', label: 'Investment Ready', min: 80, max: 100 },
+        { id: 'near', label: 'Near Ready', min: 60, max: 79 },
+        { id: 'early', label: 'Early Stage', min: 40, max: 59 },
+        { id: 'pre', label: 'Pre-Investment', min: 0, max: 39 }
+    ]
   }
 }, { immediate: true })
 

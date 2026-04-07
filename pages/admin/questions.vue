@@ -229,6 +229,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
+import { useConfirm } from '~/composables/useConfirm'
 import QuestionModal from '~/components/AdminQuestionModal.vue'
 import PillarWeightModal from '~/components/AdminPillarWeightModal.vue'
 import {
@@ -251,6 +252,7 @@ import {
 
 const route = useRoute()
 const adminStore = useAdminStore()
+const { ask } = useConfirm()
 const selectedPillar = ref('all')
 const showModal = ref(false)
 const showWeightModal = ref(false)
@@ -384,7 +386,13 @@ const handleDuplicate = async (question: any) => {
 }
 
 const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this question?')) {
+    const confirmed = await ask({
+        title: 'Delete Question?',
+        message: 'Are you sure you want to delete this question? This will remove it from the template and any future assessments.',
+        confirmText: 'Delete Question',
+        type: 'danger'
+    })
+    if (confirmed) {
         await adminStore.deleteQuestion(id)
     }
 }

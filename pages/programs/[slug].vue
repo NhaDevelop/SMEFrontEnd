@@ -52,19 +52,57 @@
                         <p class="text-lg text-gray-500 leading-relaxed mb-10 max-w-2xl">
                             {{ program.description }}
                         </p>
-                        <button v-if="hasEnrolled" disabled
-                            class="px-8 py-4 bg-gray-100 text-gray-500 font-semibold rounded-lg flex items-center gap-2 cursor-not-allowed">
-                            <CheckIcon class="w-5 h-5 text-teal-600" />
-                            Already Enrolled
-                        </button>
-                        <button v-else @click="handleApply" :disabled="isApplying"
-                            class="px-8 py-4 bg-teal-600 text-white font-semibold rounded-lg shadow-xl shadow-teal-600/20 hover:bg-teal-700 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50">
-                            {{ isApplying ? 'Enrolling...' : 'Apply Now' }}
-                            <ArrowRightIcon v-if="!isApplying" class="w-5 h-5" />
-                            <div v-else
-                                class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent">
+                        <!-- CTA: respects admin-set dates and user role -->
+
+                        <!-- Coming Soon -->
+                        <div v-if="program.isComingSoon"
+                            class="inline-flex items-center gap-2.5 px-8 py-4 bg-amber-50 text-amber-600 font-semibold rounded-lg border border-amber-200">
+                            <ClockIcon class="w-5 h-5" />
+                            Opens {{ formatDate(program.startDate) }}
+                        </div>
+
+                        <!-- Program Ended -->
+                        <div v-else-if="program.isFinished"
+                            class="inline-flex items-center gap-2.5 px-8 py-4 bg-gray-100 text-gray-400 font-semibold rounded-lg cursor-not-allowed">
+                            Program Ended
+                        </div>
+
+                        <!-- Program Live -->
+                        <template v-else>
+                            <!-- Admin: view only, no action -->
+                            <div v-if="auth.user?.role?.toUpperCase() === 'ADMIN'"
+                                class="inline-flex items-center gap-2.5 px-8 py-4 bg-gray-50 text-gray-400 font-semibold rounded-xl cursor-default border border-gray-200">
+                                Admin View Only
                             </div>
-                        </button>
+
+                            <!-- User not enrolled / Guest -->
+                            <template v-else-if="!hasEnrolled">
+                                <!-- Guest / SME -->
+                                <button v-if="!auth.isAuthenticated || auth.user?.role === 'SME'" 
+                                    @click="handleApply" :disabled="isApplying"
+                                    class="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl shadow-xl shadow-teal-600/20 hover:bg-teal-700 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50">
+                                    {{ isApplying ? 'Applying...' : 'Apply Now' }}
+                                    <ArrowRightIcon v-if="!isApplying" class="w-5 h-5" />
+                                    <div v-else class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                </button>
+
+                                <!-- Investor -->
+                                <button v-else-if="auth.user?.role === 'INVESTOR'" 
+                                    @click="handleApply" :disabled="isApplying"
+                                    class="px-8 py-4 bg-teal-600 text-white font-semibold rounded-xl shadow-xl shadow-teal-600/20 hover:bg-teal-700 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50">
+                                    {{ isApplying ? 'Enrolling...' : 'Enroll' }}
+                                    <SparklesIcon v-if="!isApplying" class="w-5 h-5" />
+                                    <div v-else class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                </button>
+                            </template>
+
+                            <!-- User already enrolled -->
+                            <div v-else
+                                class="inline-flex items-center gap-2.5 px-8 py-4 bg-gray-50 text-teal-700 font-semibold rounded-xl border border-teal-100 cursor-default">
+                                <CheckCircleIcon class="w-5 h-5" />
+                                {{ auth.user?.role === 'INVESTOR' ? 'Joined' : 'Already Enrolled' }}
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Right: Program Details Card -->
@@ -244,18 +282,34 @@
                             business.
                         </p>
                         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <button v-if="hasEnrolled" disabled
-                                class="w-full sm:w-auto px-8 py-3 bg-white/10 text-white font-semibold rounded-lg flex items-center justify-center gap-2 cursor-not-allowed opacity-80">
-                                <CheckIcon class="w-4 h-4" />
-                                Enrolled
-                            </button>
+                            <!-- Coming Soon -->
+                            <div v-if="program.isComingSoon"
+                                class="inline-flex items-center gap-2 px-8 py-3 bg-amber-50 text-amber-600 font-semibold rounded-lg border border-amber-200">
+                                <ClockIcon class="w-4 h-4" />
+                                Opens {{ formatDate(program.startDate) }}
+                            </div>
+                            <!-- Program Ended -->
+                            <div v-else-if="program.isFinished"
+                                class="inline-flex items-center gap-2 px-8 py-3 bg-white/10 text-white font-semibold rounded-lg cursor-not-allowed opacity-60">
+                                Program Ended
+                            </div>
+                            <!-- Admin: no action -->
+                            <div v-else-if="auth.user?.role?.toUpperCase() === 'ADMIN'"
+                                class="inline-flex items-center gap-2 px-8 py-3 bg-white/10 text-white font-semibold rounded-lg cursor-default border border-white/20">
+                                Admin View Only
+                            </div>
+                            <!-- User already enrolled -->
+                            <div v-else-if="hasEnrolled"
+                                class="w-full sm:w-auto px-8 py-3 bg-white/10 text-white font-semibold rounded-xl flex items-center justify-center gap-2 cursor-default border border-white/20">
+                                <CheckCircleIcon class="w-4 h-4" />
+                                {{ auth.user?.role === 'INVESTOR' ? 'Joined' : 'Already Enrolled' }}
+                            </div>
+                            <!-- Apply / Guest -->
                             <button v-else @click="handleApply" :disabled="isApplying"
-                                class="w-full sm:w-auto px-8 py-3 bg-white text-teal-900 font-semibold rounded-lg hover:bg-teal-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/10 disabled:opacity-50">
-                                {{ isApplying ? 'Enrolling...' : 'Apply Now' }}
-                                <ArrowRightIcon v-if="!isApplying" class="w-4 h-4" />
-                                <div v-else
-                                    class="animate-spin rounded-full h-4 w-4 border-2 border-teal-900 border-t-transparent">
-                                </div>
+                                class="w-full sm:w-auto px-8 py-3 bg-white text-teal-900 font-semibold rounded-xl hover:bg-teal-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/10 disabled:opacity-50 group">
+                                {{ isApplying ? (auth.user?.role === 'INVESTOR' ? 'Enrolling...' : 'Applying...') : (auth.user?.role === 'INVESTOR' ? 'Enroll Now' : 'Apply Now') }}
+                                <ArrowRightIcon v-if="!isApplying" class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                <div v-else class="animate-spin rounded-full h-4 w-4 border-2 border-teal-900 border-t-transparent"></div>
                             </button>
                             <NuxtLink to="/programs"
                                 class="w-full sm:w-auto px-8 py-3 bg-teal-600/30 text-white font-semibold rounded-lg hover:bg-teal-600/50 transition-all border border-teal-500/30">
@@ -266,19 +320,22 @@
                 </div>
             </section>
         </div>
-        <!-- Success Toast Notification -->
-        <transition enter-active-class="transition duration-300 ease-out"
-            enter-from-class="transform translate-y-10 opacity-0" enter-to-class="transform translate-y-0 opacity-100"
-            leave-active-class="transition duration-200 ease-in" leave-from-class="transform translate-y-0 opacity-100"
-            leave-to-class="transform translate-y-10 opacity-0">
-            <div v-if="showSuccessToast"
-                class="fixed bottom-6 right-6 bg-gray-900 border border-gray-800 text-white px-5 py-4 rounded-xl shadow-2xl flex items-start gap-3 z-50 max-w-sm">
-                <CheckCircleIcon class="w-6 h-6 text-green-400 flex-shrink-0" />
+        <!-- Toast Notification -->
+        <transition name="toast">
+            <div v-if="toast.show"
+                :class="[
+                    'fixed bottom-6 right-6 border text-white px-5 py-4 rounded-xl shadow-2xl flex items-start gap-3 z-50 max-w-sm transition-all duration-300',
+                    toast.type === 'success' ? 'bg-gray-900 border-teal-500/30' : 'bg-gray-900 border-red-500/30'
+                ]">
+                <CheckCircleIcon v-if="toast.type === 'success'" class="w-6 h-6 text-teal-400 flex-shrink-0" />
+                <ExclamationTriangleIcon v-else class="w-6 h-6 text-red-400 flex-shrink-0" />
+                
                 <div class="flex-1">
-                    <h4 class="text-sm font-semibold text-white mb-1">Application Successful!</h4>
-                    <p class="text-sm text-gray-400">You are now enrolled. The program assessment has been unlocked in
-                        your dashboard.</p>
-                    <div class="mt-3">
+                    <h4 class="text-sm font-semibold text-white mb-1">
+                        {{ toast.type === 'success' ? 'Success!' : 'Action Failed' }}
+                    </h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">{{ toast.message }}</p>
+                    <div v-if="toast.type === 'success' && auth.user?.role === 'SME'" class="mt-3">
                         <NuxtLink to="/sme/assessment"
                             class="text-xs font-semibold text-teal-400 hover:text-teal-300 transition-colors uppercase tracking-wide flex items-center gap-1">
                             Go to Assessments
@@ -286,7 +343,7 @@
                         </NuxtLink>
                     </div>
                 </div>
-                <button @click="showSuccessToast = false"
+                <button @click="toast.show = false"
                     class="text-gray-500 hover:text-gray-300 transition-colors p-1">
                     <XMarkIcon class="w-5 h-5" />
                 </button>
@@ -322,6 +379,8 @@ import {
     CheckCircleIcon,
     XMarkIcon
 } from '@heroicons/vue/24/outline'
+import { useConfirm } from '~/composables/useConfirm'
+import { useAuthStore } from '~/stores/auth.store'
 
 const route = useRoute()
 const api = useApi()
@@ -332,7 +391,7 @@ const fetchPrograms = async () => {
     pending.value = true
     try {
         const res = await api<any>('/programs')
-        allPrograms.value = res.data || res || []
+        allPrograms.value = res.programs || res.data?.programs || (Array.isArray(res) ? res : [])
     } catch (e) {
         console.error('Failed to fetch programs:', e)
     } finally {
@@ -361,16 +420,46 @@ const getIcon = (name: string) => {
 }
 
 const auth = useAuthStore()
+const { ask } = useConfirm()
 const isApplying = ref(false)
-
-// Modal triggers removed
-const hasEnrolled = computed(() => {
-    const userRole = auth.user?.role
-    if (!auth.isAuthenticated || String(userRole).toLowerCase() !== 'sme' || !program.value) return false
-    const smeId = auth.user?.company?.id || auth.user?.id
-    return program.value.enrolled_smes?.some((id: any) => String(id) === String(smeId)) || 
-           program.value.enrolledSMEs?.some((id: any) => String(id) === String(smeId))
+const toast = ref({
+    show: false,
+    message: '',
+    type: 'success' as 'success' | 'error'
 })
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    toast.value = { show: true, message, type }
+    setTimeout(() => {
+        toast.value.show = false
+    }, 6000)
+}
+const checkEnrolled = (program: any) => {
+    if (!auth.isAuthenticated || !program) return false
+    
+    // Always trust the backend isEnrolled flag if it exists
+    if (program.isEnrolled !== undefined) {
+        return !!program.isEnrolled
+    }
+
+    // Fallback logic for manual check
+    const userRole = auth.user?.role
+    let profileId: number | string | undefined
+
+    if (userRole === 'SME') {
+        profileId = auth.user?.sme_profile?.id || auth.user?.company?.id || auth.user?.id
+    } else if (userRole === 'INVESTOR') {
+        profileId = auth.user?.investor_profile?.id
+    }
+    
+    if (!profileId) return false
+
+    return (program.enrolled_smes?.some((id: any) => String(id) === String(profileId))) ||
+        (program.enrolledSMEs?.some((id: any) => String(id) === String(profileId))) ||
+        (program.enrolled_investors?.some((id: any) => String(id) === String(profileId)))
+}
+
+const hasEnrolled = computed(() => checkEnrolled(program.value))
 
 const handleApply = async () => {
     if (!auth.isAuthenticated) {
@@ -379,34 +468,52 @@ const handleApply = async () => {
     }
 
     const userRole = auth.user?.role
-    if (String(userRole).toLowerCase() !== 'sme') {
-        alert("Only SME accounts can apply to programs.")
+    if (!['SME', 'INVESTOR'].includes(userRole as string)) {
+        showToast("Only SME or Investor accounts can apply/enroll.", "error")
         return
     }
 
     if (!program.value) return
 
+    const isInvestor = userRole === 'INVESTOR'
+    const actionName = isInvestor ? 'enroll in' : 'apply for'
+    const confirmText = isInvestor ? 'Enroll Now' : 'Submit Application'
+
+    const confirmed = await ask({
+        title: `Confirm: ${program.value.name}?`,
+        message: `You are about to ${actionName} this program. Your profile will be shared with the program administrators.`,
+        confirmText: confirmText,
+        type: 'info'
+    })
+    if (!confirmed) return
+
     isApplying.value = true
     try {
-        await api(`/programs/${program.value.id}/apply`, {
+        const endpoint = isInvestor 
+            ? `/investor/programs/${program.value.id}/enroll` 
+            : `/programs/${program.value.id}/apply`
+
+        await api(endpoint, {
             method: 'POST'
         })
 
         // Refresh programs data
         await fetchPrograms()
 
-        showSuccessToast.value = true
-        setTimeout(() => {
-            showSuccessToast.value = false
-        }, 5000)
+        showToast(isInvestor 
+            ? "You have successfully enrolled in this program." 
+            : "Application submitted! The assessment is now unlocked in your dashboard.")
 
     } catch (e: any) {
-        console.error("Failed to apply to program:", e)
-        alert(e.data?.message || "Something went wrong while applying. Please try again.")
+        console.error("Enrollment failed:", e)
+        showToast(e.data?.message || "Something went wrong. Please try again.", "error")
     } finally {
         isApplying.value = false
     }
 }
-const showSuccessToast = ref(false)
 
+const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'N/A'
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
 </script>

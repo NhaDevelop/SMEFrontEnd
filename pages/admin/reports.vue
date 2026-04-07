@@ -27,7 +27,9 @@
                                     and recommendations</p>
                             </div>
                         </div>
-                        <button @click="generateReport('Investment Readiness Report', 'PDF', null, selectedTableProgramId)" :disabled="isGenerating"
+                        <button
+                            @click="generateReport('Investment Readiness Report', 'PDF', null, selectedTableProgramId)"
+                            :disabled="isGenerating"
                             class="mt-4 text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start disabled:opacity-50">
                             {{ isGenerating ? 'Generating...' : 'Generate PDF' }}
                             <ArrowLongRightIcon class="w-4 h-4" />
@@ -66,7 +68,8 @@
                                 <p class="text-sm text-gray-500 mt-1">Compare SME performance across the portfolio</p>
                             </div>
                         </div>
-                        <button @click="generateReport('Portfolio Comparison', 'PDF', null, selectedTableProgramId)" :disabled="isGenerating"
+                        <button @click="generateReport('Portfolio Comparison', 'PDF', null, selectedTableProgramId)"
+                            :disabled="isGenerating"
                             class="mt-4 text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 self-start disabled:opacity-50">
                             {{ isGenerating ? 'Rendering...' : 'Generate Report' }}
                             <ArrowLongRightIcon class="w-4 h-4" />
@@ -224,11 +227,13 @@
                                 <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.date }}</td>
                                 <td class="px-8 py-5 whitespace-nowrap text-right text-sm">
                                     <div class="flex justify-end gap-2">
-                                        <button @click="generateReport('PDF Report', sme.name, sme.id, selectedTableProgramId)"
+                                        <button
+                                            @click="generateReport('PDF Report', sme.name, sme.id, selectedTableProgramId)"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
                                             <DocumentTextIcon class="w-3.5 h-3.5" /> PDF
                                         </button>
-                                        <button @click="generateReport('CSV Export', sme.name, sme.id, selectedTableProgramId)"
+                                        <button
+                                            @click="generateReport('CSV Export', sme.name, sme.id, selectedTableProgramId)"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
                                             <TableCellsIcon class="w-3.5 h-3.5" /> CSV
                                         </button>
@@ -362,15 +367,28 @@ const getSectorStyle = (sectorName: string) => {
 const loadReportLogs = async () => {
     try {
         const api = useApi()
-        const logs = await api<any[]>('/reports/logs')
-        recentReports.value = logs.map((log: any) => ({
-            id: log.id,
-            name: log.name,
-            company: log.company || 'All SMEs',
-            date: new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            type: log.type,
-            smeId: log.smeId
-        }))
+        const res = await api<any>('/admin/reports/logs')
+        const logs = res?.data ?? res ?? [] // Handle both {data:[]} and direct []
+        
+        recentReports.value = logs.filter((log: any) => 
+            ['GENERATED_REPORT', 'GENERATED_PORTFOLIO_REPORT', 'EXPORTED_DATA'].includes(log.action)
+        ).map((log: any) => {
+            const details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details
+            return {
+                id: log.id,
+                name: details?.report_type || log.action.replace(/_/g, ' '),
+                company: details?.sme_name || details?.company_name || 'All SMEs',
+                date: new Date(log.created_at).toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }),
+                type: details?.format || (log.action === 'EXPORTED_DATA' ? 'CSV' : 'PDF'),
+                smeId: details?.sme_id || log.target_id
+            }
+        })
     } catch (e) {
         console.error('Failed to load report logs:', e)
     }
@@ -417,11 +435,6 @@ const selectedTableProgramId = ref<number | null>(null)  // table row program fi
 
 const filteredSMEs = computed(() => {
     let result = smes.value
-
-    const programId = selectedTableProgramId.value ?? (route.query.programId ? Number(route.query.programId) : null)
-    if (programId) {
-        result = result.filter(sme => sme.programIds.includes(programId))
-    }
 
     if (selectedRiskFilter.value) {
         result = result.filter(sme => sme.risk === selectedRiskFilter.value)

@@ -62,7 +62,7 @@
               </span>
             </td>
             <td class="py-4 px-4 text-sm text-gray-600">{{ user.email }}</td>
-            <td class="py-4 px-4 text-sm text-gray-600">{{ user.registered || 'N/A' }}</td>
+            <td class="py-4 px-4 text-sm text-gray-600">{{ formatDate(user.registered) }}</td>
             <td class="py-4 px-4 text-right">
               <Menu as="div" class="relative inline-block text-left">
                 <MenuButton
@@ -277,6 +277,21 @@ const handleSaveProfile = async (formData: any) => {
 const getInitials = (name: string) => {
   if (!name) return '?'
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+}
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'N/A'
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return dateString
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+  } catch (e) {
+    return dateString
+  }
 }
 
 const getRoleBadge = (role: string) => {

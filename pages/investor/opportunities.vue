@@ -22,20 +22,112 @@
                 </div>
 
                 <!-- Search & Filters -->
-                <div class="relative">
-                    <MagnifyingGlassIcon class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input v-model="searchQuery" type="text" placeholder="Search programs..."
-                        class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white shadow-sm" />
+                <div class="flex items-center gap-4">
+                    <div class="relative flex-1">
+                        <MagnifyingGlassIcon class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input v-model="searchQuery" type="text" placeholder="Search programs..."
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white shadow-sm" />
+                    </div>
+
+                    <!-- View Toggle -->
+                    <div class="flex items-center bg-white rounded-xl border border-gray-200 p-1 shadow-sm">
+                        <button @click="viewMode = 'grid'" :class="[
+                            'px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium',
+                            viewMode === 'grid' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
+                        ]">
+                            <Squares2X2Icon class="w-4 h-4" />
+                            Grid
+                        </button>
+                        <button @click="viewMode = 'list'" :class="[
+                            'px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium',
+                            viewMode === 'list' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
+                        ]">
+                            <ListBulletIcon class="w-4 h-4" />
+                            List
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Programs Grid -->
+                <!-- Programs -->
                 <div v-if="loading && !programs.length" class="text-center py-12">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
                 </div>
 
-                <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <ProgramCard v-for="program in programs" :key="program.id" :program="program"
-                        @view="handleViewProgram" @discuss="handleDiscussProgram" @enroll="handleEnrollProgram" />
+                <div v-else-if="programs.length > 0">
+                    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <ProgramCard v-for="program in programs" :key="program.id" :program="program"
+                            @view="handleViewProgram" @discuss="handleDiscussProgram" @enroll="handleEnrollProgram" />
+                    </div>
+                    <div v-else class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50/50 border-b border-gray-200">
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Program</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">SMEs</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Avg Score</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Progress</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr v-for="program in programs" :key="program.id" class="group hover:bg-gray-50/50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+                                                    {{ program.name?.charAt(0) }}
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm font-bold text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-1 truncate max-w-[300px]">{{ program.name }}</div>
+                                                    <div class="text-xs text-gray-500 mt-0.5 line-clamp-1 max-w-[200px]">{{ program.description }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="text-sm font-bold text-gray-900">{{ program.smesCount ?? 0 }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="text-sm font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-lg">{{ program.avgScore ?? 0 }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-[80px]">
+                                                    <div class="h-full bg-teal-500 rounded-full transition-all duration-700" :style="{ width: `${program.progress ?? program.completion ?? 0}%` }"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span :class="[
+                                                'px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap',
+                                                program.status === 'Active' || program.status === 'Published' ? 'bg-green-100 text-green-700 border-green-200' : 
+                                                program.status === 'Finished' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-600 border-gray-200'
+                                            ]">{{ program.status }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <button @click="handleViewProgram(program)" class="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="View Details">
+                                                    <EyeIcon class="w-4 h-4" />
+                                                </button>
+                                                <button @click="handleDiscussProgram(program)" class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all" title="Open Discussion">
+                                                    <ChatBubbleLeftRightIcon class="w-4 h-4" />
+                                                </button>
+                                                <button v-if="!program.isEnrolled && !program.isEnrollmentClosed && !program.isFinished" @click="handleEnrollProgram(program.id)" class="px-3 py-1.5 text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-all text-xs font-bold ml-2">
+                                                    Enroll Now
+                                                </button>
+                                                <div v-else-if="!program.isEnrolled && (program.isEnrollmentClosed || program.isFinished)" class="px-2 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-100 ml-2 whitespace-nowrap">
+                                                    {{ program.isFinished ? 'Finished' : 'Closed' }}
+                                                </div>
+                                                <div v-else class="px-2 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100 flex items-center gap-1.5 ml-2 whitespace-nowrap">
+                                                    <CheckCircleIcon class="w-3.5 h-3.5" /> Enrolled
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -116,14 +208,22 @@
                                 <span class="text-gray-500">Template:</span>
                                 <span class="font-medium text-gray-900">{{ viewingProgram.template }}</span>
                             </div>
-                            <div v-if="viewingProgram.startDate || viewingProgram.endDate"
-                                class="flex items-center gap-3 text-sm">
-                                <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                                <span class="text-gray-500">Duration:</span>
-                                <span class="font-medium text-gray-900">
-                                    {{ viewingProgram.startDate || '—' }} → {{ viewingProgram.endDate || '—' }}
-                                </span>
-                            </div>
+                             <div v-if="viewingProgram.startDate || viewingProgram.endDate"
+                                 class="flex items-center gap-3 text-sm">
+                                 <CalendarIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                                 <span class="text-gray-500">Duration:</span>
+                                 <span class="font-medium text-gray-900">
+                                     {{ viewingProgram.startDate || '—' }} → {{ viewingProgram.endDate || '—' }}
+                                 </span>
+                             </div>
+                             <div v-if="viewingProgram.enrollmentDeadline"
+                                 class="flex items-center gap-3 text-sm">
+                                 <ClockIcon class="w-4 h-4 text-gray-400 shrink-0" />
+                                 <span class="text-gray-500">Enrollment Deadline:</span>
+                                 <span :class="['font-medium', viewingProgram.isEnrollmentClosed ? 'text-red-500' : 'text-teal-600']">
+                                     {{ viewingProgram.enrollmentDeadline.split(' ')[0] }}
+                                 </span>
+                             </div>
                         </div>
 
                         <!-- Quick Actions -->
@@ -185,6 +285,7 @@
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInvestorStore } from '~/stores/investor.store'
+import { useConfirm } from '~/composables/useConfirm'
 import StatCard from '~/components/AdminStatCard.vue'
 import ProgramCard from '~/components/ProgramCard.vue'
 import ProgramParticipantList from '~/components/ProgramParticipantList.vue'
@@ -200,16 +301,22 @@ import {
     PencilSquareIcon,
     ChatBubbleLeftRightIcon,
     CalendarIcon,
-    DocumentDuplicateIcon
+    DocumentDuplicateIcon,
+    Squares2X2Icon,
+    ListBulletIcon,
+    EyeIcon,
+    CheckCircleIcon
 } from '@heroicons/vue/24/outline'
 
 const investorStore = useInvestorStore()
+const { ask } = useConfirm()
 
 const stats = computed(() => investorStore.programStats)
 const loading = computed(() => investorStore.loading)
 const searchQuery = ref('')
 const viewingProgram = ref<any>(null)
 const discussingProgram = ref<any>(null)
+const viewMode = ref<'grid' | 'list'>('grid')
 const router = useRouter()
 
 // Filter programs locally for search
@@ -232,6 +339,14 @@ const handleDiscussProgram = (program: any) => {
 }
 
 const handleEnrollProgram = async (id: string | number) => {
+    const confirmed = await ask({
+        title: 'Enroll in Program?',
+        message: 'Are you sure you want to enroll in this investment program? Your investor profile will be shared with the program managers.',
+        confirmText: 'Yes, Enroll Now',
+        type: 'info'
+    })
+    if (!confirmed) return
+
     try {
         await investorStore.enrollInProgram(id)
     } catch (e) {

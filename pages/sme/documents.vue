@@ -266,6 +266,7 @@ import {
     CheckCircleIcon,
     ExclamationCircleIcon
 } from '@heroicons/vue/24/outline'
+import { useConfirm } from '~/composables/useConfirm'
 import { useAuthStore } from '~/stores/auth.store'
 
 definePageMeta({
@@ -275,6 +276,7 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const smeId = computed(() => authStore.user?.company?.id || 1)
+const { ask } = useConfirm()
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const searchQuery = ref('')
@@ -425,7 +427,14 @@ const uploadDocument = async () => {
 
 // ── Delete ────────────────────────────────────────────────────────────────────
 const deleteDocument = async (id: string) => {
-    if (!confirm('Delete this document? This cannot be undone.')) return
+    const confirmed = await ask({
+        title: 'Delete Document?',
+        message: 'Are you sure you want to permanently delete this document? This action cannot be undone.',
+        confirmText: 'Delete Document',
+        type: 'danger'
+    })
+    if (!confirmed) return
+    
     deletingId.value = id
     const api = useApi()
     try {

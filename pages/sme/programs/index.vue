@@ -24,7 +24,7 @@
                     <div class="relative flex-1">
                         <MagnifyingGlassIcon class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input v-model="searchQuery" type="text" placeholder="Search programs..."
-                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white shadow-sm" />
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:teal-500 focus:border-transparent bg-white shadow-sm" />
                     </div>
 
                     <div class="flex gap-2 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
@@ -35,6 +35,25 @@
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                         ]">
                             {{ filter.label }}
+                        </button>
+                    </div>
+
+                    <!-- View Toggle -->
+                    <div
+                        class="flex items-center bg-white rounded-xl border border-gray-200 p-1 shadow-sm shrink-0 hidden md:flex">
+                        <button @click="viewMode = 'grid'" :class="[
+                            'px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium',
+                            viewMode === 'grid' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
+                        ]">
+                            <Squares2X2Icon class="w-4 h-4" />
+                            Grid
+                        </button>
+                        <button @click="viewMode = 'list'" :class="[
+                            'px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm font-medium',
+                            viewMode === 'list' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
+                        ]">
+                            <ListBulletIcon class="w-4 h-4" />
+                            List
                         </button>
                     </div>
                 </div>
@@ -63,10 +82,128 @@
                     <p class="text-gray-500 mt-2">Try adjusting your filters or search keywords.</p>
                 </div>
 
-                <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    <ProgramCard v-for="program in filteredPrograms" :key="program.id" :program="program"
-                        @enroll="enroll(program)" @view="handleViewDetails(program)"
-                        @discuss="discussingProgram = program" />
+                <div v-else-if="filteredPrograms.length > 0">
+                    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <ProgramCard v-for="program in filteredPrograms" :key="program.id" :program="program"
+                            @enroll="enroll(program)" @view="handleViewDetails(program)"
+                            @discuss="discussingProgram = program" />
+                    </div>
+                    <div v-else class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50/50 border-b border-gray-200">
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                            Program</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
+                                            Avg Score</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                            Progress</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                            Status</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
+                                            Deadline</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">
+                                            Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr v-for="program in filteredPrograms" :key="program.id"
+                                        class="group hover:bg-gray-50/50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+                                                    {{ program.name?.charAt(0) }}
+                                                </div>
+                                                <div>
+                                                    <div
+                                                        class="text-sm font-bold text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-1 truncate max-w-[300px]">
+                                                        {{ program.name }}</div>
+                                                    <div
+                                                        class="text-xs text-gray-500 mt-0.5 line-clamp-1 max-w-[200px]">
+                                                        {{ program.description }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span
+                                                class="text-sm font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-lg">{{
+                                                    program.avgScore ?? 0 }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-[80px]">
+                                                    <div class="h-full bg-teal-500 rounded-full transition-all duration-700"
+                                                        :style="{ width: `${program.progress ?? 0}%` }"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span :class="[
+                                                'px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap',
+                                                program.enrollmentStatus && program.enrollmentStatus !== 'None' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                                                (program.status === 'Finished' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                                (program.status === 'Active' || program.status === 'Published' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'))
+                                            ]">{{ program.enrollmentStatus && program.enrollmentStatus !== 'None' ?
+                                                program.enrollmentStatus : (program.isComingSoon ? 'Coming Soon' : program.status) }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <div class="flex flex-col items-center gap-1">
+                                                <div class="flex flex-col items-center">
+                                                    <span class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Register By</span>
+                                                    <span :class="['text-xs font-bold', program.isEnrollmentClosed ? 'text-red-500' : 'text-teal-600']">
+                                                        {{ formatDate(program.enrollmentDeadline) }}
+                                                    </span>
+                                                </div>
+                                                <div class="flex flex-col items-center border-t border-gray-100 pt-1 w-full mt-1">
+                                                    <span class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Program Period</span>
+                                                    <span class="text-[10px] text-gray-700 font-bold whitespace-nowrap">
+                                                        {{ formatDate(program.startDate) }} - {{ formatDate(program.endDate) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <button @click="handleViewDetails(program)"
+                                                    class="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                                                    title="View Details">
+                                                    <EyeIcon class="w-4 h-4" />
+                                                </button>
+                                                <button @click="discussingProgram = program"
+                                                    class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+                                                    title="Open Discussion">
+                                                    <ChatBubbleLeftRightIcon class="w-4 h-4" />
+                                                </button>
+                                                <div v-if="program.isComingSoon" 
+                                                    class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-[10px] font-bold border border-amber-100 ml-2 whitespace-nowrap uppercase tracking-widest">
+                                                    Coming Soon
+                                                </div>
+                                                <button
+                                                    v-else-if="(!program.enrollmentStatus || program.enrollmentStatus === 'None') && !program.isEnrollmentClosed && !program.isFinished"
+                                                    @click="enroll(program)"
+                                                    class="px-3 py-1.5 text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-all text-xs font-bold ml-2 whitespace-nowrap">
+                                                    Apply Now
+                                                </button>
+                                                <div v-else-if="(!program.enrollmentStatus || program.enrollmentStatus === 'None') && (program.isEnrollmentClosed || program.isFinished)"
+                                                    class="px-2 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-100 ml-2 whitespace-nowrap">
+                                                    {{ program.isFinished ? 'Finished' : 'Closed' }}
+                                                </div>
+                                                <div v-else-if="program.enrollmentStatus === 'Enrolled' || program.enrollmentStatus === 'Accepted'"
+                                                    class="px-2 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100 flex items-center gap-1.5 ml-2 whitespace-nowrap">
+                                                    <CheckCircleIcon class="w-3.5 h-3.5" /> Enrolled
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -101,7 +238,8 @@
                     <!-- Body -->
                     <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
                         <!-- Tabs Navigation -->
-                        <div class="flex items-center gap-8 px-8 border-b border-gray-100 bg-white sticky top-0 z-10 pt-4">
+                        <div
+                            class="flex items-center gap-8 px-8 border-b border-gray-100 bg-white sticky top-0 z-10 pt-4">
                             <button @click="activeSlideTab = 'general'"
                                 :class="activeSlideTab === 'general' ? 'text-teal-600 border-teal-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
                                 class="pb-4 text-xs font-bold border-b-2 transition-colors uppercase tracking-widest">
@@ -111,7 +249,8 @@
                                 :class="activeSlideTab === 'participants' ? 'text-teal-600 border-teal-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
                                 class="pb-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 uppercase tracking-widest">
                                 Participants
-                                <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg text-[10px]">{{ viewingProgram.smesCount ?? 0 }}</span>
+                                <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg text-[10px]">{{
+                                    viewingProgram.smesCount ?? 0 }}</span>
                             </button>
                         </div>
 
@@ -120,12 +259,15 @@
                             <div v-if="activeSlideTab === 'general'" class="space-y-8 animate-in fade-in duration-300">
                                 <!-- Description -->
                                 <div>
-                                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Description</h3>
-                                    <p class="text-sm text-gray-700 leading-relaxed">{{ viewingProgram.description }}</p>
+                                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                        Description</h3>
+                                    <p class="text-sm text-gray-700 leading-relaxed">{{ viewingProgram.description }}
+                                    </p>
                                 </div>
 
                                 <!-- Progress (if enrolled) -->
-                                <div v-if="viewingProgram.enrollmentStatus !== 'None' && viewingProgram.enrollmentStatus !== 'Applied'">
+                                <div
+                                    v-if="viewingProgram.enrollmentStatus !== 'None' && viewingProgram.enrollmentStatus !== 'Applied'">
                                     <div class="flex justify-between text-[10px] mb-3 uppercase tracking-widest">
                                         <span class="text-gray-400 font-bold">Overall Program Progress</span>
                                         <span class="font-bold text-teal-600">{{ viewingProgram.progress || 0 }}%</span>
@@ -137,57 +279,80 @@
                                 </div>
 
                                 <!-- Details Grid -->
-                                <div class="grid grid-cols-1 gap-4 bg-gray-50/50 p-6 rounded-2xl border border-gray-100/50">
+                                <div
+                                    class="grid grid-cols-1 gap-4 bg-gray-50/50 p-6 rounded-2xl border border-gray-100/50">
                                     <div class="flex items-center gap-4 text-sm text-gray-600">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
+                                        <div
+                                            class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                             <GlobeAltIcon class="w-5 h-5 text-gray-400" />
                                         </div>
                                         <div class="flex flex-col">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sector</span>
-                                            <span class="text-gray-900 font-bold">{{ viewingProgram.sector || 'General' }}</span>
+                                            <span
+                                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sector</span>
+                                            <span class="text-gray-900 font-bold">{{ viewingProgram.sector || 'General'
+                                            }}</span>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-4 text-sm text-gray-600">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
+                                        <div
+                                            class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                             <CurrencyDollarIcon class="w-5 h-5 text-gray-400" />
                                         </div>
                                         <div class="flex flex-col">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Investment</span>
-                                            <span class="text-gray-900 font-bold">{{ viewingProgram.investment_amount || 'TBA' }}</span>
+                                            <span
+                                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Investment</span>
+                                            <span class="text-gray-900 font-bold">{{ viewingProgram.investment_amount ||
+                                                'TBA' }}</span>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-4 text-sm text-gray-600">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
+                                        <div
+                                            class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                             <CalendarIcon class="w-5 h-5 text-gray-400" />
                                         </div>
                                         <div class="flex flex-col">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Timeline</span>
+                                            <span
+                                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Timeline</span>
                                             <span class="text-gray-900 font-bold">
-                                                {{ viewingProgram.startDate ? formatDate(viewingProgram.startDate) : 'TBA' }}
+                                                {{ viewingProgram.startDate ? formatDate(viewingProgram.startDate) :
+                                                    'TBA' }}
                                                 <span v-if="viewingProgram.endDate" class="text-gray-300 mx-1">→</span>
-                                                <span v-if="viewingProgram.endDate">{{ formatDate(viewingProgram.endDate) }}</span>
+                                                <span v-if="viewingProgram.endDate">{{
+                                                    formatDate(viewingProgram.endDate) }} (End)</span>
+                                            </span>
+                                            <span v-if="viewingProgram.enrollmentDeadline" class="text-[10px] mt-1 font-bold" :class="viewingProgram.isEnrollmentClosed ? 'text-red-500' : 'text-teal-600 uppercase'">
+                                                Enrollment Deadline: {{ formatDate(viewingProgram.enrollmentDeadline) }}
                                             </span>
                                         </div>
                                     </div>
-                                    <div v-if="viewingProgram.templateName" class="flex items-center gap-4 text-sm text-gray-600">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
+                                    <div v-if="viewingProgram.templateName"
+                                        class="flex items-center gap-4 text-sm text-gray-600">
+                                        <div
+                                            class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0">
                                             <DocumentDuplicateIcon class="w-5 h-5 text-gray-400" />
                                         </div>
                                         <div class="flex flex-col">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assessment Framework</span>
-                                            <span class="text-gray-900 font-bold">{{ viewingProgram.templateName }}</span>
+                                            <span
+                                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assessment
+                                                Framework</span>
+                                            <span class="text-gray-900 font-bold">{{ viewingProgram.templateName
+                                            }}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Benefits -->
                                 <div v-if="viewingProgram.benefits?.length">
-                                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Core Benefits</h3>
+                                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Core
+                                        Benefits</h3>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div v-for="benefit in viewingProgram.benefits" :key="benefit"
                                             class="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-teal-200 transition-colors group">
-                                            <div class="w-2 h-2 rounded-full bg-teal-400 group-hover:scale-125 transition-transform"></div>
-                                            <span class="text-xs font-bold text-gray-700 tracking-tight">{{ benefit }}</span>
+                                            <div
+                                                class="w-2 h-2 rounded-full bg-teal-400 group-hover:scale-125 transition-transform">
+                                            </div>
+                                            <span class="text-xs font-bold text-gray-700 tracking-tight">{{ benefit
+                                            }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -196,46 +361,64 @@
                             <!-- Participants Tab -->
                             <div v-else-if="activeSlideTab === 'participants'" class="animate-in fade-in duration-300">
                                 <div class="mb-6 flex items-center justify-between">
-                                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <h3
+                                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                         <UserGroupIcon class="w-4 h-4" />
                                         Cohort Directory
                                     </h3>
-                                    <span class="text-[10px] font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-lg border border-teal-100">{{ store.participants.length }} Enrolled</span>
+                                    <span
+                                        class="text-[10px] font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-lg border border-teal-100">{{
+                                            store.participants.length }} Enrolled</span>
                                 </div>
 
                                 <div v-if="viewingProgram.enrollmentStatus === 'None' || viewingProgram.enrollmentStatus === 'Applied'"
                                     class="p-10 bg-gray-50/80 rounded-3xl border border-dashed border-gray-200 text-center flex flex-col items-center">
-                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm mb-6">
+                                    <div
+                                        class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm mb-6">
                                         <UserGroupIcon class="w-8 h-8 text-gray-300" />
                                     </div>
-                                    <h4 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-widest">Cohort Protected</h4>
+                                    <h4 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-widest">Cohort
+                                        Protected</h4>
                                     <p class="text-xs text-gray-500 leading-relaxed max-w-[240px] mx-auto">
-                                        Full participant details and networking options are available once your application is approved.
+                                        Full participant details and networking options are available once your
+                                        application is approved.
                                     </p>
                                 </div>
-                                <ProgramParticipantList v-else :participants="store.participants" :loading="store.participantsLoading" />
+                                <ProgramParticipantList v-else :participants="store.participants"
+                                    :loading="store.participantsLoading" />
                             </div>
                         </div>
 
                         <!-- Actions (Sticky Footer) -->
-                        <div class="p-8 border-t border-gray-100 bg-white sticky bottom-0 z-10 bg-white/95 backdrop-blur-md">
-                            <button v-if="viewingProgram.enrollmentStatus === 'None'"
+                        <div
+                            class="p-8 border-t border-gray-100 bg-white sticky bottom-0 z-10 bg-white/95 backdrop-blur-md">
+                            <button v-if="viewingProgram.enrollmentStatus === 'None' && !viewingProgram.isEnrollmentClosed && !viewingProgram.isFinished"
                                 @click="enroll(viewingProgram); viewingProgram = null"
                                 class="w-full py-4 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-teal-600/30 active:scale-95 text-sm uppercase tracking-widest">
                                 Apply for this Program
                                 <ArrowRightIcon class="w-5 h-5 shadow-sm" />
                             </button>
-                            <div v-else class="text-center p-5 bg-teal-50/50 rounded-2xl border border-teal-100 flex items-center justify-between">
+                            <div v-else-if="viewingProgram.enrollmentStatus === 'None' && (viewingProgram.isEnrollmentClosed || viewingProgram.isFinished)"
+                                class="w-full py-4 bg-gray-100 text-gray-400 rounded-xl font-bold border border-gray-200 text-center text-sm uppercase tracking-widest">
+                                {{ viewingProgram.isFinished ? 'Program Finished' : 'Enrollment Closed' }}
+                            </div>
+                            <div v-else
+                                class="text-center p-5 bg-teal-50/50 rounded-2xl border border-teal-100 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-white border border-teal-100 flex items-center justify-center">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-white border border-teal-100 flex items-center justify-center">
                                         <CheckCircleIcon class="w-6 h-6 text-teal-600" />
                                     </div>
                                     <div class="text-left">
-                                        <p class="text-[10px] text-teal-600/60 font-black uppercase tracking-widest mb-0.5">Application Status</p>
-                                        <p class="text-sm font-black text-teal-800 tracking-tight">{{ viewingProgram.enrollmentStatus }}</p>
+                                        <p
+                                            class="text-[10px] text-teal-600/60 font-black uppercase tracking-widest mb-0.5">
+                                            Application Status</p>
+                                        <p class="text-sm font-black text-teal-800 tracking-tight">{{
+                                            viewingProgram.enrollmentStatus }}</p>
                                     </div>
                                 </div>
-                                <div class="text-[10px] font-black text-teal-600 bg-white px-3 py-1.5 rounded-lg border border-teal-100 uppercase tracking-widest shadow-sm">
+                                <div
+                                    class="text-[10px] font-black text-teal-600 bg-white px-3 py-1.5 rounded-lg border border-teal-100 uppercase tracking-widest shadow-sm">
                                     Secured
                                 </div>
                             </div>
@@ -284,11 +467,16 @@ import {
     SparklesIcon,
     XMarkIcon,
     DocumentDuplicateIcon,
-    UserGroupIcon
+    UserGroupIcon,
+    Squares2X2Icon,
+    ListBulletIcon,
+    EyeIcon,
+    ChatBubbleLeftRightIcon
 } from '@heroicons/vue/24/outline'
 import { useSmeProgramStore } from '~/stores/smeProgram.store'
 import { storeToRefs } from 'pinia'
 import { formatDate } from '~/utils/format'
+import { useConfirm } from '~/composables/useConfirm'
 import StatCard from '~/components/AdminStatCard.vue'
 import ProgramCard from '~/components/ProgramCard.vue'
 import ProgramParticipantList from '~/components/ProgramParticipantList.vue'
@@ -296,12 +484,14 @@ import ProgramCommentThread from '~/components/ProgramCommentThread.vue'
 
 const store = useSmeProgramStore()
 const { programs, loading } = storeToRefs(store)
+const { ask } = useConfirm()
 
 const searchQuery = ref('')
 const activeFilter = ref('all')
 const viewingProgram = ref<any | null>(null)
 const discussingProgram = ref<any | null>(null)
 const activeSlideTab = ref('general')
+const viewMode = ref<'grid' | 'list'>('grid')
 
 const filters = [
     { id: 'all', label: 'All Programs' },
@@ -338,7 +528,13 @@ const fetchPrograms = async () => {
 }
 
 const enroll = async (program: any) => {
-    if (!confirm(`Are you sure you want to apply for ${program.name}?`)) return
+    const confirmed = await ask({
+        title: `Apply for ${program.name}?`,
+        message: `You are about to submit an application for this program. Your business profile will be shared with the program administrators.`,
+        confirmText: 'Submit Application',
+        type: 'info'
+    })
+    if (!confirmed) return
 
     try {
         await store.applyToProgram(program.id)

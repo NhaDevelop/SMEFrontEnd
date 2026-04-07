@@ -59,6 +59,9 @@
               <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold">
                 v{{ template.version || '1.0' }}
               </span>
+              <span v-if="template.isFinished" class="px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold border border-red-200 uppercase">
+                Finished
+              </span>
             </div>
           </div>
 
@@ -72,7 +75,15 @@
           </div>
 
           <div
-            class="absolute inset-x-5 bottom-4 transition-all duration-200 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0">
+            class="absolute inset-x-5 bottom-4 transition-all duration-200 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 flex flex-col gap-2">
+            <button v-if="template.isFinished" type="button" disabled
+              class="w-full px-3 py-2 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium border border-gray-200 cursor-not-allowed">
+              Assessment Closed
+            </button>
+            <button v-else type="button" @click="selectTemplate(template.id)"
+              class="w-full px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm">
+              Start Assessment
+            </button>
             <button type="button" @click="openTemplatePreview(template)"
               class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
               <span class="text-xs">&#9679;</span>
@@ -148,7 +159,11 @@
               class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors">
               Close
             </button>
-            <button type="button" @click="startPreviewedTemplate"
+            <button v-if="previewTemplate?.isFinished" type="button" disabled
+              class="px-5 py-2 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium border border-gray-200 cursor-not-allowed uppercase">
+              Program Finished
+            </button>
+            <button v-else type="button" @click="startPreviewedTemplate"
               class="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors">
               Start Assessment
             </button>
@@ -245,6 +260,29 @@
             <button @click="navigateToDashboard"
               class="px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm">
               Go to Dashboard
+            </button>
+          </div>
+        </div>
+
+        <!-- NEW: Block state if template/program is finished -->
+        <div v-else-if="isCurrentTemplateFinished"
+          class="max-w-3xl mx-auto py-12 flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in">
+          <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+            <ClockIcon class="w-12 h-12 text-amber-600" />
+          </div>
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Assessment Period Closed</h2>
+          <p class="text-gray-500 max-w-lg mb-8 text-lg">
+            This assessment is no longer available because the associated program has ended or the deadline has passed. 
+            You can no longer start or finish this assessment.
+          </p>
+          <div class="flex gap-4">
+            <button @click="navigateTo('/sme/dashboard')"
+              class="px-8 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm">
+              Back to Dashboard
+            </button>
+            <button @click="navigateTo('/assessment')"
+              class="px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm">
+              View Other Assessments
             </button>
           </div>
         </div>
@@ -624,6 +662,7 @@ definePageMeta({
 
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRoute, onBeforeRouteLeave } from 'vue-router'
+import { useConfirm } from '~/composables/useConfirm'
 import {
   ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
@@ -641,7 +680,8 @@ import {
   ChevronDownIcon,
   ComputerDesktopIcon,
   CheckIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  ClockIcon
 } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon as CheckCircleIconSolid } from '@heroicons/vue/24/solid'
 
@@ -653,6 +693,7 @@ import { calculateOverallScore } from '~/utils/helpers'
 const route = useRoute()
 const smeProgramStore = useSmeProgramStore()
 const dashboardStore = useDashboardStore()
+const { ask } = useConfirm()
 const frameworkSettings = ref<any[]>([])
 
 interface AssessmentQuestion {
@@ -741,7 +782,8 @@ const availableTemplates = computed(() => {
       description: p.description,
       version: p.templateVersion || p.version || null,
       duration: 15, // Mock duration for now
-      programName: p.name
+      programName: p.name,
+      isFinished: p.isFinished || p.isAssessmentPeriodOver
     }))
 })
 
@@ -769,9 +811,15 @@ const templateMeta = ref<Record<string, { questionCount: number, pillarCount: nu
 
 // Function to select a template and start assessment
 const selectTemplate = (templateId: string | number) => {
+  const template = availableTemplates.value.find(t => String(t.id) === String(templateId))
+  const program = availablePrograms.value.find(p => p.templateId === templateId)
+  
   navigateTo({
     path: '/assessment',
-    query: { template: String(templateId) }
+    query: { 
+      template: String(templateId),
+      program: program ? program.id : undefined 
+    }
   })
 }
 
@@ -803,7 +851,9 @@ const loadTemplateMeta = async () => {
     availableTemplates.value.map(async (template) => {
       try {
         const response = await api<any>('/sme/questions', {
-          query: { template_id: normalizeTemplateId(template.id) }
+          query: { template_id: normalizeTemplateId(template.id) },
+          // @ts-ignore
+          ignoreErrors: true
         })
         const questions: AssessmentQuestion[] = response.data || response || []
         const uniquePillars = new Set(questions.map(q => String(q.pillar_id)))
@@ -824,6 +874,11 @@ const currentTemplateId = computed(() => (route.query.template as string) || nul
 
 // Filtered questions for current template
 const assessmentQuestions = ref<AssessmentQuestion[]>([])
+const isCurrentTemplateFinished = computed(() => {
+  if (!currentTemplateId.value) return false
+  const template = availableTemplates.value.find(t => String(t.id) === String(currentTemplateId.value))
+  return template?.isFinished || false
+})
 const loadingQuestions = ref(false)
 const previewModalOpen = ref(false)
 const previewLoading = ref(false)
@@ -1099,6 +1154,14 @@ const validateAndNext = () => {
 }
 
 const submitAssessment = async () => {
+  const confirmed = await ask({
+    title: 'Submit Assessment?',
+    message: 'Are you sure you want to submit your answers? You will not be able to change them once the assessment is finalized.',
+    confirmText: 'Yes, Submit Now',
+    type: 'info'
+  })
+  if (!confirmed) return
+
   console.log('[Assessment] Submit button clicked')
   const api = useApi()
   try {
@@ -1108,7 +1171,8 @@ const submitAssessment = async () => {
     const startResponse = await api<any>('/assessment/start', {
       method: 'POST',
       body: { 
-        template_id: typeof tId === 'string' ? (Number(tId.replace('temp_', '')) || tId) : tId
+        template_id: typeof tId === 'string' ? (Number(tId.replace('temp_', '')) || tId) : tId,
+        program_id: route.query.program ? Number(route.query.program) : undefined
       }
     })
     
@@ -1250,11 +1314,17 @@ onMounted(async () => {
   }
 })
 
-// --- NEW: Navigation Guard ---
-onBeforeRouteLeave((to, from, next) => {
+// --- Navigation Guard ---
+onBeforeRouteLeave(async (to, from, next) => {
   if (dashboardStore.isAssessmentActive && !isSubmitted.value) {
-    const confirmLeave = confirm('Are you sure you want to leave the assessment? Your unsaved progress will be lost.')
-    if (confirmLeave) {
+    const confirmed = await ask({
+      title: 'Exit Assessment?',
+      message: 'Are you sure you want to leave the assessment? Your unsaved progress will be lost.',
+      confirmText: 'Exit Anyway',
+      type: 'warning'
+    })
+    
+    if (confirmed) {
       dashboardStore.isAssessmentActive = false // Reset state on leave
       next()
     } else {

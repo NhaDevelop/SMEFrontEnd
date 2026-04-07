@@ -224,11 +224,11 @@
                       </p>
                       <a v-if="goal.proofDocument"
                         :href="getDocumentUrl(goal.proofDocument)" target="_blank"
-                        class="text-xs text-teal-600 hover:underline flex items-center gap-1 font-medium bg-teal-50/50 px-2 py-1 rounded border border-teal-100 w-fit">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        class="flex items-center gap-2 text-teal-700 font-bold text-xs bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100 hover:bg-teal-100 transition-colors w-fit shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                         </svg>
-                        View & Download Proof
+                        View & Download Proof Document
                       </a>
                       <div class="flex gap-2 pt-1">
                         <button @click="handleVerifyGoal(goal.id)"
@@ -454,6 +454,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useInvestorStore } from '~/stores/investor.store'
+import { useConfirm } from '~/composables/useConfirm'
 import Marketplace from '~/components/InvestorMarketplace.vue'
 import GoalDetailModal from '~/components/InvestorGoalDetailModal.vue'
 import CreateGoalModal from '~/components/InvestorCreateGoalModal.vue'
@@ -461,6 +462,7 @@ import RiskGrowthScatterPlot from '~/components/InvestorRiskGrowthScatterPlot.vu
 import SmeSummaryModal from '~/components/InvestorSmeSummaryModal.vue'
 
 const store = useInvestorStore()
+const { ask } = useConfirm()
 const stats = computed(() => store.stats)
 
 const activeTab = ref('comparison')
@@ -552,30 +554,61 @@ const handleCreateGoal = async (goalData: any) => {
 }
 
 const handleUpdateGoalStatus = async ({ id, status }: { id: number, status: string }) => {
+  const isApproving = status.toLowerCase().includes('approved') || status.toLowerCase().includes('active')
+  const actionTitle = isApproving ? 'Approve Goal?' : 'Reject Goal?'
+  const actionMessage = isApproving 
+    ? 'Are you sure you want to approve this goal? This will move it to the active tracking phase.' 
+    : 'Are you sure you want to reject this goal? The SME will be notified to revise their target.'
+
+  const confirmed = await ask({
+    title: actionTitle,
+    message: actionMessage,
+    confirmText: isApproving ? 'Approve' : 'Reject',
+    type: isApproving ? 'info' : 'danger'
+  })
+  
+  if (!confirmed) return
+
   await store.updateGoalStatus(id, status)
   isDetailOpen.value = false
 }
 
 const handleDeleteGoal = async (id: number) => {
-  if (confirm('Are you sure you want to delete this goal?')) {
+  const confirmed = await ask({
+    title: 'Delete Goal?',
+    message: 'Are you sure you want to delete this goal from the portfolio? This cannot be undone.',
+    confirmText: 'Delete Goal',
+    type: 'danger'
+  })
+  if (confirmed) {
     await store.deleteGoal(id)
   }
 }
 
 const handleVerifyGoal = async (id: number) => {
   if (verifyingGoalId.value) return
+  
+  const confirmed = await ask({
+    title: 'Verify Goal Evidence?',
+    message: 'Are you sure you want to mark this goal as verified? You should only do this if the provided evidence meets the program requirements.',
+    confirmText: 'Verify Now',
+    type: 'info'
+  })
+  
+  if (!confirmed) return
+
   verifyingGoalId.value = id
   const api = useApi()
   try {
     const res = await api<any>(`/sme/goals/${id}/verify`, { method: 'PATCH' })
-    if (res?.success) {
-      // Refresh deal flow to update statuses
-      await store.fetchDealFlow(true)
-      // If we are in the detail modal, update it or close it
-      if (selectedGoal.value?.id === id) {
-        selectedGoal.value.status = 'Achieved'
-        selectedGoal.value.progress = 100
-      }
+    
+    // The response is usually automatically unwrapped by useApi into its data component
+    // If it didn't throw an error, we treat it as a success!
+    await store.fetchDealFlow(true)
+    // If we are in the detail modal, update it or close it
+    if (selectedGoal.value?.id === id) {
+      selectedGoal.value.status = 'Achieved'
+      selectedGoal.value.progress = 100
     }
   } catch (e: any) {
     console.error('Verify error:', e)

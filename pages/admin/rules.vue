@@ -9,108 +9,83 @@
 
         <main class="flex-1 overflow-y-auto custom-scrollbar p-8">
             <div class="max-w-[1200px] mx-auto space-y-8">
-
-                <!-- Header Cards -->
-                <div class="flex gap-6">
-                    <div
-                        class="flex-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-1">Total Rules</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ rules.length }}</p>
-                        </div>
-                        <div class="p-3 bg-gray-50 rounded-lg">
-                            <BoltIcon class="w-6 h-6 text-gray-400" />
-                        </div>
-                    </div>
-                    <div
-                        class="flex-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-1">Active Rules</p>
-                            <p class="text-3xl font-bold text-gray-900">{{ metrics.activeRules }}</p>
-                        </div>
-                        <div class="p-3 bg-green-50 rounded-lg">
-                            <CheckCircleIcon class="w-6 h-6 text-green-500" />
-                        </div>
-                    </div>
-                    <div
-                        class="flex-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-1">Max Bonus</p>
-                            <p class="text-3xl font-bold text-green-600">+{{ metrics.maxBonus }}</p>
-                        </div>
-                        <div class="p-3 bg-green-50 rounded-lg">
-                            <ArrowTrendingUpIcon class="w-6 h-6 text-green-500" />
-                        </div>
-                    </div>
-                    <div
-                        class="flex-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 mb-1">Max Penalty</p>
-                            <p class="text-3xl font-bold text-red-500">{{ metrics.maxPenalty }}</p>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <ArrowTrendingDownIcon class="w-6 h-6 text-red-500" />
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Readiness Level Thresholds Section -->
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-6">
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900">Scoring Rules</h2>
-                            <p class="text-gray-500 mt-1">Rules are applied in order. Multiple rules can trigger for the
-                                same SME.</p>
+                            <h2 class="text-xl font-bold text-gray-900">Readiness Level Thresholds</h2>
+                            <p class="text-gray-500 mt-1">Define score ranges for the selected context below</p>
+                            <div class="mt-4 flex items-center gap-3">
+                                <label class="text-sm font-semibold text-gray-700 whitespace-nowrap">Target Configuration:</label>
+                                <select v-model="selectedProgramId" 
+                                    class="w-full sm:w-64 rounded-lg border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500 py-2 pl-3 pr-8 bg-gray-50 font-medium">
+                                    <option value="global">🌍 Global (Default System Thresholds)</option>
+                                    <optgroup label="Active Programs">
+                                        <option v-for="prog in activePrograms" :key="prog.id" :value="prog.id">
+                                            {{ prog.name }}
+                                        </option>
+                                    </optgroup>
+                                </select>
+                            </div>
                         </div>
-                        <button @click="openCreateModal"
-                            class="px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium hover:bg-cyan-700 transition-colors flex items-center gap-2">
-                            <PlusIcon class="w-4 h-4" /> Add Rule
+                        <button @click="handleSaveThresholds" :disabled="isSavingThresholds || !isThresholdsValid"
+                            class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 font-medium shadow-sm disabled:opacity-50">
+                            <CloudArrowUpIcon class="w-4 h-4" />
+                            {{ isSavingThresholds ? 'Saving...' : 'Save Thresholds' }}
                         </button>
                     </div>
-                    <div class="space-y-4">
-                        <div v-for="rule in rules" :key="rule.id"
-                            class="border border-gray-200 rounded-xl p-6 flex items-start gap-4 hover:border-teal-200 transition-colors">
-                            <!-- Icon -->
-                            <div :class="['p-3 rounded-lg', rule.modifier > 0 ? 'bg-teal-50' : 'bg-red-50']">
-                                <ArrowTrendingUpIcon v-if="rule.modifier > 0" class="w-6 h-6 text-teal-600" />
-                                <ArrowTrendingDownIcon v-else class="w-6 h-6 text-red-500" />
-                            </div>
 
-                            <!-- Content -->
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-1">
-                                    <h3 class="text-lg font-medium text-gray-900">{{ rule.name }}</h3>
-                                    <span
-                                        :class="['px-2 py-0.5 rounded-full text-xs font-bold', rule.modifier > 0 ? 'bg-teal-600 text-white' : 'bg-red-500 text-white']">
-                                        {{ rule.modifier > 0 ? '+' : '' }}{{ rule.modifier }} points
-                                    </span>
-                                </div>
-                                <p class="text-gray-500 mb-3 text-sm">Award bonus points for SMEs with >20% monthly
-                                    growth rate</p>
+                    <div class="space-y-6 max-w-3xl mb-12">
+                        <div v-for="level in thresholds" :key="level.id" class="flex items-center gap-6">
+                            <div class="w-4 h-4 rounded-md flex-shrink-0" :class="level.colorBg"></div>
+                            <span class="text-sm font-medium text-gray-900 w-40">{{ level.label }}</span>
 
-                                <div
-                                    class="bg-gray-100 rounded px-3 py-1.5 inline-block font-mono text-xs text-gray-700 border border-gray-200">
-                                    {{ rule.condition }}
-                                </div>
+                            <div class="flex items-center gap-3">
+                                <input type="number" v-model="level.min"
+                                    class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <span class="text-gray-400 text-sm">to</span>
+                                <input type="number" v-model="level.max"
+                                    class="w-20 rounded-lg border-gray-300 text-center text-sm focus:border-emerald-500 focus:ring-emerald-500">
                             </div>
+                        </div>
+                    </div>
 
-                            <!-- Actions -->
-                            <div class="flex items-center gap-4">
-                                <button @click="toggleRule(rule)" :class="[
-                                    'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                                    rule.isActive ? 'bg-teal-600' : 'bg-gray-200'
-                                ]">
-                                    <span aria-hidden="true" :class="[
-                                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                                        rule.isActive ? 'translate-x-5' : 'translate-x-0'
-                                    ]" />
-                                </button>
-                                <button @click="editRule(rule)" class="text-gray-400 hover:text-gray-600">
-                                    <PencilSquareIcon class="w-5 h-5" />
-                                </button>
-                                <button @click="deleteRule(rule)" class="text-gray-400 hover:text-red-500">
-                                    <TrashIcon class="w-5 h-5" />
-                                </button>
+                    <div v-if="!isThresholdsValid"
+                        class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-3">
+                        <ExclamationTriangleIcon class="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <p class="text-sm font-medium">{{ thresholdErrorMessage }}</p>
+                    </div>
+
+                    <!-- Visual Preview -->
+                    <div class="pt-8 border-t border-gray-100" v-if="thresholds.length >= 4">
+                        <h4
+                            class="font-semibold text-gray-900 mb-6 font-medium text-sm text-gray-500 uppercase tracking-wider">
+                            Score Scale Preview</h4>
+                        <div
+                            class="relative h-12 w-full flex rounded-lg overflow-hidden font-medium text-white text-xs shadow-inner">
+                            <div class="bg-red-500 flex items-center justify-center transition-all duration-500"
+                                :style="{ width: getWidth(thresholds[3]) }">
+                                0 - {{ thresholds[3]?.max }}
                             </div>
+                            <div class="bg-teal-500 flex items-center justify-center transition-all duration-500"
+                                :style="{ width: getWidth(thresholds[2]) }">
+                                {{ thresholds[2]?.min }} - {{ thresholds[2]?.max }}
+                            </div>
+                            <div class="bg-amber-500 flex items-center justify-center transition-all duration-500"
+                                :style="{ width: getWidth(thresholds[1]) }">
+                                {{ thresholds[1]?.min }} - {{ thresholds[1]?.max }}
+                            </div>
+                            <div class="bg-emerald-600 flex items-center justify-center transition-all duration-500"
+                                :style="{ width: getWidth(thresholds[0]) }">
+                                {{ thresholds[0]?.min }} - 100
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-400 mt-3 px-1 font-medium">
+                            <span>0</span>
+                            <span>25</span>
+                            <span>50</span>
+                            <span>75</span>
+                            <span>100</span>
                         </div>
                     </div>
                 </div>
@@ -118,70 +93,139 @@
             </div>
         </main>
 
-        <CreateRuleModal v-if="showModal" :initial-data="editingRule" @cancel="showModal = false"
-            @save="handleSaveRule" />
-
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
-import CreateRuleModal from '~/components/AdminCreateRuleModal.vue'
 import {
-    PlusIcon,
-    BoltIcon,
-    CheckCircleIcon,
-    ArrowTrendingUpIcon,
-    ArrowTrendingDownIcon,
-    PencilSquareIcon,
-    TrashIcon
+    ExclamationTriangleIcon,
+    CloudArrowUpIcon
 } from '@heroicons/vue/24/outline'
 
 const adminStore = useAdminStore()
-const rules = computed(() => adminStore.scoringRules)
-const showModal = ref(false)
-const editingRule = ref<any>(null)
+const isSavingThresholds = ref(false)
 
-const metrics = computed(() => {
-    const active = rules.value.filter(r => r.isActive)
-    return {
-        activeRules: active.length,
-        maxBonus: active.filter(r => r.modifier > 0).reduce((sum, r) => sum + r.modifier, 0),
-        maxPenalty: active.filter(r => r.modifier < 0).reduce((sum, r) => sum + r.modifier, 0)
-    }
+const selectedProgramId = ref<string | number>('global')
+const activePrograms = computed(() => {
+    return adminStore.programs.filter((p: any) => ['Published', 'Coming Soon'].includes(p.status))
 })
 
-const openCreateModal = () => {
-    editingRule.value = null
-    showModal.value = true
-}
+const thresholds = ref<{ id: string, label: string, min: number, max: number, colorBg: string }[]>([])
+const thresholdErrorMessage = ref('')
 
-const editRule = (rule: any) => {
-    editingRule.value = rule
-    showModal.value = true
-}
+const isThresholdsValid = computed(() => {
+    if (thresholds.value.length === 0) return true
 
-const handleSaveRule = async (ruleData: any) => {
-    if (ruleData.id) {
-        await adminStore.updateScoringRule(ruleData)
+    const sorted = [...thresholds.value].sort((a, b) => Number(a.min) - Number(b.min))
+    const first = sorted[0]
+    const last = sorted[sorted.length - 1]
+
+    if (!first || Number(first.min) !== 0) {
+        thresholdErrorMessage.value = 'Thresholds must start from 0'
+        return false
+    }
+
+    if (!last || Number(last.max) !== 100) {
+        thresholdErrorMessage.value = 'Thresholds must end at 100'
+        return false
+    }
+
+    for (let i = 0; i < sorted.length; i++) {
+        const current = sorted[i];
+        if (!current) continue;
+
+        if (Number(current.min) >= Number(current.max)) {
+            thresholdErrorMessage.value = `Invalid range for ${current.label}: min must be less than max`;
+            return false;
+        }
+        if (i < sorted.length - 1) {
+            const next = sorted[i + 1];
+            if (!next) continue;
+
+            if (Number(current.max) !== Number(next.min) - 1) {
+                thresholdErrorMessage.value = `Gaps or overlaps detected between ${current.label} and ${next.label}. Ranges must be contiguous (e.g., 0-39, 40-59).`;
+                return false;
+            }
+        }
+    }
+
+    thresholdErrorMessage.value = ''
+    return true
+})
+
+const loadThresholdsContext = () => {
+    if (selectedProgramId.value === 'global') {
+        if (adminStore.frameworkThresholds && adminStore.frameworkThresholds.length > 0) {
+            thresholds.value = JSON.parse(JSON.stringify(adminStore.frameworkThresholds))
+        } else {
+            thresholds.value = [
+                { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
+                { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
+                { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
+                { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
+            ]
+        }
     } else {
-        await adminStore.addScoringRule(ruleData)
+        const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
+        if (prog && prog.thresholds && prog.thresholds.length === 4) {
+            thresholds.value = JSON.parse(JSON.stringify(prog.thresholds))
+        } else {
+            // Seed from global default if the program has no custom thresholds yet
+            thresholds.value = adminStore.frameworkThresholds && adminStore.frameworkThresholds.length > 0
+                ? JSON.parse(JSON.stringify(adminStore.frameworkThresholds))
+                : [
+                    { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
+                    { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
+                    { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
+                    { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
+                ]
+        }
     }
-    showModal.value = false
-    editingRule.value = null
 }
 
-const toggleRule = async (rule: any) => {
-    const updated = { ...rule, isActive: !rule.isActive }
-    await adminStore.updateScoringRule(updated)
-}
+watch(selectedProgramId, () => {
+    loadThresholdsContext()
+})
 
-const deleteRule = async (rule: any) => {
-    if (confirm(`Are you sure you want to delete "${rule.name}"?`)) {
-        await adminStore.deleteScoringRule(rule.id)
+onMounted(async () => {
+    await Promise.all([
+        adminStore.fetchFrameworkSettings(),
+        adminStore.programs.length === 0 ? adminStore.fetchProgramsData() : Promise.resolve()
+    ])
+    loadThresholdsContext()
+})
+
+const handleSaveThresholds = async () => {
+    if (!isThresholdsValid.value) return
+
+    isSavingThresholds.value = true
+    try {
+        if (selectedProgramId.value === 'global') {
+            await adminStore.updateFrameworkSettings({
+                thresholds: thresholds.value
+            })
+            alert('Global thresholds updated successfully')
+        } else {
+            const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
+            if (prog) {
+                const updatedProg = { ...prog, thresholds: thresholds.value }
+                await adminStore.updateProgram(updatedProg)
+                alert(`Thresholds updated successfully for program: ${prog.name}`)
+            }
+        }
+    } catch (e) {
+        alert('Failed to save thresholds')
+    } finally {
+        isSavingThresholds.value = false
     }
 }
+
+const getWidth = (t: any) => {
+    if (!t) return '0%'
+    return ((t.max - t.min + 1) / 100 * 100) + '%'
+}
+
 
 definePageMeta({
     layout: 'admin',

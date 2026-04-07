@@ -118,8 +118,18 @@ import {
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
+const { ask } = useConfirm()
 
 const logout = async () => {
-    await authStore.logout()
+    const confirmed = await ask({
+        title: 'Confirm Logout',
+        message: 'Are you sure you want to sign out of your account?',
+        confirmText: 'Sign Out',
+        type: 'warning'
+    })
+
+    if (confirmed) {
+        await authStore.logout()
+    }
 }
 </script>
