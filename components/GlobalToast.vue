@@ -20,10 +20,10 @@
               
               <!-- Icon based on type -->
               <div class="flex-shrink-0">
-                <CheckCircleIcon v-if="toast.type === 'success'" class="h-6 w-6 text-green-400" aria-hidden="true" />
+                <CheckCircleIcon v-if="toast.type === 'success'" class="h-6 w-6 text-primary-400" aria-hidden="true" />
                 <XCircleIcon v-else-if="toast.type === 'error'" class="h-6 w-6 text-red-500" aria-hidden="true" />
-                <ExclamationTriangleIcon v-else-if="toast.type === 'warning'" class="h-6 w-6 text-yellow-400" aria-hidden="true" />
-                <InformationCircleIcon v-else class="h-6 w-6 text-blue-400" aria-hidden="true" />
+                <ExclamationTriangleIcon v-else-if="toast.type === 'warning'" class="h-6 w-6 text-amber-500" aria-hidden="true" />
+                <InformationCircleIcon v-else class="h-6 w-6 text-cyan-500" aria-hidden="true" />
               </div>
               
               <!-- Content -->
@@ -41,7 +41,7 @@
                 <button 
                   type="button" 
                   @click="remove(toast.id)"
-                  class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   <span class="sr-only">Close</span>
                   <XMarkIcon class="h-5 w-5" aria-hidden="true" />

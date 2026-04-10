@@ -102,9 +102,11 @@ import {
     ExclamationTriangleIcon,
     CloudArrowUpIcon
 } from '@heroicons/vue/24/outline'
+import { useToast } from '~/composables/useToast'
 
 const adminStore = useAdminStore()
 const isSavingThresholds = ref(false)
+const toast = useToast()
 
 const selectedProgramId = ref<string | number>('global')
 const activePrograms = computed(() => {
@@ -205,17 +207,17 @@ const handleSaveThresholds = async () => {
             await adminStore.updateFrameworkSettings({
                 thresholds: thresholds.value
             })
-            alert('Global thresholds updated successfully')
+            toast.success('Global thresholds updated successfully')
         } else {
             const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
             if (prog) {
                 const updatedProg = { ...prog, thresholds: thresholds.value }
                 await adminStore.updateProgram(updatedProg)
-                alert(`Thresholds updated successfully for program: ${prog.name}`)
+                toast.success(`Thresholds updated successfully for program: ${prog.name}`)
             }
         }
     } catch (e) {
-        alert('Failed to save thresholds')
+        toast.error('Failed to save thresholds')
     } finally {
         isSavingThresholds.value = false
     }

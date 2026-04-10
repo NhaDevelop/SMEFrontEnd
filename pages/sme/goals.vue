@@ -454,7 +454,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useConfirm } from '~/composables/useConfirm'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { FlagIcon, BoltIcon, EllipsisHorizontalIcon, CheckCircleIcon, ClockIcon, TrashIcon } from '@heroicons/vue/24/outline'
@@ -462,6 +462,7 @@ import ComparisonRadarChart from '~/components/DashboardComparisonRadarChart.vue
 import CreateGoalModal from '~/components/SmeCreateGoalModal.vue'
 import SmeGoalProofModal from '~/components/SmeGoalProofModal.vue'
 import { useAuthStore } from '~/stores/auth.store'
+import { useToast } from '~/composables/useToast'
 
 interface Pillar {
     name: string
@@ -513,6 +514,7 @@ const showCreateGoalModal = ref(false)
 const showProofModal = ref(false)
 const goalIdToComplete = ref<number | string>('')
 const { ask } = useConfirm()
+const toast = useToast()
 const goals = ref<Goal[]>([])
 const loading = ref(false)
 
@@ -666,10 +668,11 @@ const handleCreateGoal = async (goalData: any) => {
         if (result) {
             await fetchGoals()
             showCreateGoalModal.value = false
+            toast.success('Goal created successfully!')
         }
     } catch (e: any) {
         console.error('Failed to create goal', e)
-        alert(e.data?.message || 'Failed to save goal. Please try again.')
+        toast.error(e.data?.message || 'Failed to save goal. Please try again.')
     }
 }
 
@@ -708,9 +711,10 @@ const submitProofAndAchieve = async (payload: { id: number, proofNote: string, p
 
         await fetchGoals()
         showProofModal.value = false
+        toast.success('Evidence submitted successfully!')
     } catch (e: any) {
         console.error('Failed to update goal', e)
-        alert(e.data?.message || 'Failed to update goal status.')
+        toast.error(e.data?.message || 'Failed to update goal status.')
     } finally {
         loading.value = false
     }
@@ -727,9 +731,10 @@ const pauseGoal = async (id: number, currentStatus: string) => {
         })
 
         await fetchGoals()
+        toast.success(newStatus === 'PAUSED' ? 'Goal paused successfully.' : 'Goal resumed successfully.')
     } catch (e: any) {
         console.error('Failed to update goal status', e)
-        alert(e.data?.message || 'Failed to update goal status.')
+        toast.error(e.data?.message || 'Failed to update goal status.')
     } finally {
         loading.value = false
     }
@@ -755,9 +760,10 @@ const deleteGoal = async (id: number) => {
         if (selectedGoal.value?.id === id) {
             selectedGoal.value = goals.value[0] || null
         }
+        toast.success('Goal deleted successfully.')
     } catch (e: any) {
         console.error('Failed to delete goal', e)
-        alert(e.data?.message || 'Failed to delete goal.')
+        toast.error(e.data?.message || 'Failed to delete goal.')
     } finally {
         loading.value = false
     }
@@ -788,6 +794,14 @@ const filteredGoals = computed(() => {
     }
 
     return result
+})
+
+watch(filteredGoals, (newGoals) => {
+    if (newGoals.length === 0) {
+        selectedGoal.value = null
+    } else if (selectedGoal.value && !newGoals.some(g => g.id === selectedGoal.value?.id)) {
+        if (newGoals[0]) selectGoal(newGoals[0])
+    }
 })
 
 const getStatusColor = (status: string) => {

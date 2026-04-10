@@ -326,15 +326,6 @@ const templates = computed(() => {
         }))
 })
 
-onMounted(async () => {
-    // Legacy route compatibility:
-    // SME users should use `/assessment` flow (SME endpoints), not admin endpoints.
-    await navigateTo({
-        path: '/assessment',
-        query: route.query
-    })
-})
-
 const filteredTemplates = computed(() => {
     return templates.value.filter(template => {
         // Filter by pillars
@@ -411,6 +402,15 @@ const startAssessment = (template: any) => {
 
 definePageMeta({
     layout: 'default',
-    middleware: ['auth', 'sme']
+    middleware: [
+        'auth', 
+        'sme',
+        function (to, from) {
+            return navigateTo({
+                path: '/assessment',
+                query: to.query
+            })
+        }
+    ]
 })
 </script>

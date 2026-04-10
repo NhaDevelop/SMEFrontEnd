@@ -1,6 +1,6 @@
 <template>
     <header
-        class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b bg-white/90 backdrop-blur-md border-gray-100 py-4 shadow-sm">
+        class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b bg-white/95 backdrop-blur-md border-gray-100 py-4 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center">
                 <!-- Logo -->
@@ -77,12 +77,42 @@
                     </template>
                     <template v-else>
                         <NuxtLink :to="{ path: '/login', query: { redirect: route.fullPath } }"
-                            class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-semibold tracking-wide uppercase rounded-lg transition-all shadow-lg shadow-teal-600/20 active:scale-95">
+                            class="hidden sm:block px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-semibold tracking-wide uppercase rounded-lg transition-all shadow-lg shadow-teal-600/20 active:scale-95">
                             Log In
                         </NuxtLink>
                     </template>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button @click="showMobileMenu = !showMobileMenu"
+                        class="md:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
+                        <Bars3Icon v-if="!showMobileMenu" class="w-6 h-6" />
+                        <XMarkIcon v-else class="w-6 h-6" />
+                    </button>
                 </div>
             </div>
+            
+            <!-- Mobile Menu Dropdown -->
+            <transition enter-active-class="transition duration-200 ease-out"
+                enter-from-class="transform -translate-y-2 opacity-0"
+                enter-to-class="transform translate-y-0 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="transform translate-y-0 opacity-100"
+                leave-to-class="transform -translate-y-2 opacity-0">
+                <div v-if="showMobileMenu" class="md:hidden pt-4 pb-2 border-t border-gray-100 mt-4 space-y-1">
+                    <NuxtLink @click="showMobileMenu = false" to="/" class="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-600 hover:bg-teal-50 hover:text-teal-600 transition-colors" exact-active-class="bg-teal-50 text-teal-600">Home</NuxtLink>
+                    <NuxtLink @click="showMobileMenu = false" to="/programs" class="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-600 hover:bg-teal-50 hover:text-teal-600 transition-colors" active-class="bg-teal-50 text-teal-600">Programs</NuxtLink>
+                    <NuxtLink @click="showMobileMenu = false" to="/landing/sme" class="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-600 hover:bg-teal-50 hover:text-teal-600 transition-colors" active-class="bg-teal-50 text-teal-600">For SMEs</NuxtLink>
+                    <NuxtLink @click="showMobileMenu = false" to="/landing/investor" class="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-600 hover:bg-teal-50 hover:text-teal-600 transition-colors" active-class="bg-teal-50 text-teal-600">For Investors</NuxtLink>
+                    <NuxtLink @click="showMobileMenu = false" to="/contact" class="block px-4 py-3 rounded-lg text-sm font-semibold text-gray-600 hover:bg-teal-50 hover:text-teal-600 transition-colors" active-class="bg-teal-50 text-teal-600">Contact</NuxtLink>
+                    
+                    <div v-if="!auth.isAuthenticated.value" class="px-4 pt-4 mt-2 border-t border-gray-100">
+                        <NuxtLink @click="showMobileMenu = false" :to="{ path: '/login', query: { redirect: route.fullPath } }"
+                            class="block w-full text-center px-6 py-3 bg-teal-600 text-white text-[13px] font-bold tracking-wide uppercase rounded-lg shadow-md shadow-teal-600/20 active:scale-95 transition-transform">
+                            Log In
+                        </NuxtLink>
+                    </div>
+                </div>
+            </transition>
         </div>
     </header>
 </template>
@@ -91,12 +121,15 @@
 import { ref, computed } from 'vue'
 import {
     ChartBarIcon, ArrowRightIcon, ChevronDownIcon,
-    ArrowRightOnRectangleIcon, ChartBarSquareIcon
+    ArrowRightOnRectangleIcon, ChartBarSquareIcon,
+    Bars3Icon, XMarkIcon
 } from '@heroicons/vue/24/outline'
 
 const auth = useAuth()
 const route = useRoute()
 const { ask } = useConfirm()
+
+const showMobileMenu = ref(false)
 
 const dashboardRoute = computed(() => {
     const role = auth.user?.value?.role?.toUpperCase()

@@ -39,11 +39,13 @@ export const useApi = () => {
 
       // ----- GLOBAL TOAST INJECTION (SUCCESS) -----
       // Only auto-toast on POST, PUT, DELETE, PATCH to prevent spam on every GET page load
+      // Individual requests can pass { noToast: true } to silence this.
       if (
         process.client && 
         response._data?.message && 
         response._data?.success === true &&
-        options.method && options.method.toUpperCase() !== 'GET'
+        options.method && options.method.toUpperCase() !== 'GET' &&
+        !(options as any).noToast
       ) {
         const { success } = useToast()
         success(response._data.message)

@@ -52,15 +52,13 @@
               <ClipboardDocumentCheckIcon class="w-5 h-5 text-teal-600" />
             </div>
             <div class="flex items-center gap-2">
-              <span :class="getTemplateType(template.id) === 'Quick' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'"
+              <span
+                :class="getTemplateType(template.id) === 'Quick' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'"
                 class="px-2 py-0.5 rounded-full text-[10px] font-semibold">
                 {{ getTemplateType(template.id) }}
               </span>
               <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold">
                 v{{ template.version || '1.0' }}
-              </span>
-              <span v-if="template.isFinished" class="px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold border border-red-200 uppercase">
-                Finished
               </span>
             </div>
           </div>
@@ -75,15 +73,7 @@
           </div>
 
           <div
-            class="absolute inset-x-5 bottom-4 transition-all duration-200 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 flex flex-col gap-2">
-            <button v-if="template.isFinished" type="button" disabled
-              class="w-full px-3 py-2 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium border border-gray-200 cursor-not-allowed">
-              Assessment Closed
-            </button>
-            <button v-else type="button" @click="selectTemplate(template.id)"
-              class="w-full px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm">
-              Start Assessment
-            </button>
+            class="absolute inset-x-5 bottom-4 transition-all duration-200 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0">
             <button type="button" @click="openTemplatePreview(template)"
               class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
               <span class="text-xs">&#9679;</span>
@@ -112,7 +102,8 @@
       <div v-if="previewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50" @click="closeTemplatePreview"></div>
 
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+        <div
+          class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-100 flex items-start justify-between">
             <div>
               <h3 class="text-xl font-bold text-gray-900">{{ previewTemplate?.name || 'Assessment Preview' }}</h3>
@@ -159,11 +150,7 @@
               class="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors">
               Close
             </button>
-            <button v-if="previewTemplate?.isFinished" type="button" disabled
-              class="px-5 py-2 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium border border-gray-200 cursor-not-allowed uppercase">
-              Program Finished
-            </button>
-            <button v-else type="button" @click="startPreviewedTemplate"
+            <button type="button" @click="startPreviewedTemplate"
               class="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors">
               Start Assessment
             </button>
@@ -264,29 +251,6 @@
           </div>
         </div>
 
-        <!-- NEW: Block state if template/program is finished -->
-        <div v-else-if="isCurrentTemplateFinished"
-          class="max-w-3xl mx-auto py-12 flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in">
-          <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
-            <ClockIcon class="w-12 h-12 text-amber-600" />
-          </div>
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Assessment Period Closed</h2>
-          <p class="text-gray-500 max-w-lg mb-8 text-lg">
-            This assessment is no longer available because the associated program has ended or the deadline has passed. 
-            You can no longer start or finish this assessment.
-          </p>
-          <div class="flex gap-4">
-            <button @click="navigateTo('/sme/dashboard')"
-              class="px-8 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm">
-              Back to Dashboard
-            </button>
-            <button @click="navigateTo('/assessment')"
-              class="px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm">
-              View Other Assessments
-            </button>
-          </div>
-        </div>
-
         <div v-else class="max-w-3xl mx-auto">
           <!-- Header -->
           <div class="flex items-start justify-between mb-2">
@@ -295,7 +259,7 @@
                 <h2 class="text-2xl font-bold text-gray-900">Investment Readiness Assessment</h2>
                 <span
                   class="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
-                  {{ availableTemplates.find(t => t.id == currentTemplateId)?.name || 'Assessment' }}
+                  {{availableTemplates.find(t => t.id == currentTemplateId)?.name || 'Assessment'}}
                 </span>
               </div>
               <div class="flex items-center gap-2 mb-2">
@@ -448,7 +412,7 @@
                   </label>
 
                   <!-- YES/NO or BOOLEAN (Yes/No Questions) -->
-                  <div v-if="q.type === 'Yes/No' || q.type === 'YesNo' || q.type === 'BOOLEAN' || q.type === 'Boolean'" class="flex flex-col gap-4">
+                  <div v-if="q.type === 'Yes/No' || q.type === 'BOOLEAN'" class="flex flex-col gap-4">
                     <div class="flex gap-6">
                       <!-- If question has options (BOOLEAN type from mock data) -->
                       <template v-if="q.options && q.options.length > 0">
@@ -481,7 +445,8 @@
                       <label class="block text-sm font-medium mb-2"
                         :class="proofValidationErrors.includes(String(q.id)) ? 'text-red-600' : 'text-gray-700'">
                         Upload Proof <span class="text-red-500">*</span>
-                        <span v-if="proofValidationErrors.includes(String(q.id))" class="ml-2 font-normal text-xs text-red-500">
+                        <span v-if="proofValidationErrors.includes(String(q.id))"
+                          class="ml-2 font-normal text-xs text-red-500">
                           ⚠ Proof document required before proceeding
                         </span>
                       </label>
@@ -489,8 +454,8 @@
                         :class="proofValidationErrors.includes(String(q.id)) ? 'border-red-300 hover:border-red-400 hover:bg-red-50' : 'border-gray-300 hover:bg-teal-50 hover:border-teal-300'"
                         class="flex flex-col items-center px-4 py-4 bg-white border-2 border-dashed rounded-lg cursor-pointer transition-colors">
                         <svg class="w-6 h-6 mb-2"
-                          :class="proofValidationErrors.includes(String(q.id)) ? 'text-red-400' : 'text-gray-400'" fill="none"
-                          stroke="currentColor" viewBox="0 0 24 24">
+                          :class="proofValidationErrors.includes(String(q.id)) ? 'text-red-400' : 'text-gray-400'"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
                           </path>
@@ -502,18 +467,16 @@
                           @change="(e) => { handleFileUpload(e, String(q.id) + '_proof'); proofValidationErrors = proofValidationErrors.filter(id => id !== String(q.id)) }"
                           accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
                       </label>
-                      <!-- Show selected file name -->
                       <div v-if="answers[String(q.id) + '_proof']"
                         class="mt-3 text-sm text-gray-700 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                         <CheckCircleIcon class="w-5 h-5 text-teal-600" />
-                        <span class="truncate font-medium">{{ answers[String(q.id) + '_proof']?.name || 'Proof file attached'
-                        }}</span>
+                        <span class="truncate font-medium">{{ answers[String(q.id) + '_proof']?.name || 'Proof file attached' }}</span>
                       </div>
                     </div>
                   </div>
 
                   <!-- CHOICE (Single Choice or Multiple Choice with options) -->
-                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Choice' || q.type === 'Multiple Choice' || q.type === 'MultipleChoice' || q.type === 'Single Choice' || q.type === 'SingleChoice'"
+                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Multiple Choice' || q.type === 'Single Choice'"
                     class="space-y-3">
                     <template v-if="q.options && q.options.length > 0">
                       <!-- Handle both object format {label, value, points} and simple string array -->
@@ -529,7 +492,7 @@
                   </div>
 
                   <!-- DROPDOWN SELECT -->
-                  <div v-else-if="q.type === 'Dropdown Select' || q.type === 'Dropdown' || q.type === 'Select'" class="relative max-w-md">
+                  <div v-else-if="q.type === 'Dropdown Select' || q.type === 'Dropdown'" class="relative max-w-md">
                     <select v-model="answers[q.id]"
                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 outline-none text-sm appearance-none bg-white">
                       <option value="" disabled selected>Select an option</option>
@@ -554,7 +517,7 @@
                   </div>
 
                   <!-- SCALE (1-10) -->
-                  <div v-else-if="q.type === 'Scale (1-10)' || q.type === 'SCALE' || q.type === 'Scale' || q.type === 'Rating'" class="max-w-xl">
+                  <div v-else-if="q.type === 'Scale (1-10)' || q.type === 'SCALE'" class="max-w-xl">
                     <input type="range" v-model.number="answers[q.id]" min="1" max="10" step="1"
                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600">
                     <div class="flex justify-between text-xs text-gray-500 mt-2">
@@ -564,7 +527,7 @@
                   </div>
 
                   <!-- FILE UPLOAD -->
-                  <div v-else-if="q.type === 'File Upload' || q.type === 'File' || q.type === 'Upload'" class="max-w-md">
+                  <div v-else-if="q.type === 'File Upload'" class="max-w-md">
                     <label
                       class="flex flex-col items-center px-4 py-6 bg-white border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                       <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -587,17 +550,11 @@
                     </div>
                   </div>
 
-                  <!-- FALLBACK: Unknown question type - show warning message instead of text input -->
+                  <!-- FALLBACK: Unknown question type - render as TEXT -->
                   <div v-else>
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <p class="text-sm text-yellow-800 font-medium mb-1">⚠️ Question Type Error</p>
-                      <p class="text-sm text-yellow-700">
-                        This question has an unhandled type: <strong>{{ q.type }}</strong>
-                      </p>
-                      <p class="text-xs text-yellow-600 mt-2">
-                        Please contact support or check the question configuration in the admin panel.
-                      </p>
-                    </div>
+                    <textarea v-model="answers[q.id]" rows="3" placeholder="Enter your answer..."
+                      class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 outline-none text-sm resize-none"></textarea>
+                    <p class="text-xs text-gray-400 mt-1">Question type: {{ q.type }}</p>
                   </div>
                 </div>
               </div>
@@ -660,9 +617,8 @@ definePageMeta({
   middleware: ['auth', 'sme']
 })
 
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import { useRoute, onBeforeRouteLeave } from 'vue-router'
-import { useConfirm } from '~/composables/useConfirm'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
@@ -680,8 +636,7 @@ import {
   ChevronDownIcon,
   ComputerDesktopIcon,
   CheckIcon,
-  ArrowRightIcon,
-  ClockIcon
+  ArrowRightIcon
 } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon as CheckCircleIconSolid } from '@heroicons/vue/24/solid'
 
@@ -693,7 +648,6 @@ import { calculateOverallScore } from '~/utils/helpers'
 const route = useRoute()
 const smeProgramStore = useSmeProgramStore()
 const dashboardStore = useDashboardStore()
-const { ask } = useConfirm()
 const frameworkSettings = ref<any[]>([])
 
 interface AssessmentQuestion {
@@ -782,8 +736,7 @@ const availableTemplates = computed(() => {
       description: p.description,
       version: p.templateVersion || p.version || null,
       duration: 15, // Mock duration for now
-      programName: p.name,
-      isFinished: p.isFinished || p.isAssessmentPeriodOver
+      programName: p.name
     }))
 })
 
@@ -811,15 +764,9 @@ const templateMeta = ref<Record<string, { questionCount: number, pillarCount: nu
 
 // Function to select a template and start assessment
 const selectTemplate = (templateId: string | number) => {
-  const template = availableTemplates.value.find(t => String(t.id) === String(templateId))
-  const program = availablePrograms.value.find(p => p.templateId === templateId)
-  
   navigateTo({
     path: '/assessment',
-    query: { 
-      template: String(templateId),
-      program: program ? program.id : undefined 
-    }
+    query: { template: String(templateId) }
   })
 }
 
@@ -851,9 +798,7 @@ const loadTemplateMeta = async () => {
     availableTemplates.value.map(async (template) => {
       try {
         const response = await api<any>('/sme/questions', {
-          query: { template_id: normalizeTemplateId(template.id) },
-          // @ts-ignore
-          ignoreErrors: true
+          query: { template_id: normalizeTemplateId(template.id) }
         })
         const questions: AssessmentQuestion[] = response.data || response || []
         const uniquePillars = new Set(questions.map(q => String(q.pillar_id)))
@@ -874,11 +819,6 @@ const currentTemplateId = computed(() => (route.query.template as string) || nul
 
 // Filtered questions for current template
 const assessmentQuestions = ref<AssessmentQuestion[]>([])
-const isCurrentTemplateFinished = computed(() => {
-  if (!currentTemplateId.value) return false
-  const template = availableTemplates.value.find(t => String(t.id) === String(currentTemplateId.value))
-  return template?.isFinished || false
-})
 const loadingQuestions = ref(false)
 const previewModalOpen = ref(false)
 const previewLoading = ref(false)
@@ -1154,14 +1094,6 @@ const validateAndNext = () => {
 }
 
 const submitAssessment = async () => {
-  const confirmed = await ask({
-    title: 'Submit Assessment?',
-    message: 'Are you sure you want to submit your answers? You will not be able to change them once the assessment is finalized.',
-    confirmText: 'Yes, Submit Now',
-    type: 'info'
-  })
-  if (!confirmed) return
-
   console.log('[Assessment] Submit button clicked')
   const api = useApi()
   try {
@@ -1170,15 +1102,14 @@ const submitAssessment = async () => {
 
     const startResponse = await api<any>('/assessment/start', {
       method: 'POST',
-      body: { 
-        template_id: typeof tId === 'string' ? (Number(tId.replace('temp_', '')) || tId) : tId,
-        program_id: route.query.program ? Number(route.query.program) : undefined
+      body: {
+        template_id: typeof tId === 'string' ? (Number(tId.replace('temp_', '')) || tId) : tId
       }
     })
-    
+
     // The unwrapped response should have assessment_id
     const assessmentId = startResponse.data?.assessment_id || startResponse.assessment_id
-    
+
     if (!assessmentId) throw new Error('Failed to initialize assessment session')
 
     // 2. Prepare answers in the format the backend expects
@@ -1273,11 +1204,6 @@ onMounted(async () => {
     // 2. Fetch Framework Settings
     frameworkSettings.value = await smeService.fetchFrameworkSettings()
     await loadTemplateMeta()
-
-    // --- NEW: Set focus mode if assessment is already active in URL ---
-    if (currentTemplateId.value) {
-      dashboardStore.isAssessmentActive = true
-    }
   } catch (e) {
     console.error('Failed to fetch initial assessment data:', e)
   } finally {
@@ -1314,33 +1240,6 @@ onMounted(async () => {
   }
 })
 
-// --- Navigation Guard ---
-onBeforeRouteLeave(async (to, from, next) => {
-  if (dashboardStore.isAssessmentActive && !isSubmitted.value) {
-    const confirmed = await ask({
-      title: 'Exit Assessment?',
-      message: 'Are you sure you want to leave the assessment? Your unsaved progress will be lost.',
-      confirmText: 'Exit Anyway',
-      type: 'warning'
-    })
-    
-    if (confirmed) {
-      dashboardStore.isAssessmentActive = false // Reset state on leave
-      next()
-    } else {
-      next(false) // Stay on page
-    }
-  } else {
-    dashboardStore.isAssessmentActive = false // Reset state if finishing/submitting normally
-    next()
-  }
-})
-
-// Clean up if component is unmounted unexpectedly
-onBeforeUnmount(() => {
-  dashboardStore.isAssessmentActive = false
-})
-
 watch(
   () => currentTemplateId.value,
   async (newTemplateId, oldTemplateId) => {
@@ -1348,13 +1247,11 @@ watch(
     if (!newTemplateId) {
       assessmentQuestions.value = []
       currentSection.value = 0
-      dashboardStore.isAssessmentActive = false // Reset state
       return
     }
 
     if (newTemplateId !== oldTemplateId) {
       currentSection.value = 0
-      dashboardStore.isAssessmentActive = true // Activate focus mode
       await fetchQuestions()
     }
   }

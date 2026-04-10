@@ -63,6 +63,19 @@ interface FilterState {
   risk: string
 }
 
+interface TrendPoint {
+  month: string
+  score: number
+  ready: number
+}
+
+interface PillarRisk {
+  name: string
+  min: number
+  avg: number
+  max: number
+}
+
 interface InvestorState {
   dealFlow: SME[]
   goals: Goal[]
@@ -75,6 +88,8 @@ interface InvestorState {
   lastProgramsFetch: number | null
   lastAnalyticsFetch: number | null
   loading: boolean
+  trendData: TrendPoint[]
+  pillarRiskData: PillarRisk[]
 }
 
 export const useInvestorStore = defineStore('investor', {
@@ -95,7 +110,9 @@ export const useInvestorStore = defineStore('investor', {
     lastDealFlowFetch: null,
     lastProgramsFetch: null,
     lastAnalyticsFetch: null,
-    loading: false
+    loading: false,
+    trendData: [],
+    pillarRiskData: []
   }),
 
   getters: {
@@ -334,7 +351,7 @@ export const useInvestorStore = defineStore('investor', {
         }
     },
 
-    async fetchAnalytics(force = false, programId?: string | number) {
+    async fetchAnalytics(force = false, programId?: string | number, startDate?: Date, endDate?: Date) {
         if (!force && this.lastAnalyticsFetch && (Date.now() - this.lastAnalyticsFetch < 300000)) {
             return
         }
@@ -342,11 +359,20 @@ export const useInvestorStore = defineStore('investor', {
         this.loading = true
         const api = useApi()
         try {
-            const data = await api<any>('/investor/analytics', {
-                params: { program_id: programId }
-            })
+            const params: Record<string, any> = {}
+            if (programId) params.program_id = programId
+            if (startDate) params.start_date = startDate.toISOString().slice(0, 10)
+            if (endDate) params.end_date = endDate.toISOString().slice(0, 10)
+
+            const data = await api<any>('/investor/analytics', { params })
             if (data.smes) {
                 this.dealFlow = data.smes
+            }
+            if (data.historical_trend && Array.isArray(data.historical_trend)) {
+                this.trendData = data.historical_trend
+            }
+            if (data.pillar_risk && Array.isArray(data.pillar_risk)) {
+                this.pillarRiskData = data.pillar_risk
             }
             this.lastAnalyticsFetch = Date.now()
             return data

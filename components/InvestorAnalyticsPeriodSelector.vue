@@ -139,7 +139,7 @@ const props = defineProps<{
     periodPreset: string
 }>()
 
-const emit = defineEmits(['update:modelValue', 'update:compareValue', 'update:compareEnabled', 'update:periodPreset'])
+const emit = defineEmits(['update:modelValue', 'update:compareValue', 'update:compareEnabled', 'update:periodPreset', 'change'])
 
 const presets = [
     { label: '7 Days', value: '7d' },
@@ -189,8 +189,23 @@ const formatDateRange = (start: Date, end: Date) => {
 
 const selectPreset = (preset: any) => {
     selectedPreset.value = preset.value
-    // Logic to update dates based on preset could be here or in parent. 
-    // Usually it's better to tell parent "preset changed" and parent updates dates.
+    const now = new Date()
+    now.setHours(23, 59, 59, 0)
+    let start = new Date(now)
+
+    switch (preset.value) {
+        case '7d':  start = new Date(now); start.setDate(now.getDate() - 7); break
+        case '1m':  start = new Date(now); start.setMonth(now.getMonth() - 1); break
+        case '3m':  start = new Date(now); start.setMonth(now.getMonth() - 3); break
+        case '6m':  start = new Date(now); start.setMonth(now.getMonth() - 6); break
+        case '1y':  start = new Date(now); start.setFullYear(now.getFullYear() - 1); break
+        case 'all': start = new Date(2020, 0, 1); break
+    }
+    start.setHours(0, 0, 0, 0)
+
+    const payload = { start, end: new Date(now) }
+    emit('update:modelValue', payload)
+    emit('change')
 }
 
 const togglePicker = (type: 'current' | 'compare') => {
@@ -306,6 +321,7 @@ const applyDateRange = () => {
             emit('update:compareValue', payload)
         }
         showPicker.value = false
+        emit('change')
     }
 }
 </script>

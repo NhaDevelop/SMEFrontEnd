@@ -298,6 +298,7 @@ const inbox = ref<any[]>([])
 const sent = ref<any[]>([])
 const loading = ref(false)
 const authStore = useAuthStore()
+const toast = useToast()
 
 // Programs Discussion
 const selectedProgramId = ref<string | null>(null)
@@ -407,7 +408,7 @@ const sendMessage = async () => {
 
     } catch (e) {
         console.error('Failed to send message', e)
-        alert('Failed to send message. See console.')
+        toast.error('Failed to send message. Please try again.')
     }
 }
 

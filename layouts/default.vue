@@ -1,12 +1,13 @@
 <template>
   <div class="flex h-screen bg-gray-50">
     <!-- Sidebar -->
-    <aside :class="sidebarClasses" class="bg-[#1a3a3a] text-white flex flex-col transition-all duration-300">
+    <aside :class="[sidebarClasses, 'h-screen sticky top-0 overflow-hidden']" class="bg-[#1a3a3a] text-white flex flex-col transition-all duration-300">
       <!-- Logo & Toggle -->
-      <div class="p-6 border-b border-gray-700 relative">
-        <div class="flex flex-col items-center justify-center gap-3">
-          <img src="/logo.png" alt="CAM INVESTMENT" :class="isCollapsed ? 'h-16 w-16' : 'h-24 w-24'"
+      <div class="p-4 border-b border-gray-700 relative">
+        <div class="flex flex-col items-center justify-center gap-2">
+          <img src="/logo.png" alt="CAM INVESTMENT" :class="isCollapsed ? 'h-10 w-10' : 'h-16 w-16'"
             class="object-cover rounded-full shadow-lg transition-all duration-300 flex-shrink-0" />
+            <p v-if="!isCollapsed" class="text-gray-400 text-xs tracking-widest uppercase mt-1">{{ isInvestor ? 'Investor Portal' : (isAdmin ? 'Admin Portal' : 'SME Portal') }}</p>
         </div>
         <button @click="toggleSidebar"
           class="absolute top-4 right-4 p-1.5 rounded-md transition-colors lg:block hidden text-gray-400 hover:text-white hover:bg-gray-700">
@@ -16,11 +17,11 @@
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 p-4 space-y-1">
+      <nav class="flex-1 px-3 py-3 space-y-1 overflow-y-auto scrollbar-thin">
         <template v-for="(item, index) in navItems" :key="index">
           <!-- Header Item -->
-          <div v-if="item.header" class="px-4 mt-6 mb-2 first:mt-2">
-            <p v-if="!isCollapsed" class="text-xs font-semibold text-gray-400 opacity-60 uppercase tracking-wider">{{
+          <div v-if="item.header" class="px-3 mt-4 mb-1 first:mt-1">
+            <p v-if="!isCollapsed" class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{{
               item.header }}</p>
             <div v-else class="h-px bg-white opacity-10 mx-2 mb-2"></div>
           </div>
@@ -28,7 +29,7 @@
           <!-- Link Item -->
           <NuxtLink v-else :to="item.path" v-slot="{ isActive }" custom>
             <a @click="navigateTo(item.path)" :class="[
-              'flex items-center gap-3 px-4 py-2 mt-1 rounded-lg transition-colors cursor-pointer group',
+              'flex items-center gap-3 px-3 py-1.5 mt-1 rounded-lg transition-colors cursor-pointer group',
               isActive ? 'text-teal-400 bg-gray-700/50 font-medium' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             ]">
               <component :is="item.icon"
@@ -40,9 +41,9 @@
       </nav>
 
       <!-- User Profile -->
-      <div class="p-4 border-t border-gray-700">
+      <div class="px-3 py-3 border-t border-gray-700">
         <div v-if="user"
-          class="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-gray-700 transition-smooth cursor-pointer">
+          class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-700 transition-smooth cursor-pointer">
           <div class="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
             <span class="text-sm font-semibold">{{ (user?.full_name || user?.name || user?.role || 'U').charAt(0).toUpperCase() }}</span>
           </div>
@@ -54,7 +55,7 @@
 
         <!-- Sign Out -->
         <button @click="handleSignOut"
-          class="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-smooth">
+          class="w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-smooth">
           <ArrowRightOnRectangleIcon class="w-5 h-5 flex-shrink-0" />
           <span v-if="!isCollapsed">Sign Out</span>
         </button>

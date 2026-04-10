@@ -463,6 +463,7 @@ import SmeSummaryModal from '~/components/InvestorSmeSummaryModal.vue'
 
 const store = useInvestorStore()
 const { ask } = useConfirm()
+const toast = useToast()
 const stats = computed(() => store.stats)
 
 const activeTab = ref('comparison')
@@ -613,7 +614,7 @@ const handleVerifyGoal = async (id: number) => {
   } catch (e: any) {
     console.error('Verify error:', e)
     const msg = e.data?.message || 'Failed to approve goal. This usually happens if the goal status changed recently.'
-    alert(msg)
+    toast.error(msg)
     // Refresh deal flow anyway to sync state
     await store.fetchDealFlow(true)
   } finally {
@@ -640,7 +641,7 @@ const handleRejectGoal = async () => {
     rejectModalGoalId.value = null
     rejectionNote.value = ''
   } catch (e: any) {
-    alert(e?.data?.message || 'Failed to reject goal.')
+    toast.error(e?.data?.message || 'Failed to reject goal.')
   } finally {
     verifyingGoalId.value = null
   }

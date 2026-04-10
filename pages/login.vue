@@ -21,25 +21,26 @@
             <p class="text-sm text-gray-400 mb-7">Log in to access your account.</p>
 
             <!-- Error Alert -->
-            <Transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 -translate-y-2"
-                enter-to-class="opacity-100 translate-y-0"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 translate-y-0"
-                leave-to-class="opacity-0 -translate-y-2"
-            >
+            <Transition enter-active-class="transition-all duration-300 ease-out"
+                enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 -translate-y-2">
                 <div v-if="error" class="mb-5 rounded-xl overflow-hidden border border-red-200">
                     <div class="flex items-start gap-3 px-4 py-3.5 bg-red-50">
-                        <div class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <div
+                            class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                             <ExclamationCircleIcon class="w-4 h-4 text-red-600" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold text-red-700">Authentication Failed</p>
                             <p class="text-xs text-red-500 mt-0.5">{{ error }}</p>
                         </div>
-                        <button @click="error = ''" class="flex-shrink-0 text-red-300 hover:text-red-500 transition-colors mt-0.5">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <button @click="error = ''"
+                            class="flex-shrink-0 text-red-300 hover:text-red-500 transition-colors mt-0.5">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
                 </div>

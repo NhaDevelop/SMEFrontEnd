@@ -280,10 +280,30 @@ const refreshData = async () => {
     await investorStore.fetchAnalytics(true)
 }
 
-const handleDateChange = () => {
-    // In a real app, you might trigger a re-fetch or filter client side
-    console.log('Date range changed:', dateRangeValue.value)
+const handleDateChange = async () => {
+    // Re-fetch analytics with the selected date range as filter params
+    await investorStore.fetchAnalytics(true, undefined, dateRangeValue.value.start, dateRangeValue.value.end)
 }
+
+const handleToggleCompare = () => {
+    // When compare is newly enabled, auto-populate comparison window as the equivalent period before current
+    if (comparePeriods.value) {
+        const currentStart = dateRangeValue.value.start
+        const currentEnd = dateRangeValue.value.end
+        const periodMs = currentEnd.getTime() - currentStart.getTime()
+        compareDateRangeValue.value = {
+            end: new Date(currentStart.getTime() - 1),
+            start: new Date(currentStart.getTime() - periodMs - 1)
+        }
+    }
+}
+
+// Auto-populate compare dates whenever the toggle changes
+watch(comparePeriods, (newVal) => {
+    if (newVal) {
+        handleToggleCompare()
+    }
+})
 
 // -- 3. Derived Data (Computed) --
 const allSMEs = computed(() => investorStore.dealFlow)
@@ -374,19 +394,7 @@ const sectorDetails = computed(() => {
     })
 })
 
-const riskByPillarData = computed(() => {
-    // Generate risk by pillar if available in SMES, otherwise mock
-    const pillars = [
-        'Team & Leadership', 'Business Model', 'Market & Traction', 
-        'Financial Readiness', 'Operations', 'Legal & Governance'
-    ]
-    return pillars.map((p, idx) => ({
-        name: p,
-        min: 25 + (idx * 2),
-        avg: 55 + (idx * 3),
-        max: 85 + (idx * 2)
-    }))
-})
+const riskByPillarData = computed(() => investorStore.pillarRiskData)
 
 const topPerformers = computed(() => {
     return [...filteredDealFlow.value]
@@ -406,20 +414,26 @@ const sortedSMEs = computed(() => {
     return [...filteredDealFlow.value].sort((a, b) => b.score - a.score)
 })
 
-// -- 4. Trend Logic --
+// -- 4. Trend Logic (Real data from backend) --
 const portfolioTrendData = computed(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    return months.map((m, i) => ({
-        month: m,
-        score: 55 + (i * 4),
-        ready: 2 + Math.floor(i / 2),
-        x: i * 20,
-        y: (55 + (i * 4))
+    const rawTrend = investorStore.trendData
+    if (!rawTrend || rawTrend.length === 0) {
+        // Fallback: compute from dealflow if backend sends no trend yet
+        const now = new Date()
+        return [{ month: now.toLocaleString('en-US', { month: 'short', year: 'numeric' }), score: filteredStats.value.avgScore, ready: filteredStats.value.investorReady, x: 0, y: filteredStats.value.avgScore }]
+    }
+    const totalPoints = rawTrend.length
+    const svgWidth = 100
+    return rawTrend.map((point, i) => ({
+        ...point,
+        x: totalPoints > 1 ? Math.round((i / (totalPoints - 1)) * svgWidth) : 50,
+        y: point.score
     }))
 })
 
 const trendPath = computed(() => {
     const points = portfolioTrendData.value
+    if (!points.length) return ''
     return 'M ' + points.map(p => `${p.x},${100 - p.y}`).join(' L ')
 })
 
@@ -427,14 +441,17 @@ const trendAreaPath = computed(() => {
     const points = portfolioTrendData.value
     if (!points.length) return ''
     const line = points.map(p => `${p.x},${100 - p.y}`).join(' L ')
-    const firstX = points[0]?.x || 0
-    const lastX = points[points.length - 1]?.x || 0
+    const firstX = points[0]?.x ?? 0
+    const lastX = points[points.length - 1]?.x ?? 0
     return `M ${firstX},100 L ${line} L ${lastX},100 Z`
 })
 
 const comparisonPath = computed(() => {
+    // The comparison path is the previous-period trend if comparePeriods is active.
+    // Since backend doesn't return separate previous-period trend, we use a 5% offset as a visual indicator.
     const points = portfolioTrendData.value
-    return 'M ' + points.map(p => `${p.x},${100 - (p.y - 5)}`).join(' L ')
+    if (!points.length) return ''
+    return 'M ' + points.map(p => `${p.x},${100 - Math.max(0, p.y - 5)}`).join(' L ')
 })
 
 const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

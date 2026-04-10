@@ -135,15 +135,15 @@
                 <!-- Stats -->
                 <div class="grid grid-cols-3 gap-3 mb-6">
                   <div class="bg-blue-50 rounded-lg p-3 text-center">
-                    <div class="text-blue-600 font-semibold text-xl">1</div>
+                    <div class="text-blue-600 font-semibold text-xl">{{ goalsStats.active }}</div>
                     <div class="text-[10px] uppercase tracking-wide text-blue-600 font-medium mt-1">Active</div>
                   </div>
                   <div class="bg-emerald-50 rounded-lg p-3 text-center">
-                    <div class="text-emerald-600 font-semibold text-xl">1</div>
+                    <div class="text-emerald-600 font-semibold text-xl">{{ goalsStats.achieved }}</div>
                     <div class="text-[10px] uppercase tracking-wide text-emerald-600 font-medium mt-1">Achieved</div>
                   </div>
                   <div class="bg-orange-50 rounded-lg p-3 text-center">
-                    <div class="text-orange-600 font-semibold text-xl">39%</div>
+                    <div class="text-orange-600 font-semibold text-xl">{{ goalsStats.progress }}%</div>
                     <div class="text-[10px] uppercase tracking-wide text-orange-600 font-medium mt-1">Progress</div>
                   </div>
                 </div>
@@ -294,6 +294,7 @@ export default {
     const actionsCount = computed(() => dashboardStore.actionsCount)
     const recommendedActions = computed(() => dashboardStore.actions)
     const primaryGoal = computed(() => dashboardStore.primaryGoal) // Added primaryGoal
+    const goalsStats = computed(() => dashboardStore.goalsStats || { active: 0, achieved: 0, progress: 0 })
 
     const readinessStatus = computed(() => {
       const score = overallScore.value
@@ -325,6 +326,7 @@ export default {
       actionsCount,
       recommendedActions,
       primaryGoal,
+      goalsStats,
       readinessStatus,
       readinessColorClass,
       formatNumber,

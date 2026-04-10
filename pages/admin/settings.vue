@@ -248,6 +248,7 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
+const toast = useToast()
 const currentTab = ref('profile')
 const loading = ref(false)
 
@@ -314,24 +315,24 @@ const saveProfile = async () => {
             full_name: form.value.name,
             phone: form.value.phone
         })
-        alert('Profile updated successfully!')
+        toast.success('Profile updated successfully!')
     } catch (e: any) {
-        alert(e.message || 'Failed to update profile')
+        toast.error(e.message || 'Failed to update profile')
     } finally {
         loading.value = false
     }
 }
 
 const savePreferences = () => {
-    alert('Preferences saved successfully!')
+    toast.success('Preferences saved successfully!')
 }
 
 const updatePassword = () => {
     if (security.value.newPassword !== security.value.confirmPassword) {
-        alert('Passwords do not match!')
+        toast.warning('Passwords do not match!')
         return
     }
-    alert('Password updated successfully!')
+    toast.success('Password updated successfully!')
     security.value.currentPassword = ''
     security.value.newPassword = ''
     security.value.confirmPassword = ''

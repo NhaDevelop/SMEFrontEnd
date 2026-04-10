@@ -96,16 +96,14 @@
                                     </div>
                                     <div class="flex items-start gap-4">
                                         <div
-                                            class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                                            <ClockIcon class="w-5 h-5 text-teal-600" />
+                                            class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                                            <ClockIcon class="w-5 h-5 text-gray-400" />
                                         </div>
                                         <div>
                                             <div
-                                                class="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-0.5">
-                                                Registration</div>
-                                            <div class="font-bold text-gray-700 leading-tight">
-                                                {{ formatDate(program.createdAt || program.startDate) }} - {{ formatDate(program.enrollmentDeadline || program.endDate) }}
-                                            </div>
+                                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+                                                Duration</div>
+                                            <div class="font-bold text-gray-700 leading-tight">12 Weeks</div>
                                         </div>
                                     </div>
                                     <div class="flex items-start gap-4">
@@ -116,10 +114,9 @@
                                         <div>
                                             <div
                                                 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
-                                                Program Duration</div>
-                                            <div class="font-bold text-gray-700 leading-tight">
-                                                {{ formatDate(program.startDate) }} - {{ formatDate(program.endDate) }}
-                                            </div>
+                                                Deadline</div>
+                                            <div class="font-bold text-gray-700 leading-tight">{{ program.endDate ?
+                                                formatDate(program.endDate) : 'March 31, 2024' }}</div>
                                         </div>
                                     </div>
                                     <div class="flex items-start gap-4">
@@ -385,7 +382,7 @@ import {
 import { smeService } from '~/modules/sme/sme.service'
 import { formatDate, formatRelativeTime } from '~/utils/format'
 import { useRoute } from 'vue-router'
-import ProgramParticipantList from '~/components/ProgramParticipantList.vue'
+
 
 const route = useRoute()
 const programId = route.params.id as string

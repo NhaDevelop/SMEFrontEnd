@@ -30,6 +30,7 @@ interface DashboardState {
   progressData: ProgressData[]
   actions: Action[]
   primaryGoal: any | null
+  goalsStats: { active: number, achieved: number, progress: number } | null
   frameworkThresholds: any[]
   isAssessmentActive: boolean
   loading: boolean
@@ -43,6 +44,7 @@ export const useDashboardStore = defineStore('dashboard', {
     progressData: [],
     actions: [],
     primaryGoal: null,
+    goalsStats: null,
     frameworkThresholds: [],
     isAssessmentActive: false,
     loading: false,
@@ -89,13 +91,14 @@ export const useDashboardStore = defineStore('dashboard', {
       try {
         // Backend now uses the authenticated user's SME profile automatically
         const response = await dashboardService.getDashboardData('me') 
-        const { company, pillars, progress, actions, primaryGoal, thresholds } = response
+        const { company, pillars, progress, actions, primaryGoal, goalsStats, thresholds } = response
         
         this.company = company
         this.pillars = pillars
         this.progressData = progress
         this.actions = actions
         this.primaryGoal = primaryGoal
+        this.goalsStats = goalsStats || { active: 0, achieved: 0, progress: 0 }
         this.frameworkThresholds = thresholds || []
       } catch (error: any) {
         this.error = error.message

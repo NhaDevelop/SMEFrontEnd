@@ -431,6 +431,7 @@ import ProgramCommentThread from '~/components/ProgramCommentThread.vue'
 
 const adminStore = useAdminStore()
 const { ask } = useConfirm()
+const toast = useToast()
 
 const stats = computed(() => adminStore.programStats)
 const loading = computed(() => adminStore.loading)
@@ -476,7 +477,7 @@ const handleCreateProgram = async (programData: any) => {
     await adminStore.createProgram(programData)
     isCreateModalOpen.value = false
   } catch (error) {
-    alert('Failed to create program')
+    toast.error('Failed to create program')
   }
 }
 
@@ -496,7 +497,7 @@ const handleUpdateProgram = async (programData: any) => {
     isCreateModalOpen.value = false
     editingProgram.value = null
   } catch (error) {
-    alert('Failed to update program')
+    toast.error('Failed to update program')
   }
 }
 

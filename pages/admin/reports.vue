@@ -509,14 +509,29 @@ const generateReport = async (
         if (type === 'Raw Scores Export' || type === 'CSV Export' || type === 'CSV') {
             const params: any = { type: 'sme', format: 'excel' }
             if (smeId) params.id = smeId
+            if (programId) params.programId = programId
             if (token) params.token = token
+            
             const url = `${apiBase}/admin/reports/export${buildQuery(params)}`
+            
+            // Re-authenticate and fetch instead of direct link for better error handling
+            const response = await fetch(url)
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                alert(`Export Failed: ${errorData.error || 'Server error'}`)
+                return
+            }
+
+            const blob = await response.blob()
+            const downloadUrl = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
-            a.href = url
-            a.download = smeId ? `sme_${smeId}_report.csv` : 'all_smes_report.csv'
+            a.href = downloadUrl
+            a.download = smeId ? `sme_${smeId}_report.csv` : (programId ? `program_${programId}_report.csv` : 'all_smes_report.csv')
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
+            window.URL.revokeObjectURL(downloadUrl)
         } else if (type === 'Portfolio Comparison' || type === 'Portfolio') {
             const params: any = {}
             if (programId) params.programId = programId

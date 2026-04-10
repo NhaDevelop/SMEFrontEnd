@@ -41,11 +41,24 @@
                     </div>
                 </div>
 
-                <button @click="handleDownloadReport" :disabled="isDownloading"
-                    class="px-4 py-2 bg-[#198754] text-white rounded-lg font-medium hover:bg-[#157347] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50">
-                    <ArrowDownTrayIcon class="w-4 h-4" />
-                    {{ isDownloading ? 'Downloading...' : 'Download Report' }}
-                </button>
+                <div class="flex items-center gap-4">
+                    <div v-if="smeData.enrolledPrograms && smeData.enrolledPrograms.length > 0" class="flex items-center gap-2">
+                        <label class="text-sm font-medium text-gray-700">Program Filter:</label>
+                        <select v-model="selectedProgramId" @change="handleProgramChange"
+                            class="rounded-lg border-gray-300 text-sm focus:ring-[#198754] focus:border-[#198754] shadow-sm py-2 pl-3 pr-8 w-64 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                            <option value="">Latest Overall Assessment</option>
+                            <option v-for="prog in smeData.enrolledPrograms" :key="prog.id" :value="prog.id">
+                                {{ prog.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <button @click="handleDownloadReport" :disabled="isDownloading"
+                        class="px-4 py-2 bg-[#198754] text-white rounded-lg font-medium hover:bg-[#157347] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50">
+                        <ArrowDownTrayIcon class="w-4 h-4" />
+                        {{ isDownloading ? 'Downloading...' : 'Download Report' }}
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -351,6 +364,13 @@ const apiSmeData = ref<any>(null)
 const realPillars = ref<any[]>([])  // Store real pillars from dashboard endpoint
 const realProgress = ref<any[]>([]) // Store real progress data from dashboard endpoint
 
+const selectedProgramId = ref('')
+
+const handleProgramChange = () => {
+    fetchSmeDetails()
+    fetchRealActions()
+}
+
 // Fetch SME from API to ensure we have the full `assessments` array and history
 const fetchSmeDetails = async () => {
     if (!smeId.value) return
@@ -360,7 +380,11 @@ const fetchSmeDetails = async () => {
         let prefix = ''
         if (role === 'ADMIN') prefix = '/admin'
         else if (role === 'INVESTOR') prefix = '/investor'
-        const response = await api<any>(`${prefix}/smes/${smeId.value}`)
+        
+        const params: any = {}
+        if (selectedProgramId.value) params.program_id = selectedProgramId.value
+        
+        const response = await api<any>(`${prefix}/smes/${smeId.value}`, { params })
         apiSmeData.value = response.data || response
     } catch (e) {
         console.error('Failed to fetch SME details:', e)
@@ -523,7 +547,10 @@ const fetchRealActions = async () => {
         if (role === 'INVESTOR') endpoint = `/investor/smes/${smeId.value}/dashboard`
         if (role === 'ADMIN') endpoint = `/admin/smes/${smeId.value}/dashboard`
 
-        const response = await api<any>(endpoint)
+        const params: any = {}
+        if (selectedProgramId.value) params.program_id = selectedProgramId.value
+
+        const response = await api<any>(endpoint, { params })
         const res = response.data || response
         if (res && res.actions) {
             actions.value = res.actions.map((a: any) => ({

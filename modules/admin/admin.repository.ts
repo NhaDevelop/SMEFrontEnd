@@ -174,7 +174,7 @@ export class AdminRepository {
   async getSmeDirectory(programId?: string | number) {
     const api = useApi()
     const params = programId ? { program_id: programId } : undefined
-    return await api('/admin/smes', { params })
+    return await api('/admin/reports/smes', { params })
   }
 
   async getVerificationRequests() {

@@ -181,11 +181,8 @@
           <!-- Brand Column -->
           <div class="space-y-6">
             <div class="flex items-center gap-2">
-              <div
-                class="w-10 h-10 bg-teal-600 rounded-md flex items-center justify-center shadow-lg shadow-teal-600/20">
-                <ChartBarIcon class="w-6 h-6 text-white" />
-              </div>
-              <span class="text-2xl font-semibold tracking-tight text-gray-900">IRIP</span>
+              <img src="/logo.png" alt="CAM INVESTMENT" class="w-12 h-12 object-cover rounded-full shadow-sm" />
+              <span class="text-2xl font-semibold tracking-tight text-gray-900">CAM INVESTMENT</span>
             </div>
             <p class="text-sm text-gray-400 leading-relaxed max-w-[240px]">
               Investment Readiness Intelligence Platform
@@ -239,7 +236,7 @@
 
         <div class="pt-8 border-t border-gray-50 text-center">
           <p class="text-xs font-medium text-gray-400 uppercase tracking-widest">
-            &copy; {{ new Date().getFullYear() }} IRIP. All rights reserved.
+            &copy; {{ new Date().getFullYear() }} CAM INVESTMENT. All rights reserved.
           </p>
         </div>
       </div>
@@ -415,7 +412,7 @@ onUnmounted(() => {
 }
 
 .bg-dashed {
-  background-image: linear-gradient(to right, #99f6e4 33%, rgba(255, 255, 255, 0) 0%);
+  background-image: linear-gradient(to right, #a3dbce 33%, rgba(255, 255, 255, 0) 0%);
   background-position: top;
   background-size: 15px 2px;
   background-repeat: repeat-x;

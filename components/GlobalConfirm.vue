@@ -31,21 +31,9 @@
               <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start text-center sm:text-left">
                   
-                  <!-- Icon Section -->
-                  <div 
-                    :class="[
-                      'mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10',
-                      state.type === 'danger' ? 'bg-red-100 text-red-600' : 
-                      state.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
-                    ]"
-                  >
-                    <!-- Warning Icon for Danger/Warning -->
-                    <ExclamationTriangleIcon v-if="state.type === 'danger' || state.type === 'warning'" 
-                      :class="['h-6 w-6', state.type === 'danger' ? 'animate-pulse' : '']" 
-                      aria-hidden="true" 
-                    />
-                    <!-- Info Icon for Success/Info -->
-                    <InformationCircleIcon v-else class="h-6 w-6" aria-hidden="true" />
+                  <!-- Logo Section -->
+                  <div class="mx-auto flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-12 sm:w-12 bg-white shadow-sm border border-gray-100">
+                    <img src="/logo.png" alt="CAM INVESTMENT" class="h-full w-full object-cover rounded-full" />
                   </div>
 
                   <!-- Content Section -->
@@ -69,7 +57,7 @@
                   :class="[
                     'inline-flex w-full justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm sm:w-auto transition-all',
                     state.type === 'danger' ? 'bg-red-600 hover:bg-red-500 focus-visible:outline-red-600' : 
-                    'bg-cyan-600 hover:bg-cyan-500 focus-visible:outline-cyan-600'
+                    'bg-primary-500 hover:bg-primary-600 focus-visible:outline-primary-600'
                   ]"
                   @click="confirm"
                 >

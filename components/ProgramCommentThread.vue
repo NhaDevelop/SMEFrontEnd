@@ -141,7 +141,7 @@ const fetchComments = async () => {
     if (!props.programId) return
     loading.value = true
     try {
-        const res = await useApi()(`/programs/${props.programId}/comments`)
+        const res: any = await useApi()(`/programs/${props.programId}/comments`)
         comments.value = Array.isArray(res) ? res : (res?.data || [])
         await scrollToBottom()
     } catch (e) {
@@ -159,6 +159,7 @@ const postComment = async () => {
     try {
         const response: any = await useApi()(`/programs/${props.programId}/comments`, {
             method: 'POST',
+            noToast: true,
             body: {
                 content: text
             }

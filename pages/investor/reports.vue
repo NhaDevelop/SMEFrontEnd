@@ -164,9 +164,14 @@
                                 <td class="px-8 py-5 whitespace-nowrap text-right text-sm">
                                     <div class="flex justify-end gap-2">
                                         <button @click="generateSmeReport(sme)"
-                                            :disabled="isGenerating || !sme.user_id"
+                                            :disabled="isGenerating || !sme.id"
                                             class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
                                             <DocumentTextIcon class="w-3.5 h-3.5" /> PDF
+                                        </button>
+                                        <button @click="generateSmeCsv(sme)"
+                                            :disabled="isGenerating || !sme.id"
+                                            class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100 flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
+                                            <ArrowDownTrayIcon class="w-3.5 h-3.5" /> CSV
                                         </button>
                                     </div>
                                 </td>
@@ -221,6 +226,7 @@ import { getFinancialRiskLevel } from '~/utils/helpers'
 import {
     DocumentTextIcon,
     ArrowLongRightIcon,
+    ArrowDownTrayIcon,
     ChartBarIcon,
     CalendarIcon,
     XMarkIcon,
@@ -240,7 +246,9 @@ const apiBase = computed(() => (config.public.apiBase as string))
 
 // ── Programs ────────────────────────────────────────────────────────────────
 const selectedProgramId = ref<number | null>(null)
-const programs = computed(() => investorStore.programs ?? [])
+const programs = computed(() =>
+    (investorStore.programs ?? []).filter((p: any) => p.isEnrolled)
+)
 const selectedProgramName = computed(() =>
     programs.value.find((p: any) => p.id === selectedProgramId.value)?.name ?? ''
 )
@@ -347,17 +355,49 @@ const generatePortfolioReport = async () => {
     }
 }
 
-/** Individual SME readiness report */
-const generateSmeReport = async (sme: { user_id?: number | string; name: string }) => {
-    if (!sme.user_id) return
+/** Individual SME readiness report (PDF/HTML) */
+const generateSmeReport = async (sme: { id: number | string; name: string }) => {
+    if (!sme.id) return
     isGenerating.value = true
     try {
-        const params: Record<string, any> = { smeId: sme.user_id }
+        const params: Record<string, any> = { smeId: sme.id }
         const token = getToken()
         if (selectedProgramId.value) params.programId = selectedProgramId.value
         if (token) params.token = token
         window.open(`${apiBase.value}/admin/reports/readiness${buildQuery(params)}`, '_blank')
         pushRecent('Readiness Report', sme.name)
+    } finally {
+        isGenerating.value = false
+    }
+}
+
+/** Individual SME CSV export */
+const generateSmeCsv = async (sme: { id: number | string; name: string }) => {
+    if (!sme.id) return
+    isGenerating.value = true
+    try {
+        const params: any = { 
+            type: 'sme', 
+            format: 'excel', 
+            id: sme.id 
+        }
+        const token = getToken()
+        if (selectedProgramId.value) params.programId = selectedProgramId.value
+        if (token) params.token = token
+
+        const downloadUrl = `${apiBase.value}/admin/reports/export${buildQuery(params)}`
+        
+        // Use hidden anchor for direct download (standard pattern for CSV streams)
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', `${sme.name.toLowerCase().replace(/\s+/g, '-')}-assessment.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        pushRecent('CSV Export', sme.name)
+    } catch (e) {
+        console.error('Failed to generate CSV export', e)
     } finally {
         isGenerating.value = false
     }

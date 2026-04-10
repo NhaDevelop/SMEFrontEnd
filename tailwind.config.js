@@ -1,3 +1,18 @@
+const brandGreen = {
+  50: '#f0f9f7',
+  100: '#d1ede6',
+  200: '#a3dbce',
+  300: '#75c9b6',
+  400: '#47b79e',
+  500: '#05624e', // Primary Brand Green
+  600: '#044f3f',
+  700: '#033b2f',
+  800: '#022820',
+  900: '#011410',
+  950: '#010c0a',
+  DEFAULT: '#05624e',
+};
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -11,19 +26,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          200: "#bae6fd",
-          300: "#7dd3fc",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
-          800: "#075985",
-          900: "#0c4a6e",
-          950: "#082f49",
-        },
+        primary: brandGreen,
+        teal: brandGreen,
+        emerald: brandGreen,
+        green: brandGreen,
         navy: {
           50: "#f8fafc",
           100: "#f1f5f9",
