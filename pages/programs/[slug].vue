@@ -119,7 +119,7 @@
                                         <div
                                             class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                                             Sector</div>
-                                        <div class="font-semibold text-gray-700">{{ program.sector }}</div>
+                                        <div class="font-semibold text-gray-700">{{ program.sector || 'Agnostic' }}</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-4">
@@ -131,10 +131,10 @@
                                         <div
                                             class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                                             Duration</div>
-                                        <div class="font-semibold text-gray-700">{{ program.duration }}</div>
+                                        <div class="font-semibold text-gray-700">{{ program.duration || 'Not specified' }}</div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-4">
+                                <div class="flex items-start gap-4" v-if="program.startDate && program.endDate">
                                     <div
                                         class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
                                         <CalendarIcon class="w-5 h-5 text-gray-400" />
@@ -142,8 +142,20 @@
                                     <div>
                                         <div
                                             class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
+                                            Program Period</div>
+                                        <div class="font-semibold text-gray-700">{{ formatDate(program.startDate) }} - {{ formatDate(program.endDate) }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                                        <ExclamationTriangleIcon class="w-5 h-5 text-gray-400" />
+                                    </div>
+                                    <div>
+                                        <div
+                                            class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                                             Application Deadline</div>
-                                        <div class="font-semibold text-gray-700">{{ program.deadline }}</div>
+                                        <div class="font-semibold text-gray-700">{{ program.enrollmentDeadline ? formatDate(program.enrollmentDeadline) : 'Open Until Filled' }}</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-4">
@@ -155,7 +167,7 @@
                                         <div
                                             class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                                             Funding Available</div>
-                                        <div class="font-semibold text-teal-600">{{ program.investmentAmount }}
+                                        <div class="font-semibold text-teal-600">{{ program.investmentAmount || 'Varies' }}
                                         </div>
                                     </div>
                                 </div>
@@ -192,7 +204,7 @@
             </section>
 
             <!-- Program Benefits -->
-            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24" v-if="program.benefits?.length">
                 <h2 class="text-3xl font-bold text-gray-900 mb-12 tracking-tight">Program Benefits</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div v-for="benefit in program.benefits" :key="benefit"
@@ -210,7 +222,7 @@
             <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
                 <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Eligibility Requirements</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="req in program.eligibility" :key="req"
+                    <div v-for="req in (program.eligibility || ['Registered business entity', 'Minimum 1 year of operation', 'Clear business model', 'Commitment to program duration'])" :key="req"
                         class="flex items-center gap-4 p-5 bg-white border border-gray-200 rounded-lg hover:border-teal-200 hover:shadow-sm transition-all">
                         <div class="w-8 h-8 flex items-center justify-center shrink-0 text-teal-600">
                             <UserCircleIcon class="w-6 h-6" />
@@ -224,14 +236,19 @@
             <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
                 <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Program Timeline</h2>
                 <div class="space-y-4 max-w-2xl">
-                    <div v-for="(step, index) in program.timeline" :key="index" class="flex gap-5 items-start">
+                    <div v-for="(step, index) in (program.timeline || [
+                        { title: 'Application Period', week: 'Phase 1', description: 'Submit your profile and initial documentation for review.' },
+                        { title: 'Assessment & Selection', week: 'Phase 2', description: 'Complete the readiness assessment matrix and initial evaluations.' },
+                        { title: 'Program Onboarding', week: 'Phase 3', description: 'Kick-off session to align goals, mentors, and program access.' },
+                        { title: 'Growth & Investment Ready', week: 'Phase 4', description: 'Final pitch, graduation, and connecting with our investor network.' }
+                    ])" :key="index" class="flex gap-5 items-start">
                         <!-- Step number circle -->
                         <div class="flex flex-col items-center shrink-0">
                             <div
                                 class="w-11 h-11 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-sm">
                                 {{ String(Number(index) + 1).padStart(2, '0') }}
                             </div>
-                            <div v-if="Number(index) < program.timeline.length - 1"
+                            <div v-if="Number(index) < 3"
                                 class="w-0.5 flex-grow bg-gray-100 my-1 min-h-[24px]"></div>
                         </div>
                         <!-- Step card -->
@@ -254,7 +271,7 @@
             <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
                 <h2 class="text-3xl font-bold text-gray-900 mb-10 tracking-tight">Expected Outcomes</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="outcome in program.outcomes" :key="outcome"
+                    <div v-for="outcome in (program.outcomes || ['Investment Readiness Certification', 'Access to exclusive investor networks', 'Optimized operational workflows', 'Strategic growth roadmap'])" :key="outcome"
                         class="flex items-start gap-4 p-5 bg-white border border-gray-200 rounded-lg hover:border-teal-200 hover:shadow-sm transition-all">
                         <div class="w-8 h-8 flex items-center justify-center shrink-0 text-teal-600 mt-0.5">
                             <BriefcaseIcon class="w-6 h-6" />

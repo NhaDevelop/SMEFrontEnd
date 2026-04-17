@@ -475,9 +475,8 @@
                     </div>
                   </div>
 
-                  <!-- CHOICE (Single Choice or Multiple Choice with options) -->
-                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Multiple Choice' || q.type === 'Single Choice'"
-                    class="space-y-3">
+                  <!-- SINGLE CHOICE -->
+                  <div v-else-if="q.type === 'CHOICE' || q.type === 'Single Choice'" class="space-y-3">
                     <template v-if="q.options && q.options.length > 0">
                       <!-- Handle both object format {label, value, points} and simple string array -->
                       <label v-for="(option, idx) in q.options" :key="idx"
@@ -485,6 +484,20 @@
                         :class="answers[q.id] === getOptionValue(option) ? 'border-teal-500 ring-1 ring-teal-500 bg-teal-50' : 'border-gray-200'">
                         <input type="radio" v-model="answers[q.id]" :value="getOptionValue(option)"
                           class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300">
+                        <span class="text-sm text-gray-700">{{ getOptionLabel(option) }}</span>
+                      </label>
+                    </template>
+                    <div v-else class="text-sm text-gray-500 italic">No options available for this question</div>
+                  </div>
+
+                  <!-- MULTIPLE CHOICE (Checkboxes) -->
+                  <div v-else-if="q.type === 'Multiple Choice'" class="space-y-3">
+                    <template v-if="q.options && q.options.length > 0">
+                      <label v-for="(option, idx) in q.options" :key="idx"
+                        class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                        :class="(answers[q.id] || []).includes(getOptionValue(option)) ? 'border-teal-500 ring-1 ring-teal-500 bg-teal-50' : 'border-gray-200'">
+                        <input type="checkbox" v-model="answers[q.id]" :value="getOptionValue(option)"
+                          class="w-4 h-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded focus:ring-2">
                         <span class="text-sm text-gray-700">{{ getOptionLabel(option) }}</span>
                       </label>
                     </template>
@@ -891,6 +904,13 @@ const fetchQuestions = async () => {
       query: { template_id: currentTemplateId.value }
     })
     assessmentQuestions.value = response.data || response || []
+    
+    // Explicitly seed multiple choice answers as arrays so validation processes them correctly under checkboxes
+    assessmentQuestions.value.forEach((q: any) => {
+      if (q.type === 'Multiple Choice' && !answers.value[q.id]) {
+        answers.value[q.id] = []
+      }
+    })
   } catch (e) {
     console.error('Failed to fetch questions', e)
   } finally {
@@ -917,7 +937,12 @@ const groupedQuestions = computed<Record<string, AssessmentQuestion[]>>(() => {
 const getAnsweredCount = (pillarId: string) => {
   const qList = groupedQuestions.value[pillarId] || []
   if (!qList.length) return 0
-  return qList.filter(q => answers.value[q.id] !== undefined && answers.value[q.id] !== null && answers.value[q.id] !== '').length
+  return qList.filter(q => {
+    const ans = answers.value[q.id]
+    if (ans === undefined || ans === null || ans === '') return false
+    if (Array.isArray(ans) && ans.length === 0) return false
+    return true
+  }).length
 }
 
 const contentSections = computed<Section[]>(() => {
@@ -963,7 +988,12 @@ const currentSectionData = computed<Section | undefined>(() => sections.value[cu
 const totalQuestions = computed(() => assessmentQuestions.value.length + 5)
 
 const totalAnswered = computed(() => {
-  const qCount = Object.keys(answers.value).filter(k => answers.value[k] !== undefined && answers.value[k] !== null && answers.value[k] !== '').length
+  const qCount = Object.keys(answers.value).filter(k => {
+    const ans = answers.value[k]
+    if (ans === undefined || ans === null || ans === '') return false
+    if (Array.isArray(ans) && ans.length === 0) return false
+    return true
+  }).length
   return qCount + profileAnsweredCount.value
 })
 
@@ -991,46 +1021,39 @@ const finalScore = computed(() => {
     let questionScore = 0
 
     if (answer !== undefined && answer !== null && answer !== '') {
-      // For Yes/No or BOOLEAN questions
-      if (question.type === 'Yes/No' || question.type === 'BOOLEAN') {
-        questionScore = answer === true ? weight : 0
-      }
-      // For CHOICE questions with options
-      else if ((question.type === 'CHOICE' || question.type === 'Multiple Choice' || question.type === 'Single Choice') && question.options) {
-        // Check if options are objects with points or simple strings
-        const selectedOption = (question.options as any[]).find(opt => {
-          const optValue = typeof opt === 'object' && opt !== null && ('value' in opt ? opt.value : opt.label) ? (opt.value || opt.label) : opt
-          return optValue === answer
-        })
-
-        if (selectedOption) {
-          // If option has points property, use it
-          if (typeof selectedOption === 'object' && selectedOption !== null && 'points' in selectedOption) {
-            questionScore = (selectedOption.points / 10) * weight
-          } else {
-            // For simple string options, give full credit for answering
-            questionScore = weight
-          }
-        }
-      }
-      // For Number questions
-      else if (question.type === 'Number' || question.type === 'NUMBER') {
-        // Assume higher numbers are better, normalize to 0-10 scale
-        const numValue = typeof answer === 'number' ? answer : parseFloat(answer)
-        if (!isNaN(numValue) && numValue > 0) {
-          questionScore = Math.min(weight, (numValue / 100) * weight)
-        }
-      }
-      // For Scale questions
-      else if (question.type === 'Scale (1-10)' || question.type === 'SCALE') {
-        const scaleValue = typeof answer === 'number' ? answer : parseInt(answer)
-        if (!isNaN(scaleValue)) {
-          questionScore = (scaleValue / 10) * weight
-        }
-      }
-      // For Text, Dropdown, File Upload - if answered, give full credit
-      else if (answer) {
-        questionScore = weight // Give full credit for providing an answer
+      if (question.type === 'Yes/No' && (!question.options || question.options.length === 0)) {
+         if (answer === true || answer === 'true' || answer === 'Yes') {
+             questionScore = weight
+         }
+      } else if (question.type === 'Scale (1-10)' || question.type === 'SCALE') {
+         const scaleValue = typeof answer === 'number' ? answer : parseFloat(answer)
+         if (!isNaN(scaleValue)) {
+             questionScore = (scaleValue / 10) * weight
+         }
+      } else if (question.type === 'Multiple Choice' && Array.isArray(answer)) {
+         let runningScore = 0
+         answer.forEach(selectedVal => {
+             const selectedOption = (question.options || []).find((opt: any) => {
+                 const optValue = typeof opt === 'object' && opt !== null && ('value' in opt ? opt.value : opt.label) ? (opt.value || opt.label) : opt
+                 return optValue === selectedVal
+             })
+             if (selectedOption && typeof selectedOption === 'object' && 'points' in selectedOption) {
+                 runningScore += parseFloat(selectedOption.points) || 0
+             }
+         })
+         questionScore = Math.min(weight, runningScore)
+      } else {
+         // Fallback block that matches backend's exactly (Single Choice, Dropdown, Yes/No with options)
+         const extractedValue = answer
+         const selectedOption = (question.options || []).find((opt: any) => {
+             const optValue = typeof opt === 'object' && opt !== null && ('value' in opt ? opt.value : opt.label) ? (opt.value || opt.label) : opt
+             return optValue === extractedValue
+         })
+         if (selectedOption && typeof selectedOption === 'object' && 'points' in selectedOption) {
+             questionScore = parseFloat(selectedOption.points) || 0
+         } else if (extractedValue === true || extractedValue === 'true' || extractedValue === 'Yes') {
+             questionScore = weight
+         }
       }
     }
 

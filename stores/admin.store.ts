@@ -326,19 +326,12 @@ export const useAdminStore = defineStore('admin', {
         this.error = null
         const service = new AdminService()
         
-        // Optimistic update: move user from pending to approved in local state
-        const originalUsers = [...this.users]
-        const originalPending = [...this.pendingUsers]
-        
-        const userIndex = this.users.findIndex(u => u.id == id)
-        if (userIndex !== -1 && this.users[userIndex]) {
-            this.users[userIndex]!.status = 'active'
-        }
-        this.pendingUsers = this.pendingUsers.filter(u => u.id != id)
-
         try {
             await service.setStatus(id, 'approve')
-            // No need to re-fetch all users, local state is already updated
+            // Refresh both lists to guarantee the Approved users tab and stats get updated instantly
+            await this.fetchUsersData()
+            await this.fetchPendingUsers()
+            
             this.auditLogs.unshift({
                 id: Date.now(),
                 admin: 'Current Admin',
@@ -348,9 +341,6 @@ export const useAdminStore = defineStore('admin', {
                 details: 'Approved registration request'
             })
         } catch (e: any) { 
-            // Rollback on failure
-            this.users = originalUsers
-            this.pendingUsers = originalPending
             this.error = e.message 
         } finally { 
             this.loading = false 
@@ -362,18 +352,12 @@ export const useAdminStore = defineStore('admin', {
         this.error = null
         const service = new AdminService()
 
-        // Optimistic update
-        const originalUsers = [...this.users]
-        const originalPending = [...this.pendingUsers]
-        
-        const userIndex = this.users.findIndex(u => u.id == id)
-        if (userIndex !== -1 && this.users[userIndex]) {
-            this.users[userIndex]!.status = 'rejected'
-        }
-        this.pendingUsers = this.pendingUsers.filter(u => u.id != id)
-
         try {
             await service.setStatus(id, 'reject')
+            
+            await this.fetchUsersData()
+            await this.fetchPendingUsers()
+            
             this.auditLogs.unshift({
                 id: Date.now(),
                 admin: 'Current Admin',
@@ -383,9 +367,6 @@ export const useAdminStore = defineStore('admin', {
                 details: 'Rejected registration request'
             })
         } catch (err: any) {
-            // Rollback
-            this.users = originalUsers
-            this.pendingUsers = originalPending
             this.error = err.message
         } finally {
             this.loading = false

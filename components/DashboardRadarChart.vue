@@ -43,7 +43,8 @@ export default {
       datasets: [
         {
           label: 'Current Score',
-          data: props.pillars.map(p => p.score),
+          // Clamp to 0-100: old assessment data may have raw earned points > 100
+          data: props.pillars.map(p => Math.min(100, Math.max(0, parseFloat(p.score) || 0))),
           backgroundColor: 'rgba(15, 118, 110, 0.2)',
           borderColor: 'rgba(15, 118, 110, 1)',
           borderWidth: 2,

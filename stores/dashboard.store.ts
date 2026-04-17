@@ -20,8 +20,12 @@ interface Action {
   title: string
   status: 'pending' | 'in_progress' | 'completed'
   priority?: string
+  pillarRisk?: string
   pillar: string
   impact: number
+  description?: string
+  userAnswer?: string
+  bestOption?: string
 }
 
 interface DashboardState {

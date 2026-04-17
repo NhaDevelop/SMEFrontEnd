@@ -26,7 +26,7 @@ const finalLabel = computed(() => {
 
 const badgeClasses = computed(() => {
   const l = finalLabel.value.toLowerCase()
-  if (l.includes('safe') || l.includes('investor ready') || l === 'open' || l === 'active') {
+  if (l.includes('safe') || l.includes('investor ready') || l.includes('investment ready') || l === 'open' || l === 'active') {
     return 'bg-emerald-50 text-emerald-700 border-emerald-100'
   }
   if (l.includes('low') || l.includes('near ready')) {
@@ -43,7 +43,7 @@ const badgeClasses = computed(() => {
 
 const dotClass = computed(() => {
   const l = finalLabel.value.toLowerCase()
-  if (l.includes('safe') || l.includes('investor ready') || l === 'open' || l === 'active') return 'bg-emerald-500'
+  if (l.includes('safe') || l.includes('investor ready') || l.includes('investment ready') || l === 'open' || l === 'active') return 'bg-emerald-500'
   if (l.includes('low') || l.includes('near ready')) return 'bg-teal-500'
   if (l.includes('medium') || l.includes('early stage') || l.includes('developing')) return 'bg-amber-500'
   if (l.includes('high') || l.includes('pre-investment') || l.includes('needs improvement') || l.includes('paused')) return 'bg-rose-500'

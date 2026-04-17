@@ -19,6 +19,22 @@
 
             <!-- Content -->
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Quick Templates -->
+                <div v-if="quickTemplates.length > 0" class="-mx-2 px-2">
+                    <h3 class="text-sm font-medium text-gray-700 mb-3 block">Quick Templates (Based on Assessment Gaps)</h3>
+                    <div class="flex overflow-x-auto pb-4 gap-3 custom-scrollbar">
+                        <button v-for="template in quickTemplates" :key="template.id" @click="applyTemplate(template)"
+                            class="flex-shrink-0 w-64 p-3 text-left border rounded-lg hover:border-teal-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all cursor-pointer group"
+                            :class="template.pillarRisk === 'high' || template.priority === 'high' ? 'border-rose-200 bg-rose-50/50' : 'border-amber-200 bg-amber-50/50'">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="template.pillarRisk === 'high' || template.priority === 'high' ? 'bg-rose-500' : 'bg-amber-500'"></span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider" :class="template.pillarRisk === 'high' || template.priority === 'high' ? 'text-rose-700' : 'text-amber-700'">{{ template.pillar }}</span>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-teal-700 transition-colors">{{ template.title }}</p>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Goal Name -->
                 <div class="space-y-1">
                     <label for="goal-name" class="block text-sm font-medium text-gray-700">Goal Name *</label>
@@ -96,8 +112,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { useDashboardStore } from '~/stores/dashboard.store'
+import { calculateOverallScore } from '~/utils/helpers'
 
 const props = defineProps({
     isOpen: {
@@ -119,20 +136,49 @@ const form = reactive({
     description: '',
     deadline: '',
     targetScore: 80,
-    pillars: [] as { name: string, score: number, target: number }[]
+    pillars: [] as { name: string, score: number, target: number, weight: number }[]
 })
+
+// Quick Templates Logic
+const quickTemplates = computed(() => {
+    return dashboardStore.actions.filter((a: any) => a.priority === 'high' || a.priority === 'medium' || a.pillarRisk === 'high' || a.pillarRisk === 'medium')
+})
+
+function applyTemplate(template: any) {
+    if (!template) return
+    form.title = template.title
+
+    let desc = `Context: ${template.description}\n\nCurrent Status: ${template.userAnswer}`
+    if (template.bestOption) {
+        desc += `\nTarget Objective: ${template.bestOption}`
+    }
+    form.description = desc
+
+    if (template.pillar && form.pillars.length) {
+        const pillarNode = form.pillars.find(p => p.name.toLowerCase() === template.pillar.toLowerCase())
+        if (pillarNode) {
+            // Boost pillar target exactly by the framework impact, safely bounded.
+            const boost = Math.ceil(template.impact || 0)
+            const targetBefore = pillarNode.target
+            pillarNode.target = Math.min(100, Math.round(pillarNode.score + boost))
+        }
+    }
+}
 
 // Initialize pillars from store data
 const initializePillars = () => {
     if (dashboardStore.pillars.length > 0) {
-        form.pillars = dashboardStore.pillars.map(p => ({
-            name: p.name,
-            score: p.score,
-            target: Math.min(p.score + 10, 100) // Default target slightly higher than current
-        }))
-        // Calculate a reasonable default overall target score
-        const avgScore = form.pillars.reduce((acc, p) => acc + p.score, 0) / form.pillars.length
-        form.targetScore = Math.min(Math.round(avgScore + 10), 100)
+        form.pillars = dashboardStore.pillars.map(p => {
+            const safeScore = Math.min(100, p.score)
+            return {
+                name: p.name,
+                score: safeScore,
+                target: Math.min(safeScore + 10, 100), // Default target slightly higher than current
+                weight: p.weight || 0
+            }
+        })
+        // Accurately calculate initial weighted target score
+        form.targetScore = calculateOverallScore(form.pillars.map(p => ({ score: p.target, weight: p.weight })))
     }
 }
 
@@ -142,7 +188,7 @@ watch(() => form.targetScore, (newVal) => {
     if (isSyncing || form.pillars.length === 0) return
     isSyncing = true
 
-    const currentAvg = form.pillars.reduce((sum, p) => sum + p.target, 0) / form.pillars.length
+    const currentAvg = calculateOverallScore(form.pillars.map(p => ({ score: p.target, weight: p.weight })))
     const diff = newVal - currentAvg
 
     if (Math.abs(diff) >= 0.5) {
@@ -190,8 +236,7 @@ watch(() => form.pillars, (newPillars) => {
     if (isSyncing || newPillars.length === 0) return
     isSyncing = true
 
-    const avg = newPillars.reduce((sum, p) => sum + p.target, 0) / newPillars.length
-    form.targetScore = Math.max(0, Math.min(100, Math.round(avg)))
+    form.targetScore = calculateOverallScore(newPillars.map(p => ({ score: p.target, weight: p.weight })))
 
     setTimeout(() => { isSyncing = false }, 10)
 }, { deep: true })

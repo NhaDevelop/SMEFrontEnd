@@ -41,13 +41,13 @@
                 <InformationCircleIcon class="w-5 h-5 text-gray-400" />
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-5xl font-semibold text-cyan-600">{{ formatNumber(overallScore) }}</span>
+                <span class="text-5xl font-semibold text-cyan-600">{{ Math.min(99, Math.round(overallScore)) }}</span>
                 <span class="text-lg text-gray-500">/100</span>
                 <span :class="[
                   'text-sm font-medium ml-2',
                   scoreChange > 0 ? 'text-green-600' : scoreChange < 0 ? 'text-red-600' : 'text-gray-500'
                 ]">
-                  {{ scoreChange > 0 ? '+' : '' }}{{ formatNumber(scoreChange) }}
+                  {{ scoreChange > 0 ? '+' : '' }}{{ Math.round(scoreChange) }}
                 </span>
               </div>
               <div class="mt-3 flex items-center gap-2">
@@ -63,7 +63,7 @@
                     class="w-4 h-4"
                     :class="scoreChange > 0 ? 'text-green-500' : scoreChange < 0 ? 'text-red-500' : 'text-gray-400'" />
                   <span :class="scoreChange > 0 ? 'text-green-600' : scoreChange < 0 ? 'text-red-600' : ''">
-                    {{ scoreChange > 0 ? '+' : '' }}{{ formatNumber(scoreChange) }}
+                    {{ scoreChange > 0 ? '+' : '' }}{{ Math.round(scoreChange) }}
                   </span>
                   since last assessment
                 </span>

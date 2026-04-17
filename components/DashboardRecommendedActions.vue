@@ -24,9 +24,20 @@
       <h4 class="font-bold text-gray-900 text-sm mb-1 group-hover:text-teal-600 transition-colors">
         {{ action.title }}
       </h4>
-      <p class="text-xs text-gray-500 mb-4 line-clamp-2">
+      <p class="text-[11px] text-gray-600 mb-3 opacity-90">
         {{ action.description }}
       </p>
+
+      <div class="space-y-2 mb-4 bg-white/50 p-2.5 rounded border border-white">
+        <div class="flex items-start gap-2">
+          <span class="shrink-0 text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">You:</span>
+          <span class="text-xs font-semibold text-gray-800">{{ action.userAnswer }}</span>
+        </div>
+        <div v-if="action.bestOption" class="flex items-start gap-2 pt-2 border-t border-gray-200/60">
+          <span class="shrink-0 text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Target:</span>
+          <span class="text-xs font-semibold text-emerald-800">{{ action.bestOption }}</span>
+        </div>
+      </div>
 
       <div :class="getDividerColor(action.pillarRisk || action.priority)"
         class="flex items-center justify-between pt-3 border-t">
@@ -78,28 +89,28 @@ export default {
     getCardClasses(priority) {
       const map = {
         high: 'bg-rose-50 border-l-rose-500 border border-rose-100',
-        medium: 'bg-orange-50 border-l-orange-400 border border-orange-100',
+        medium: 'bg-amber-50 border-l-amber-400 border border-amber-200',
         low: 'bg-emerald-50 border-l-emerald-500 border border-emerald-100'
       }
       return map[priority] || 'bg-white border-l-gray-300 border border-gray-100'
     },
     getIconBg(priority) {
-      return { high: 'bg-rose-100', medium: 'bg-orange-100', low: 'bg-emerald-100' }[priority] || 'bg-gray-100'
+      return { high: 'bg-rose-100', medium: 'bg-amber-200', low: 'bg-emerald-100' }[priority] || 'bg-gray-100'
     },
     getIconColor(priority) {
-      return { high: 'text-rose-600', medium: 'text-orange-600', low: 'text-emerald-600' }[priority] || 'text-gray-600'
+      return { high: 'text-rose-600', medium: 'text-amber-700', low: 'text-emerald-600' }[priority] || 'text-gray-600'
     },
     getTextColor(priority) {
-      return { high: 'text-rose-600', medium: 'text-orange-600', low: 'text-emerald-600' }[priority] || 'text-gray-600'
+      return { high: 'text-rose-600', medium: 'text-amber-700', low: 'text-emerald-600' }[priority] || 'text-gray-600'
     },
     getImpactBadge(priority) {
-      return { high: 'bg-rose-100 text-rose-700', medium: 'bg-orange-100 text-orange-700', low: 'bg-emerald-100 text-emerald-700' }[priority] || 'bg-gray-100 text-gray-700'
+      return { high: 'bg-rose-100 text-rose-700', medium: 'bg-amber-200 text-amber-800', low: 'bg-emerald-100 text-emerald-700' }[priority] || 'bg-gray-100 text-gray-700'
     },
     getDividerColor(priority) {
-      return { high: 'border-rose-100', medium: 'border-orange-100', low: 'border-emerald-100' }[priority] || 'border-gray-100'
+      return { high: 'border-rose-200', medium: 'border-amber-200', low: 'border-emerald-100' }[priority] || 'border-gray-100'
     },
     getPillarTagClasses(priority) {
-      return { high: 'bg-rose-100 text-rose-600', medium: 'bg-orange-100 text-orange-600', low: 'bg-emerald-100 text-emerald-600' }[priority] || 'bg-gray-100 text-gray-500'
+      return { high: 'bg-rose-100 text-rose-600', medium: 'bg-amber-200 text-amber-700', low: 'bg-emerald-100 text-emerald-600' }[priority] || 'bg-gray-100 text-gray-500'
     }
   }
 }
