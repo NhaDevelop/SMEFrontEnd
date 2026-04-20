@@ -56,7 +56,8 @@
                                         <select v-model="form.programId"
                                             class="w-full rounded-lg border-gray-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2.5 text-gray-900">
                                             <option value="">Choose a Program</option>
-                                            <option v-for="program in investorStore.programs" :key="program.id"
+                                            <!-- Only show programs this investor is enrolled in -->
+                                            <option v-for="program in enrolledPrograms" :key="program.id"
                                                 :value="program.id">{{ program.name }}
                                             </option>
                                         </select>
@@ -228,6 +229,9 @@ onMounted(() => {
         investorStore.fetchPrograms()
     }
 })
+
+// Only show programs the investor is enrolled in — prevents showing unrelated programs
+const enrolledPrograms = computed(() => investorStore.programs.filter((p: any) => p.isEnrolled))
 
 const props = defineProps<{
     isOpen: boolean

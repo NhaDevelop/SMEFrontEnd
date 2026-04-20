@@ -78,9 +78,18 @@ export const useAuthStore = defineStore('auth', {
       try {
         await authService.logout()
       } finally {
-        // Clear all cached store data so the next account starts fresh
+        // ✅ Reset ALL stores so the next account starts completely fresh.
+        // Without this, switching between investors leaks the previous investor's
+        // programs, dealflow, goals, and cache timestamps into the new session.
         const dashboardStore = useDashboardStore()
         dashboardStore.$reset()
+
+        // Dynamically import to avoid circular deps at module load time
+        const { useInvestorStore } = await import('~/stores/investor.store')
+        const { useAdminStore } = await import('~/stores/admin.store')
+        useInvestorStore().$reset()
+        useAdminStore().$reset()
+
         this.user = null
         authCookie.value = null
         tokenCookie.value = null

@@ -647,7 +647,11 @@ const handleRejectGoal = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Ensure programs are loaded so CreateGoalModal can filter to enrolled-only
+  if (store.programs.length === 0) {
+    await store.fetchPrograms()
+  }
   if (store.dealFlow.length === 0) {
     store.fetchDealFlow()
   }

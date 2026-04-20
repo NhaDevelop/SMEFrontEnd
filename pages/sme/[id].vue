@@ -42,12 +42,13 @@
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <div v-if="smeData.enrolledPrograms && smeData.enrolledPrograms.length > 0" class="flex items-center gap-2">
+                    <div v-if="investorEnrolledPrograms.length > 0" class="flex items-center gap-2">
                         <label class="text-sm font-medium text-gray-700">Program Filter:</label>
                         <select v-model="selectedProgramId" @change="handleProgramChange"
                             class="rounded-lg border-gray-300 text-sm focus:ring-[#198754] focus:border-[#198754] shadow-sm py-2 pl-3 pr-8 w-64 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
                             <option value="">Latest Overall Assessment</option>
-                            <option v-for="prog in smeData.enrolledPrograms" :key="prog.id" :value="prog.id">
+                            <!-- Only show programs the investor is enrolled in -->
+                            <option v-for="prog in investorEnrolledPrograms" :key="prog.id" :value="prog.id">
                                 {{ prog.name }}
                             </option>
                         </select>
@@ -391,7 +392,30 @@ const fetchSmeDetails = async () => {
     }
 }
 
-onMounted(() => {
+// Investor-scoped program list: only programs where BOTH the investor AND the SME are enrolled
+// This prevents showing programs the investor hasn't joined
+const investorEnrolledPrograms = computed(() => {
+    const role = authStore.user?.role
+    // For non-investors (admin, SME viewing own profile), show all of smeData's programs
+    if (role !== 'INVESTOR') {
+        return smeData.value.enrolledPrograms || []
+    }
+    // For investors: only programs the investor themselves is enrolled in
+    const myEnrolledIds = new Set(
+        investorStore.programs
+            .filter((p: any) => p.isEnrolled)
+            .map((p: any) => String(p.id))
+    )
+    const smePrograms = smeData.value.enrolledPrograms || []
+    return smePrograms.filter((p: any) => myEnrolledIds.has(String(p.id)))
+})
+
+onMounted(async () => {
+    // Ensure investor's enrolled programs are loaded for the Program Filter dropdown
+    const role = authStore.user?.role
+    if (role === 'INVESTOR' && investorStore.programs.length === 0) {
+        await investorStore.fetchPrograms()
+    }
     fetchSmeDetails()
     fetchRealActions()
 })

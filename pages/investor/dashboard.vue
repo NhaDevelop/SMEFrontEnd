@@ -326,13 +326,19 @@ const handleProgramChange = () => {
 }
 
 onMounted(async () => {
-    // Fetch programs first so we have the list
+    // Fetch programs first so we have the enrolled list
     await store.fetchPrograms()
-    
-    // Fetch initial dealflow
-    if (store.dealFlow.length === 0) {
-        store.fetchDealFlow()
+
+    // Default to the investor's most recently enrolled program
+    // This prevents cross-program score bleed that happens with "All Enrolled Programs"
+    const enrolled = store.programs.filter((p: any) => p.isEnrolled)
+    if (enrolled.length > 0) {
+        // Pick the last one in the list (most recently added/enrolled)
+        selectedProgramId.value = enrolled[enrolled.length - 1].id
     }
+
+    // Always re-fetch dealflow scoped to the default program
+    store.fetchDealFlow(true, selectedProgramId.value)
 })
 
 definePageMeta({

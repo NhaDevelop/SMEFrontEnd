@@ -630,7 +630,7 @@ definePageMeta({
   middleware: ['auth', 'sme']
 })
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   ClipboardDocumentListIcon,
@@ -999,13 +999,17 @@ const totalAnswered = computed(() => {
 
 const verifiedScore = ref<number | null>(null)
 
-const finalScore = computed(() => {
-  // Calculate actual score based on answers and question weights
+// Fix #4: Debounced score — only recalculates 400ms after user stops interacting.
+// Previously was a computed() that re-ran on every checkbox/radio change, causing UI lag.
+const finalScore = ref(0)
+
+const _calculateFinalScore = () => {
   const questionsList = assessmentQuestions.value
+  if (questionsList.length === 0) {
+    finalScore.value = 0
+    return
+  }
 
-  if (questionsList.length === 0) return 0
-
-  // Group questions by pillar
   const pillarScores: Record<string, { totalScore: number, maxScore: number }> = {}
 
   questionsList.forEach(question => {
@@ -1017,7 +1021,6 @@ const finalScore = computed(() => {
       pillarScores[pillarId] = { totalScore: 0, maxScore: 0 }
     }
 
-    // Calculate score for this question
     let questionScore = 0
 
     if (answer !== undefined && answer !== null && answer !== '') {
@@ -1043,7 +1046,6 @@ const finalScore = computed(() => {
          })
          questionScore = Math.min(weight, runningScore)
       } else {
-         // Fallback block that matches backend's exactly (Single Choice, Dropdown, Yes/No with options)
          const extractedValue = answer
          const selectedOption = (question.options || []).find((opt: any) => {
              const optValue = typeof opt === 'object' && opt !== null && ('value' in opt ? opt.value : opt.label) ? (opt.value || opt.label) : opt
@@ -1064,20 +1066,28 @@ const finalScore = computed(() => {
     }
   })
 
-  // Calculate overall score using shared helper
   const pillarResults = Object.entries(pillarScores).map(([pillarId, stats]) => {
-    // Get weight for this pillar from local framework settings
     const pillarConfig = frameworkSettings.value.find(fs => String(fs.id) === String(pillarId))
     const pillarScore = stats.maxScore > 0 ? (stats.totalScore / stats.maxScore) * 100 : 0
-
     return {
       score: pillarScore,
       weight: pillarConfig ? pillarConfig.weight : 1
     }
   })
 
-  return calculateOverallScore(pillarResults)
-})
+  finalScore.value = calculateOverallScore(pillarResults)
+}
+
+// Debounce timer handle
+let _scoreDebounceTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  [answers, assessmentQuestions, frameworkSettings],
+  () => {
+    if (_scoreDebounceTimer) clearTimeout(_scoreDebounceTimer)
+    _scoreDebounceTimer = setTimeout(_calculateFinalScore, 400)
+  },
+  { deep: true }
+)
 
 const isSubmitted = ref(false)
 
