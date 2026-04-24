@@ -3,8 +3,8 @@ import { AdminRepository } from './admin.repository'
 export class AdminService {
   private repo = new AdminRepository()
 
-  async fetchUsers() {
-    const response = await this.repo.getUsers() as any
+  async fetchUsers(page: number = 1) {
+    const response = await this.repo.getUsers(page) as any
     const mapUser = (u: any) => ({
       ...u,
       id: String(u.id),
@@ -19,17 +19,30 @@ export class AdminService {
       avatar: u.avatar
     })
 
+    // Detect Laravel Paginator Object Directly
+    if (response && typeof response.current_page !== 'undefined' && Array.isArray(response.data)) {
+      return {
+        data: response.data.map(mapUser),
+        meta: {
+          current_page: response.current_page,
+          last_page: response.last_page,
+          total: response.total
+        },
+        stats: response.stats // Forward explicit DB stats
+      }
+    }
+
+    // Fallback if not paginated
     const userList = Array.isArray(response) ? response : (response?.data || response?.users || [])
-    
     if (Array.isArray(userList)) {
-      return userList.map(mapUser)
+      return { data: userList.map(mapUser), meta: null, stats: response?.stats || null }
     }
     
-    return response
+    return { data: [], meta: null, stats: null }
   }
 
-  async fetchPendingUsers() {
-    const response = await this.repo.getPendingUsers() as any
+  async fetchPendingUsers(page: number = 1) {
+    const response = await this.repo.getPendingUsers(page) as any
     const mapUser = (u: any) => ({
       ...u,
       id: String(u.id),
@@ -44,13 +57,24 @@ export class AdminService {
       avatar: u.avatar
     })
 
+    if (response && typeof response.current_page !== 'undefined' && Array.isArray(response.data)) {
+      return {
+        data: response.data.map(mapUser),
+        meta: {
+          current_page: response.current_page,
+          last_page: response.last_page,
+          total: response.total
+        },
+        stats: response.stats
+      }
+    }
+
     const userList = Array.isArray(response) ? response : (response?.data || response?.users || [])
-    
     if (Array.isArray(userList)) {
-      return userList.map(mapUser)
+      return { data: userList.map(mapUser), meta: null, stats: response?.stats || null }
     }
     
-    return response || []
+    return { data: [], meta: null, stats: null }
   }
 
   async createUser(data: any) {

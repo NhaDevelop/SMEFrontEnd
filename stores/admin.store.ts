@@ -75,6 +75,8 @@ interface User {
   department?: string
   lastActive?: string
   registered?: string
+  company?: string
+  industry?: string
 }
 
 
@@ -135,6 +137,7 @@ interface Question {
 interface SmeProfile {
   id: number | string
   name: string
+  user_name?: string
   company_name?: string
   industry: string
   location: string
@@ -156,6 +159,8 @@ interface SmeProfile {
 interface AdminState {
   userStats: UserStats | null
   pendingUsers: any[]
+  pendingUsersMeta: any | null
+  approvedUsersMeta: any | null
   programStats: ProgramStats | null
   dashboardStats: any | null
   programs: Program[]
@@ -180,6 +185,8 @@ export const useAdminStore = defineStore('admin', {
   state: (): AdminState => ({
     userStats: null,
     pendingUsers: [],
+    pendingUsersMeta: null,
+    approvedUsersMeta: null,
     dashboardStats: null,
     frameworkThresholds: [],
     users: [],
@@ -249,15 +256,18 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async fetchUsersData() {
+    async fetchUsersData(page: number = 1) {
       this.loading = true
       this.error = null
       const service = new AdminService()
       try {
-        const response = await service.fetchUsers() as any
+        const response = await service.fetchUsers(page) as any
 
-        // AdminService.fetchUsers now returns mapping result directly if it's an array
-        const userList = Array.isArray(response) ? response : (response?.users || [])
+        if (response?.meta) {
+          this.approvedUsersMeta = response.meta
+        }
+
+        const userList = response?.data || []
         if (userList.length >= 0) {
           this.users = userList
         }
@@ -269,9 +279,9 @@ export const useAdminStore = defineStore('admin', {
           this.userStats = {
             total: this.users.length,
             pending: this.users.filter((u: any) => u.status === 'pending').length,
-            smes: this.users.filter((u: any) => u.role === 'sme').length,
-            investors: this.users.filter((u: any) => u.role === 'investor').length,
-            admins: this.users.filter((u: any) => u.role === 'admin').length
+            smes: this.users.filter((u: any) => u.role === 'SME' || u.role === 'sme').length,
+            investors: this.users.filter((u: any) => u.role === 'INVESTOR' || u.role === 'investor').length,
+            admins: this.users.filter((u: any) => u.role === 'ADMIN' || u.role === 'admin').length
           }
         }
         this.pendingUsers = this.users.filter((u: any) => u.status === 'pending')
@@ -308,12 +318,20 @@ export const useAdminStore = defineStore('admin', {
         }
     },
 
-    async fetchPendingUsers() {
+    async fetchPendingUsers(page: number = 1) {
         this.loading = true
         const service = new AdminService()
         try {
-            const users = await service.fetchPendingUsers()
-            this.pendingUsers = users
+            const response = await service.fetchPendingUsers(page)
+            if (response?.meta) {
+                this.pendingUsersMeta = response.meta
+            }
+            this.pendingUsers = response?.data || []
+            
+            // Sync universal stats
+            if (response?.stats) {
+                this.userStats = response.stats
+            }
         } catch (err: any) {
             this.error = err.message
         } finally {

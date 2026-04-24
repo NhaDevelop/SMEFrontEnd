@@ -2,14 +2,14 @@ import { useApi } from '~/composables/useApi'
 
 export class AdminRepository {
   // Users
-  async getUsers() {
+  async getUsers(page: number = 1) {
     const api = useApi()
-    return await api('/admin/users')
+    return await api('/admin/users', { params: { page } })
   }
 
-  async getPendingUsers() {
+  async getPendingUsers(page: number = 1) {
     const api = useApi()
-    return await api('/admin/users/pending')
+    return await api('/admin/users/pending', { params: { page } })
   }
 
   async createUser(data: any) {

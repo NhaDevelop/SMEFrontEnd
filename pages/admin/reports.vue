@@ -175,12 +175,17 @@
                         </div>
                     </div>
 
+                    <!-- Responsive scroll wrapper -->
+                    <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-white">
                             <tr>
                                 <th scope="col"
                                     class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     SME Name</th>
+                                <th scope="col"
+                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Owner</th>
                                 <th scope="col"
                                     class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Sector</th>
@@ -200,14 +205,15 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                             <tr v-if="filteredSMEs.length === 0">
-                                <td colspan="6" class="px-8 py-12 text-center text-sm text-gray-400">No SMEs match your
+                                <td colspan="7" class="px-8 py-12 text-center text-sm text-gray-400">No SMEs match your
                                     current filters.</td>
                             </tr>
-                            <tr v-for="sme in filteredSMEs" :key="sme.id" class="hover:bg-gray-50/50 transition-colors">
+                            <tr v-for="sme in pagedSMEs" :key="sme.id" class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-8 py-5 whitespace-nowrap text-sm font-medium text-[#2BB8B8]">
                                     <button @click="router.push('/sme/' + sme.id)" class="hover:underline text-left">{{
                                         sme.name }}</button>
                                 </td>
+                                <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.userName || '—' }}</td>
                                 <td class="px-8 py-5 whitespace-nowrap">
                                     <span v-if="sme.sector"
                                         :style="`${getSectorStyle(sme.sector).bg}; ${getSectorStyle(sme.sector).text}; ${getSectorStyle(sme.sector).border}`"
@@ -242,18 +248,39 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div v-if="smeTotalPages > 1" class="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                        <span class="text-sm text-gray-500">
+                            Showing <span class="font-medium text-gray-900">{{ (smeCurrentPage - 1) * smePageSize + 1 }}</span>–<span class="font-medium text-gray-900">{{ Math.min(smeCurrentPage * smePageSize, filteredSMEs.length) }}</span> of <span class="font-medium text-gray-900">{{ filteredSMEs.length }}</span> SMEs
+                        </span>
+                        <div class="flex items-center gap-1">
+                            <button @click="smeCurrentPage = Math.max(1, smeCurrentPage - 1)" :disabled="smeCurrentPage === 1"
+                                class="px-2.5 py-1.5 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">‹</button>
+                            <button v-for="n in pageNumbers" :key="String(n)"
+                                @click="typeof n === 'number' ? smeCurrentPage = n : null"
+                                :class="[
+                                    'px-3 py-1.5 text-sm rounded-md border transition-colors',
+                                    n === smeCurrentPage ? 'bg-[#198754] text-white border-[#198754] font-semibold'
+                                    : n === '…' ? 'border-transparent text-gray-400 cursor-default'
+                                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                                ]">{{ n }}</button>
+                            <button @click="smeCurrentPage = Math.min(smeTotalPages, smeCurrentPage + 1)" :disabled="smeCurrentPage === smeTotalPages"
+                                class="px-2.5 py-1.5 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">›</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Recent Reports Section -->
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="p-8 border-b border-gray-100">
+                    <div class="px-6 py-5 border-b border-gray-100">
                         <h3 class="text-lg font-bold text-gray-900">Recent Reports</h3>
-                        <p class="text-gray-500 text-sm mt-1">Previously generated reports</p>
+                        <p class="text-gray-500 text-sm mt-1">Last 5 generated reports</p>
                     </div>
-                    <div v-if="recentReports.length === 0" class="p-8 text-center text-sm text-gray-400">No reports
-                        generated yet.</div>
+                    <div v-if="recentReports.length === 0" class="px-6 py-8 text-center text-sm text-gray-400">No reports generated yet.</div>
                     <div class="divide-y divide-gray-100">
-                        <div v-for="report in recentReports" :key="report.id"
+                        <div v-for="report in recentReports.slice(0, 5)" :key="report.id"
                             class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
                             <div class="flex items-center gap-4">
                                 <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
@@ -292,7 +319,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseRiskBadge from '~/components/BaseRiskBadge.vue'
 import { getFinancialRiskLevel } from '~/utils/helpers'
@@ -417,6 +444,7 @@ const smes = computed(() => {
         return {
             id: sme.id,
             name: sme.company_name || sme.name,
+            userName: sme.user_name || '',
             sector: sme.industry,
             score: displayScore as any,
             risk: displayRisk,
@@ -430,26 +458,50 @@ const searchQuery = ref('')
 const selectedRiskFilter = ref('')
 const selectedReportSmeId = ref<number | string | null>(null)
 const selectedReportType = ref('Detailed Assessment')
-const selectedProgramId = ref<number | null>(null)       // custom report program filter
-const selectedTableProgramId = ref<number | null>(null)  // table row program filter
+const selectedProgramId = ref<number | null>(null)
+const selectedTableProgramId = ref<number | null>(null)
+
+// ── SME Table Pagination ──────────────────────────────────────
+const smeCurrentPage = ref(1)
+const smePageSize = 10
 
 const filteredSMEs = computed(() => {
     let result = smes.value
-
     if (selectedRiskFilter.value) {
         result = result.filter(sme => sme.risk === selectedRiskFilter.value)
     }
-
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
         result = result.filter(sme =>
             sme.name.toLowerCase().includes(query) ||
+            (sme.userName ?? '').toLowerCase().includes(query) ||
             (sme.sector ?? '').toLowerCase().includes(query)
         )
     }
-
     return result
 })
+
+const smeTotalPages = computed(() => Math.ceil(filteredSMEs.value.length / smePageSize))
+
+const pagedSMEs = computed(() => {
+    const start = (smeCurrentPage.value - 1) * smePageSize
+    return filteredSMEs.value.slice(start, start + smePageSize)
+})
+
+const pageNumbers = computed(() => {
+    const total = smeTotalPages.value
+    const current = smeCurrentPage.value
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+    const pages: (number | string)[] = [1]
+    if (current > 3) pages.push('…')
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
+    if (current < total - 2) pages.push('…')
+    pages.push(total)
+    return pages
+})
+
+// Reset to page 1 whenever filters change
+watch([searchQuery, selectedRiskFilter], () => { smeCurrentPage.value = 1 })
 
 const currentProgramName = computed(() => {
     const id = selectedTableProgramId.value ?? (route.query.programId ? Number(route.query.programId) : null)

@@ -61,7 +61,7 @@
             class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 min-h-[400px]">
             <div class="flex items-center justify-between mb-1">
               <h3 class="font-bold text-xl text-gray-900">Pending Registrations</h3>
-              <button @click="loadRegistrations"
+              <button @click="loadRegistrations()"
                 class="p-1.5 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-md transition-colors"
                 title="Refresh">
                 <ArrowPathIcon class="w-4 h-4" :class="{ 'animate-spin': loadingRegs }" />
@@ -273,6 +273,26 @@
                   </div>
                 </Transition>
               </div>
+
+              <!-- Pagination Header -->
+              <div v-if="adminStore.pendingUsersMeta" class="flex items-center justify-between border-t pt-4 mt-6">
+                <span class="text-sm text-gray-500">
+                  Showing page <span class="font-medium text-gray-900">{{ adminStore.pendingUsersMeta.current_page }}</span>
+                  of <span class="font-medium text-gray-900">{{ adminStore.pendingUsersMeta.last_page }}</span>
+                </span>
+                <div class="flex items-center gap-2">
+                  <button @click="loadRegistrations(adminStore.pendingUsersMeta.current_page - 1)"
+                    :disabled="adminStore.pendingUsersMeta.current_page <= 1"
+                    class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Previous
+                  </button>
+                  <button @click="loadRegistrations(adminStore.pendingUsersMeta.current_page + 1)"
+                    :disabled="adminStore.pendingUsersMeta.current_page >= adminStore.pendingUsersMeta.last_page"
+                    class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -408,10 +428,10 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
   setTimeout(() => { toast.message = '' }, 3500)
 }
 
-const loadRegistrations = async () => {
+const loadRegistrations = async (page: number = 1) => {
   loadingRegs.value = true
   try {
-    await adminStore.fetchPendingUsers()
+    await adminStore.fetchPendingUsers(page)
   } catch (e) {
     console.error('Failed to load registrations:', e)
   } finally {

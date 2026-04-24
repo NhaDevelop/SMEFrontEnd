@@ -39,6 +39,7 @@
         <thead>
           <tr class="border-b border-gray-100 text-xs text-gray-500 uppercase">
             <th class="py-3 px-4 font-medium">User</th>
+            <th class="py-3 px-4 font-medium">Company</th>
             <th class="py-3 px-4 font-medium">Role</th>
             <th class="py-3 px-4 font-medium">Email</th>
             <th class="py-3 px-4 font-medium">Registered</th>
@@ -56,6 +57,7 @@
                 <span class="text-sm font-medium text-gray-900">{{ user.name }}</span>
               </div>
             </td>
+            <td class="py-4 px-4 text-sm text-gray-700 font-medium">{{ user.company || 'N/A' }}</td>
             <td class="py-4 px-4">
               <span :class="['px-2 py-0.5 rounded text-xs font-medium border uppercase', getRoleBadge(user.role)]">
                 {{ user.role }}
@@ -150,6 +152,26 @@
       <div v-if="filteredUsers.length === 0" class="text-center py-12">
         <p class="text-gray-500">No users found</p>
       </div>
+      
+      <!-- Pagination Header -->
+      <div v-if="adminStore.approvedUsersMeta" class="flex items-center justify-between border-t pt-4 mt-6">
+        <span class="text-sm text-gray-500">
+          Showing page <span class="font-medium text-gray-900">{{ adminStore.approvedUsersMeta.current_page }}</span>
+          of <span class="font-medium text-gray-900">{{ adminStore.approvedUsersMeta.last_page }}</span>
+        </span>
+        <div class="flex items-center gap-2">
+          <button @click="fetchApproved(adminStore.approvedUsersMeta.current_page - 1)"
+            :disabled="adminStore.approvedUsersMeta.current_page <= 1"
+            class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          <button @click="fetchApproved(adminStore.approvedUsersMeta.current_page + 1)"
+            :disabled="adminStore.approvedUsersMeta.current_page >= adminStore.approvedUsersMeta.last_page"
+            class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Edit User Modal -->
@@ -190,9 +212,9 @@ const isEditModalOpen = ref(false)
 const selectedUser = ref<any>(null)
 const saving = ref(false)
 
-const fetchApproved = async () => {
+const fetchApproved = async (page: number = 1) => {
   try {
-    await adminStore.fetchUsersData()
+    await adminStore.fetchUsersData(page)
   } catch (e) {
     console.error('[ApprovedUsers] Failed to fetch approved users', e)
   }
