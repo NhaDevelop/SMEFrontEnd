@@ -241,12 +241,12 @@
                         </div>
                         <div>
                           <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Verification Doc</p>
-                          <a :href="getDocumentUrl(reg)" target="_blank"
+                          <button @click="downloadDocument(reg.id)"
                             class="text-sm font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 group">
                             View Certificate
                             <ArrowTopRightOnSquareIcon
                               class="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                          </a>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -390,14 +390,29 @@ const formatDate = (dateString?: string) => {
     return dateString
   }
 }
-const getDocumentUrl = (reg: any) => {
-  const path = reg.sme_profile?.registration_document || reg.investor_profile?.registration_document
-  if (!path) return '#'
-
-  const config = useRuntimeConfig()
-  // Strip '/api' from the end of apiBase to get the root URL for storage
-  const baseUrl = config.public.apiBase.replace(/\/api$/, '')
-  return `${baseUrl}/storage/${path}`
+const downloadDocument = async (userId: string | number) => {
+  if (!userId) return
+  try {
+    const token = useCookie('irip_access_token').value || (typeof localStorage !== 'undefined' ? localStorage.getItem('irip_access_token') : null)
+    const config = useRuntimeConfig()
+    const response = await fetch(`${config.public.apiBase}/admin/users/${userId}/document`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } else {
+      showToast('Failed to download document or you do not have permission.', 'error')
+    }
+  } catch (e) {
+    console.error(e)
+    showToast('An error occurred while downloading the document.', 'error')
+  }
 }
 const registrationStats = reactive({
   total: 0,
