@@ -22,7 +22,7 @@ walkDir(path.join(process.cwd(), 'components'), filePath => {
     });
   }
 });
-
+22
 const searchDirs = ['pages', 'components', 'layouts', 'app.vue'];
 const allFiles = [];
 

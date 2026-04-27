@@ -289,7 +289,7 @@
                                                         'Attached Document' }}</p>
                                                     <p class="text-xs text-gray-500">Attached Evidence</p>
                                                 </div>
-                                                <a :href="getDocumentUrl(goal.proofDocument)" target="_blank"
+                                                <button @click="downloadProof(goal.id)"
                                                     class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors flex items-center gap-1">
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none"
                                                         viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
@@ -298,7 +298,7 @@
                                                             d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                                     </svg>
                                                     View & Download
-                                                </a>
+                                                </button>
                                             </div>
                                         </div>
 
@@ -349,12 +349,28 @@ import {
     ArrowRightIcon
 } from '@heroicons/vue/24/outline'
 
-const getDocumentUrl = (path: string) => {
-    if (!path) return '#'
-    if (path.startsWith('http')) return path
-    const config = useRuntimeConfig()
-    const apiBase = config.public.apiBase.replace('/api', '')
-    return `${apiBase}/storage/${path}`
+const downloadProof = async (goalId: number | string) => {
+    if (!goalId) return
+    try {
+        const token = useCookie('token').value
+        const config = useRuntimeConfig()
+        const response = await fetch(`${config.public.apiBase}/sme/goals/${goalId}/proof`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        
+        if (response.ok) {
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            window.open(url, '_blank')
+        } else {
+            alert('Failed to download proof or you do not have permission.')
+        }
+    } catch (e) {
+        console.error(e)
+        alert('An error occurred while downloading the document.')
+    }
 }
 
 // Chart.js imports

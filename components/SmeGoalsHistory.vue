@@ -70,7 +70,7 @@
                         </div>
 
                         <!-- Evidence Download Button -->
-                        <button v-if="goal.proof_document" @click="downloadProof(goal.proof_document)"
+                        <button v-if="goal.proof_document" @click="downloadProof(goal.id)"
                             class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-xs font-medium shadow-sm mt-1 whitespace-nowrap">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                                 stroke="currentColor" class="w-3.5 h-3.5">
@@ -121,11 +121,27 @@ const fetchGoals = async () => {
     }
 }
 
-const downloadProof = (path: string) => {
-    if (!path) return
-    const baseUrl = config.public.apiBase.replace(/\/api\/?$/, '')
-    const url = `${baseUrl}/storage/${path}`
-    window.open(url, '_blank')
+const downloadProof = async (goalId: number | string) => {
+    if (!goalId) return
+    try {
+        const token = useCookie('token').value
+        const response = await fetch(`${config.public.apiBase}/sme/goals/${goalId}/proof`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        
+        if (response.ok) {
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            window.open(url, '_blank')
+        } else {
+            alert('Failed to download proof or you do not have permission.')
+        }
+    } catch (e) {
+        console.error(e)
+        alert('An error occurred while downloading the document.')
+    }
 }
 
 onMounted(() => {
