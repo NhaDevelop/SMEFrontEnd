@@ -352,11 +352,12 @@ import {
 const downloadProof = async (goalId: number | string) => {
     if (!goalId) return
     try {
-        const token = useCookie('token').value
+        const token = useCookie('irip_access_token').value || (typeof localStorage !== 'undefined' ? localStorage.getItem('irip_access_token') : null)
         const config = useRuntimeConfig()
         const response = await fetch(`${config.public.apiBase}/sme/goals/${goalId}/proof`, {
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
             }
         })
         
