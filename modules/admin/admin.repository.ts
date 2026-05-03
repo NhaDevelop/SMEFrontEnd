@@ -2,14 +2,20 @@ import { useApi } from '~/composables/useApi'
 
 export class AdminRepository {
   // Users
-  async getUsers(page: number = 1) {
+  async getUsers(page: number = 1, search?: string, role?: string) {
     const api = useApi()
-    return await api('/admin/users', { params: { page } })
+    const params: any = { page }
+    if (search) params.search = search
+    if (role && role !== 'all') params.role = role
+    return await api('/admin/users', { params })
   }
 
-  async getPendingUsers(page: number = 1) {
+  async getPendingUsers(page: number = 1, search?: string, role?: string) {
     const api = useApi()
-    return await api('/admin/users/pending', { params: { page } })
+    const params: any = { page }
+    if (search) params.search = search
+    if (role && role !== 'all') params.role = role
+    return await api('/admin/users/pending', { params })
   }
 
   async createUser(data: any) {

@@ -256,12 +256,12 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async fetchUsersData(page: number = 1) {
+    async fetchUsersData(page: number = 1, search?: string, role?: string) {
       this.loading = true
       this.error = null
       const service = new AdminService()
       try {
-        const response = await service.fetchUsers(page) as any
+        const response = await service.fetchUsers(page, search, role) as any
 
         if (response?.meta) {
           this.approvedUsersMeta = response.meta
@@ -318,11 +318,11 @@ export const useAdminStore = defineStore('admin', {
         }
     },
 
-    async fetchPendingUsers(page: number = 1) {
+    async fetchPendingUsers(page: number = 1, search?: string, role?: string) {
         this.loading = true
         const service = new AdminService()
         try {
-            const response = await service.fetchPendingUsers(page)
+            const response = await service.fetchPendingUsers(page, search, role)
             if (response?.meta) {
                 this.pendingUsersMeta = response.meta
             }

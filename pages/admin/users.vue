@@ -219,6 +219,30 @@
                         <p class="text-sm font-semibold text-gray-800">${{
                           reg.investor_profile?.max_ticket_size?.toLocaleString() || '0' }}</p>
                       </div>
+                      <div class="space-y-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Registration No.</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ reg.investor_profile?.registration_number || 'N/A' }}</p>
+                      </div>
+                      <div class="space-y-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Team Size</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ reg.investor_profile?.team_size || 'N/A' }} employees</p>
+                      </div>
+                      <div class="space-y-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Years in Business</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ reg.investor_profile?.years_in_business || 'N/A' }}</p>
+                      </div>
+                      <div class="col-span-1 md:col-span-2 space-y-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Business Address</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ reg.investor_profile?.address || 'N/A' }}</p>
+                      </div>
+                      <div class="space-y-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Website</p>
+                        <a v-if="reg.investor_profile?.website_url" :href="reg.investor_profile.website_url" target="_blank"
+                          class="text-sm font-semibold text-cyan-600 hover:underline">
+                          {{ reg.investor_profile.website_url }}
+                        </a>
+                        <p v-else class="text-sm font-semibold text-gray-400 italic">Not provided</p>
+                      </div>
                     </div>
 
                     <!-- Contact Details -->
@@ -319,7 +343,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref, reactive } from 'vue'
+import { onMounted, computed, ref, reactive, watch } from 'vue'
 import { useAdminStore } from '~/stores/admin.store'
 import { useConfirm } from '~/composables/useConfirm'
 import StatCard from '~/components/AdminStatCard.vue'
@@ -425,15 +449,7 @@ const registrationStats = reactive({
 })
 
 const filteredPending = computed(() => {
-  return adminStore.pendingUsers.filter(r => {
-    const nameMatch = r.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) || false
-    const emailMatch = r.email?.toLowerCase().includes(searchQuery.value.toLowerCase()) || false
-    const companyMatch = r.company?.toLowerCase().includes(searchQuery.value.toLowerCase()) || false
-
-    const matchSearch = !searchQuery.value || nameMatch || emailMatch || companyMatch
-    const matchRole = !roleFilter.value || r.role?.toLowerCase() === roleFilter.value.toLowerCase()
-    return matchSearch && matchRole
-  })
+  return adminStore.pendingUsers
 })
 
 const toast = reactive({ message: '', type: 'success' })
@@ -446,13 +462,23 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 const loadRegistrations = async (page: number = 1) => {
   loadingRegs.value = true
   try {
-    await adminStore.fetchPendingUsers(page)
+    await adminStore.fetchPendingUsers(page, searchQuery.value, roleFilter.value)
   } catch (e) {
     console.error('Failed to load registrations:', e)
   } finally {
     loadingRegs.value = false
   }
 }
+
+let pendingSearchTimeout: any = null
+watch([searchQuery, roleFilter], () => {
+  if (activeTab.value === 'pending') {
+    clearTimeout(pendingSearchTimeout)
+    pendingSearchTimeout = setTimeout(() => {
+      loadRegistrations(1)
+    }, 500)
+  }
+})
 
 const handleApprove = async (id: string) => {
   const confirmed = await ask({

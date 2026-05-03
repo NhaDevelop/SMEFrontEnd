@@ -19,7 +19,6 @@
                                 <label class="text-sm font-semibold text-gray-700 whitespace-nowrap">Target Configuration:</label>
                                 <select v-model="selectedProgramId" 
                                     class="w-full sm:w-64 rounded-lg border-gray-300 text-sm focus:border-emerald-500 focus:ring-emerald-500 py-2 pl-3 pr-8 bg-gray-50 font-medium">
-                                    <option value="global">🌍 Global (Default System Thresholds)</option>
                                     <optgroup label="Active Programs">
                                         <option v-for="prog in activePrograms" :key="prog.id" :value="prog.id">
                                             {{ prog.name }}
@@ -108,7 +107,7 @@ const adminStore = useAdminStore()
 const isSavingThresholds = ref(false)
 const toast = useToast()
 
-const selectedProgramId = ref<string | number>('global')
+const selectedProgramId = ref<string | number>('')
 const activePrograms = computed(() => {
     return adminStore.programs.filter((p: any) => ['Published', 'Coming Soon'].includes(p.status))
 })
@@ -157,32 +156,46 @@ const isThresholdsValid = computed(() => {
 })
 
 const loadThresholdsContext = () => {
-    if (selectedProgramId.value === 'global') {
-        if (adminStore.frameworkThresholds && adminStore.frameworkThresholds.length > 0) {
-            thresholds.value = JSON.parse(JSON.stringify(adminStore.frameworkThresholds))
-        } else {
-            thresholds.value = [
-                { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
-                { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
-                { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
-                { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
-            ]
+    if (!selectedProgramId.value && activePrograms.value.length > 0) {
+        const id = activePrograms.value[0]?.id
+        if (id) {
+            selectedProgramId.value = id as string | number
         }
+    }
+
+    const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
+    
+    // Default system colors map
+    const defaultColors: Record<string, string> = {
+        'investor': 'bg-emerald-500',
+        'near': 'bg-amber-500',
+        'early': 'bg-teal-500',
+        'pre': 'bg-red-500',
+    }
+
+    if (prog && prog.thresholds && prog.thresholds.length === 4) {
+        const loadedThresholds = JSON.parse(JSON.stringify(prog.thresholds))
+        // Ensure colorBg is present
+        loadedThresholds.forEach((t: any) => {
+            if (!t.colorBg) {
+                // Try to infer from label or id
+                if (t.id && defaultColors[t.id]) t.colorBg = defaultColors[t.id]
+                else if (t.label.toLowerCase().includes('investor')) t.colorBg = 'bg-emerald-500'
+                else if (t.label.toLowerCase().includes('near')) t.colorBg = 'bg-amber-500'
+                else if (t.label.toLowerCase().includes('early')) t.colorBg = 'bg-teal-500'
+                else if (t.label.toLowerCase().includes('pre')) t.colorBg = 'bg-red-500'
+                else t.colorBg = 'bg-gray-500'
+            }
+        })
+        thresholds.value = loadedThresholds
     } else {
-        const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
-        if (prog && prog.thresholds && prog.thresholds.length === 4) {
-            thresholds.value = JSON.parse(JSON.stringify(prog.thresholds))
-        } else {
-            // Seed from global default if the program has no custom thresholds yet
-            thresholds.value = adminStore.frameworkThresholds && adminStore.frameworkThresholds.length > 0
-                ? JSON.parse(JSON.stringify(adminStore.frameworkThresholds))
-                : [
-                    { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
-                    { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
-                    { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
-                    { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
-                ]
-        }
+        // Seed from default
+        thresholds.value = [
+            { id: 'investor', label: 'Investor Ready', min: 80, max: 100, colorBg: 'bg-emerald-500' },
+            { id: 'near', label: 'Near Ready', min: 60, max: 79, colorBg: 'bg-amber-500' },
+            { id: 'early', label: 'Early Stage', min: 40, max: 59, colorBg: 'bg-teal-500' },
+            { id: 'pre', label: 'Pre-Investment', min: 0, max: 39, colorBg: 'bg-red-500' },
+        ]
     }
 }
 
@@ -203,18 +216,11 @@ const handleSaveThresholds = async () => {
 
     isSavingThresholds.value = true
     try {
-        if (selectedProgramId.value === 'global') {
-            await adminStore.updateFrameworkSettings({
-                thresholds: thresholds.value
-            })
-            toast.success('Global thresholds updated successfully')
-        } else {
-            const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
-            if (prog) {
-                const updatedProg = { ...prog, thresholds: thresholds.value }
-                await adminStore.updateProgram(updatedProg)
-                toast.success(`Thresholds updated successfully for program: ${prog.name}`)
-            }
+        const prog = adminStore.programs.find((p: any) => p.id === selectedProgramId.value)
+        if (prog) {
+            const updatedProg = { ...prog, thresholds: thresholds.value }
+            await adminStore.updateProgram(updatedProg)
+            toast.success(`Thresholds updated successfully for program: ${prog.name}`)
         }
     } catch (e) {
         toast.error('Failed to save thresholds')

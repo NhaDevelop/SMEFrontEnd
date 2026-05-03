@@ -91,7 +91,7 @@
                                                 class="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-all text-left">
                                                 <span class="text-xl">{{ template.icon }}</span>
                                                 <span class="text-xs font-medium text-gray-700">{{ template.label
-                                                }}</span>
+                                                    }}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -159,7 +159,7 @@
                                                     <div class="text-xs text-gray-500 mb-1 font-medium">Target Score
                                                     </div>
                                                     <div class="text-3xl font-bold text-emerald-600">{{ form.targetScore
-                                                        }}</div>
+                                                    }}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -177,10 +177,10 @@
                                                 <span class="text-sm font-bold text-gray-900">{{ pillar.name }}</span>
                                                 <div class="flex items-center gap-2 text-xs">
                                                     <span class="text-gray-500 font-medium">{{ pillar.currentScore
-                                                        }}</span>
+                                                    }}</span>
                                                     <span class="text-gray-300">→</span>
                                                     <span class="text-[#0F766E] font-bold">{{ pillar.targetScore
-                                                        }}</span>
+                                                    }}</span>
                                                     <span v-if="pillar.targetScore > pillar.currentScore"
                                                         class="text-orange-500 font-medium">
                                                         (+{{ pillar.targetScore - pillar.currentScore }})
@@ -258,6 +258,10 @@ const form = ref<{
     targetScore: 80
 })
 
+// Stores program-specific SME scores fetched when a program is selected
+const programSmeScores = ref<any[]>([])
+const loadingProgramScores = ref(false)
+
 watch(() => form.value.programId, async (newProgramId) => {
     if (newProgramId) {
         await investorStore.fetchParticipants(newProgramId)
@@ -265,8 +269,21 @@ watch(() => form.value.programId, async (newProgramId) => {
             const isValid = filteredSmeList.value.some(sme => String(sme.id) === String(form.value.smeId))
             if (!isValid) form.value.smeId = ''
         }
+        // Fetch program-specific SME scores from backend
+        loadingProgramScores.value = true
+        try {
+            const api = useApi()
+            const res = await api<any>('/investor/dealflow', { params: { program_id: newProgramId } })
+            const raw = res.data?.data || res.data || res || []
+            programSmeScores.value = Array.isArray(raw) ? raw : []
+        } catch (e) {
+            programSmeScores.value = []
+        } finally {
+            loadingProgramScores.value = false
+        }
     } else {
         investorStore.programParticipants = []
+        programSmeScores.value = []
         form.value.smeId = ''
     }
 })
@@ -279,24 +296,24 @@ const filteredSmeList = computed(() => {
     const smeParticipants = participants.filter((p: any) => p.role === 'SME')
 
     return smeParticipants.map((p: any) => {
-        // Link to existing dealflow data to maintain score and pillars
+        // Use program-specific scores if available, otherwise fall back to dealflow
+        const programSpecific = programSmeScores.value.find(s => String(s.id) === String(p.profile_id))
+        if (programSpecific) return programSpecific
         const found = props.smeList?.find(s => String(s.id) === String(p.profile_id))
         if (found) return found
-
-        return {
-            id: p.profile_id,
-            name: p.name,
-            score: 0,
-            pillars: []
-        }
+        return { id: p.profile_id, name: p.name, score: 0, pillars: [] }
     })
 })
 
-// Compute current SME score for display
+// Compute current SME score for display — uses PROGRAM-SPECIFIC score, not overall
 const currentSmeScore = computed(() => {
-    if (props.prefilledSme) return props.prefilledSme.score || 0
-    if (form.value.smeId && props.smeList) {
-        const found = props.smeList.find(s => s.id === form.value.smeId)
+    if (props.prefilledSme && !form.value.smeId) return props.prefilledSme.score || 0
+    if (form.value.smeId) {
+        // First try program-specific score (correct per-program score)
+        const programSpecific = programSmeScores.value.find(s => String(s.id) === String(form.value.smeId))
+        if (programSpecific) return programSpecific.score || 0
+        // Fallback to general dealflow
+        const found = props.smeList?.find(s => String(s.id) === String(form.value.smeId))
         return found ? found.score : 0
     }
     return 0
@@ -309,7 +326,7 @@ const quickTemplates = computed(() => {
     if (!sme || !sme.pillars || sme.pillars.length === 0) return []
 
     const templates = []
-    
+
     // Find high risk pillars (score < 60)
     const highRiskPillars = sme.pillars.filter((p: any) => p.score < 60)
     if (highRiskPillars.length > 0) {
@@ -438,14 +455,12 @@ watch(() => props.prefilledSme, (newSme) => {
 
 // ADDED: Watch form.smeId to handle manual selection from dropdown
 watch(() => form.value.smeId, (newId) => {
-    if (newId && props.smeList) {
-        const selectedSme = props.smeList.find(s => s.id === newId)
+    if (newId) {
+        // Use program-specific score/pillars if available
+        const programSpecific = programSmeScores.value.find(s => String(s.id) === String(newId))
+        const selectedSme = programSpecific || props.smeList?.find(s => String(s.id) === String(newId))
         if (selectedSme) {
-            // Update pillars for the manually selected SME
             updatePillarsForSme(selectedSme)
-
-            // Should potentially update other fields if they are empty or default?
-            // For now, let's at least make sure basics are there if empty
             if (!form.value.name) form.value.name = `Goal for ${selectedSme.name}`
         }
     }
@@ -464,7 +479,7 @@ watch(() => form.value.targetScore, (newVal) => {
     if (Math.abs(diff) >= 0.5) {
         // Find total points to distribute
         let remainingPointsToDistribute = diff * pillarTargets.value.length
-        
+
         // Loop up to 5 times to distribute points that hit the 100 cap
         let passes = 0
         while (Math.abs(remainingPointsToDistribute) > 0.1 && passes < 5) {
@@ -496,7 +511,7 @@ watch(() => form.value.targetScore, (newVal) => {
             })
             passes++
         }
-        
+
         // Round accurately inside bounds
         pillarTargets.value.forEach((p) => { p.targetScore = Math.max(0, Math.min(100, Math.round(p.targetScore))) })
     }
@@ -519,7 +534,7 @@ const applyTemplate = (template: any) => {
     const smeName = sme?.name || 'SME'
     form.value.name = template.getGoalName(smeName)
     form.value.description = template.getDescription(smeName)
-    
+
     // Disable syncing temporarily while applying template explicitly
     isSyncing = true
     if (template.apply) {

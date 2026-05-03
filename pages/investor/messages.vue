@@ -331,7 +331,7 @@ const fetchMessages = async () => {
         const userId = authStore.user?.id
 
         // Fetch users using useApi()(). Laravel response is wrapped in data, useApi unwraps it.
-        const usersResponse = await useApi()('/admin/users')
+        const usersResponse = await useApi()('/users/discovery')
         const allUsers = usersResponse || []
 
         const me = (allUsers as any[]).find((u: any) => u.id === userId) || authStore.user
@@ -385,7 +385,7 @@ const sendMessage = async () => {
         const userId = authStore.user?.id
         const userEmail = authStore.user?.email
 
-        const usersResponse = await useApi()('/admin/users')
+        const usersResponse = await useApi()('/users/discovery')
         const allUsers = usersResponse || []
         const targetUser = (allUsers as any[]).find((u: any) => u.email === newMessage.value.recipient)
 

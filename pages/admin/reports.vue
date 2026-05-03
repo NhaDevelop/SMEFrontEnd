@@ -87,7 +87,7 @@
                         <div>
                             <label
                                 class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">SME</label>
-                            <select v-model="selectedReportSmeId"
+                            <select v-model="selectedReportSmeId" @change="onReportSmeChange"
                                 class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-emerald-500 focus:border-emerald-500">
                                 <option :value="null">All SMEs</option>
                                 <option v-for="sme in smes" :key="sme.id" :value="sme.id">{{ sme.name }}</option>
@@ -101,7 +101,7 @@
                             <select v-model="selectedProgramId"
                                 class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-emerald-500 focus:border-emerald-500">
                                 <option :value="null">All Programs</option>
-                                <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
+                                <option v-for="p in reportPrograms" :key="p.id" :value="p.id">{{ p.name }}</option>
                             </select>
                         </div>
                         <!-- Report Type -->
@@ -111,9 +111,9 @@
                                 Type</label>
                             <select v-model="selectedReportType"
                                 class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2.5 focus:ring-emerald-500 focus:border-emerald-500">
-                                <option>Detailed Assessment</option>
-                                <option>Executive Summary</option>
-                                <option>Progress Report</option>
+                                <option value="PDF Readiness Report">PDF Readiness Report</option>
+                                <option value="XLSX Detailed Assessment">XLSX Detailed Assessment</option>
+                                <option value="Both">Both (PDF + XLSX)</option>
                             </select>
                         </div>
                         <!-- Generate Button -->
@@ -177,96 +177,105 @@
 
                     <!-- Responsive scroll wrapper -->
                     <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-white">
-                            <tr>
-                                <th scope="col"
-                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    SME Name</th>
-                                <th scope="col"
-                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Owner</th>
-                                <th scope="col"
-                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Sector</th>
-                                <th scope="col"
-                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Score</th>
-                                <th scope="col"
-                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Risk Level</th>
-                                <th scope="col"
-                                    class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Last Assessment</th>
-                                <th scope="col"
-                                    class="px-8 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
-                            <tr v-if="filteredSMEs.length === 0">
-                                <td colspan="7" class="px-8 py-12 text-center text-sm text-gray-400">No SMEs match your
-                                    current filters.</td>
-                            </tr>
-                            <tr v-for="sme in pagedSMEs" :key="sme.id" class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-8 py-5 whitespace-nowrap text-sm font-medium text-[#2BB8B8]">
-                                    <button @click="router.push('/sme/' + sme.id)" class="hover:underline text-left">{{
-                                        sme.name }}</button>
-                                </td>
-                                <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.userName || '—' }}</td>
-                                <td class="px-8 py-5 whitespace-nowrap">
-                                    <span v-if="sme.sector"
-                                        :style="`${getSectorStyle(sme.sector).bg}; ${getSectorStyle(sme.sector).text}; ${getSectorStyle(sme.sector).border}`"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border">
-                                        <span :style="getSectorStyle(sme.sector).dot"
-                                            class="w-1.5 h-1.5 rounded-full"></span>
-                                        {{ sme.sector }}
-                                    </span>
-                                    <span v-else class="text-sm text-gray-400">Not Assigned</span>
-                                </td>
-                                <td class="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">
-                                    {{ sme.score !== null ? Math.round(sme.score) : '—' }}
-                                </td>
-                                <td class="px-8 py-5 whitespace-nowrap">
-                                    <BaseRiskBadge :level="sme.risk" />
-                                </td>
-                                <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.date }}</td>
-                                <td class="px-8 py-5 whitespace-nowrap text-right text-sm">
-                                    <div class="flex justify-end gap-2">
-                                        <button
-                                            @click="generateReport('PDF Report', sme.name, sme.id, selectedTableProgramId)"
-                                            class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
-                                            <DocumentTextIcon class="w-3.5 h-3.5" /> PDF
-                                        </button>
-                                        <button
-                                            @click="generateReport('CSV Export', sme.name, sme.id, selectedTableProgramId)"
-                                            class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
-                                            <TableCellsIcon class="w-3.5 h-3.5" /> CSV
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-white">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        SME Name</th>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Owner</th>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Sector</th>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Score</th>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Risk Level</th>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Last Assessment</th>
+                                    <th scope="col"
+                                        class="px-8 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                <tr v-if="filteredSMEs.length === 0">
+                                    <td colspan="7" class="px-8 py-12 text-center text-sm text-gray-400">No SMEs match
+                                        your
+                                        current filters.</td>
+                                </tr>
+                                <tr v-for="sme in pagedSMEs" :key="sme.id"
+                                    class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-8 py-5 whitespace-nowrap text-sm font-medium text-[#2BB8B8]">
+                                        <button @click="router.push('/sme/' + sme.id)"
+                                            class="hover:underline text-left">{{
+                                                sme.name }}</button>
+                                    </td>
+                                    <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.userName || '—'
+                                        }}</td>
+                                    <td class="px-8 py-5 whitespace-nowrap">
+                                        <span v-if="sme.sector"
+                                            :style="`${getSectorStyle(sme.sector).bg}; ${getSectorStyle(sme.sector).text}; ${getSectorStyle(sme.sector).border}`"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border">
+                                            <span :style="getSectorStyle(sme.sector).dot"
+                                                class="w-1.5 h-1.5 rounded-full"></span>
+                                            {{ sme.sector }}
+                                        </span>
+                                        <span v-else class="text-sm text-gray-400">Not Assigned</span>
+                                    </td>
+                                    <td class="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">
+                                        {{ sme.score !== null ? Math.round(sme.score) : '—' }}
+                                    </td>
+                                    <td class="px-8 py-5 whitespace-nowrap">
+                                        <BaseRiskBadge :level="sme.risk" />
+                                    </td>
+                                    <td class="px-8 py-5 whitespace-nowrap text-sm text-gray-600">{{ sme.date }}</td>
+                                    <td class="px-8 py-5 whitespace-nowrap text-right text-sm">
+                                        <div class="flex justify-end gap-2">
+                                            <button
+                                                @click="generateReport('PDF Report', sme.name, sme.id, selectedTableProgramId)"
+                                                class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
+                                                <DocumentTextIcon class="w-3.5 h-3.5" /> PDF
+                                            </button>
+                                            <button
+                                                @click="generateReport('CSV Export', sme.name, sme.id, selectedTableProgramId)"
+                                                class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1">
+                                                <TableCellsIcon class="w-3.5 h-3.5" /> CSV
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- Pagination Footer -->
-                    <div v-if="smeTotalPages > 1" class="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                    <div v-if="smeTotalPages > 1"
+                        class="flex items-center justify-between px-6 py-4 border-t border-gray-100">
                         <span class="text-sm text-gray-500">
-                            Showing <span class="font-medium text-gray-900">{{ (smeCurrentPage - 1) * smePageSize + 1 }}</span>–<span class="font-medium text-gray-900">{{ Math.min(smeCurrentPage * smePageSize, filteredSMEs.length) }}</span> of <span class="font-medium text-gray-900">{{ filteredSMEs.length }}</span> SMEs
+                            Showing <span class="font-medium text-gray-900">{{ (smeCurrentPage - 1) * smePageSize + 1
+                                }}</span>–<span class="font-medium text-gray-900">{{ Math.min(smeCurrentPage *
+                                smePageSize, filteredSMEs.length) }}</span> of <span
+                                class="font-medium text-gray-900">{{ filteredSMEs.length }}</span> SMEs
                         </span>
                         <div class="flex items-center gap-1">
-                            <button @click="smeCurrentPage = Math.max(1, smeCurrentPage - 1)" :disabled="smeCurrentPage === 1"
+                            <button @click="smeCurrentPage = Math.max(1, smeCurrentPage - 1)"
+                                :disabled="smeCurrentPage === 1"
                                 class="px-2.5 py-1.5 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">‹</button>
                             <button v-for="n in pageNumbers" :key="String(n)"
-                                @click="typeof n === 'number' ? smeCurrentPage = n : null"
-                                :class="[
+                                @click="typeof n === 'number' ? smeCurrentPage = n : null" :class="[
                                     'px-3 py-1.5 text-sm rounded-md border transition-colors',
                                     n === smeCurrentPage ? 'bg-[#198754] text-white border-[#198754] font-semibold'
-                                    : n === '…' ? 'border-transparent text-gray-400 cursor-default'
-                                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                                        : n === '…' ? 'border-transparent text-gray-400 cursor-default'
+                                            : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                                 ]">{{ n }}</button>
-                            <button @click="smeCurrentPage = Math.min(smeTotalPages, smeCurrentPage + 1)" :disabled="smeCurrentPage === smeTotalPages"
+                            <button @click="smeCurrentPage = Math.min(smeTotalPages, smeCurrentPage + 1)"
+                                :disabled="smeCurrentPage === smeTotalPages"
                                 class="px-2.5 py-1.5 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">›</button>
                         </div>
                     </div>
@@ -278,7 +287,8 @@
                         <h3 class="text-lg font-bold text-gray-900">Recent Reports</h3>
                         <p class="text-gray-500 text-sm mt-1">Last 5 generated reports</p>
                     </div>
-                    <div v-if="recentReports.length === 0" class="px-6 py-8 text-center text-sm text-gray-400">No reports generated yet.</div>
+                    <div v-if="recentReports.length === 0" class="px-6 py-8 text-center text-sm text-gray-400">No
+                        reports generated yet.</div>
                     <div class="divide-y divide-gray-100">
                         <div v-for="report in recentReports.slice(0, 5)" :key="report.id"
                             class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
@@ -352,6 +362,8 @@ onMounted(async () => {
     await adminStore.fetchSmesData()
     await loadReportLogs()
     await loadPrograms()
+    // Initialize the report Program dropdown with all programs
+    reportPrograms.value = programs.value
     try {
         const api = useApi()
         sectorsList.value = await api('/admin/sectors')
@@ -396,8 +408,8 @@ const loadReportLogs = async () => {
         const api = useApi()
         const res = await api<any>('/admin/reports/logs')
         const logs = res?.data ?? res ?? [] // Handle both {data:[]} and direct []
-        
-        recentReports.value = logs.filter((log: any) => 
+
+        recentReports.value = logs.filter((log: any) =>
             ['GENERATED_REPORT', 'GENERATED_PORTFOLIO_REPORT', 'EXPORTED_DATA'].includes(log.action)
         ).map((log: any) => {
             const details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details
@@ -405,12 +417,12 @@ const loadReportLogs = async () => {
                 id: log.id,
                 name: details?.report_type || log.action.replace(/_/g, ' '),
                 company: details?.sme_name || details?.company_name || 'All SMEs',
-                date: new Date(log.created_at).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'short', 
-                    year: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                date: new Date(log.created_at).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
                 }),
                 type: details?.format || (log.action === 'EXPORTED_DATA' ? 'CSV' : 'PDF'),
                 smeId: details?.sme_id || log.target_id
@@ -521,6 +533,31 @@ const clearRouteProgram = async () => {
 // Badge styling logic removed in favor of BaseRiskBadge.vue
 
 const isGenerating = ref(false)
+const reportPrograms = ref<{ id: number; name: string }[]>([])
+const loadingReportPrograms = ref(false)
+
+const onReportSmeChange = async () => {
+    selectedProgramId.value = null
+    if (!selectedReportSmeId.value) {
+        // Reset to all programs when no SME selected
+        reportPrograms.value = programs.value
+        return
+    }
+    loadingReportPrograms.value = true
+    try {
+        const config = useRuntimeConfig()
+        const token = getToken()
+        const res = await fetch(`${config.public.apiBase}/admin/smes/${selectedReportSmeId.value}/programs`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        })
+        const json = await res.json()
+        reportPrograms.value = json.data ?? []
+    } catch {
+        reportPrograms.value = []
+    } finally {
+        loadingReportPrograms.value = false
+    }
+}
 
 const getToken = () => {
     const cookie = useCookie('irip_access_token').value
@@ -531,11 +568,11 @@ const getToken = () => {
     return null
 }
 
-const generateCustomReport = () => {
+const generateCustomReport = async () => {
     const smeName = selectedReportSmeId.value
         ? smes.value.find(s => s.id === selectedReportSmeId.value)?.name ?? 'SME'
         : 'All SMEs'
-    generateReport(selectedReportType.value, smeName, selectedReportSmeId.value, selectedProgramId.value)
+    await generateReport(selectedReportType.value, smeName, selectedReportSmeId.value, selectedProgramId.value)
 }
 
 const generateReport = async (
@@ -558,39 +595,48 @@ const generateReport = async (
     }
 
     try {
-        if (type === 'Raw Scores Export' || type === 'CSV Export' || type === 'CSV') {
-            const params: any = { type: 'sme', format: 'excel' }
-            if (smeId) params.id = smeId
-            if (programId) params.programId = programId
-            if (token) params.token = token
-            
-            const url = `${apiBase}/admin/reports/export${buildQuery(params)}`
-            
-            // Re-authenticate and fetch instead of direct link for better error handling
-            const response = await fetch(url)
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}))
-                alert(`Export Failed: ${errorData.error || 'Server error'}`)
-                return
-            }
+        const t = type.toLowerCase()
+        const runPortfolio = t.includes('portfolio')
+        const runXlsx = !runPortfolio && (t.includes('xlsx') || t.includes('csv') || t.includes('raw') || t === 'both')
+        const runPdf = !runPortfolio && (t.includes('pdf') || t.includes('readiness') || t === 'both')
 
-            const blob = await response.blob()
-            const downloadUrl = window.URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = downloadUrl
-            a.download = smeId ? `sme_${smeId}_report.csv` : (programId ? `program_${programId}_report.csv` : 'all_smes_report.csv')
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            window.URL.revokeObjectURL(downloadUrl)
-        } else if (type === 'Portfolio Comparison' || type === 'Portfolio') {
+        if (runPortfolio) {
             const params: any = {}
             if (programId) params.programId = programId
             if (token) params.token = token
             window.open(`${apiBase}/admin/reports/portfolio${buildQuery(params)}`, '_blank')
-        } else {
-            // Readiness / custom — individual or all SMEs
+        }
+
+        if (runXlsx) {
+            const params: any = {}
+            if (smeId) params.id = smeId
+            if (programId) params.programId = programId
+            if (token) params.token = token
+
+            const url = `${apiBase}/admin/reports/export${buildQuery(params)}`
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                alert(`XLSX Export Failed: ${errorData.message || errorData.error || 'Server error'}`)
+            } else {
+                const blob = await response.blob()
+                const downloadUrl = window.URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = downloadUrl
+                a.download = smeId
+                    ? `sme_${smeId}_assessment.xlsx`
+                    : (programId ? `program_${programId}_assessment.xlsx` : 'all_smes_assessment.xlsx')
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                window.URL.revokeObjectURL(downloadUrl)
+            }
+        }
+
+        if (runPdf) {
             const params: any = {}
             if (smeId) params.smeId = smeId
             if (programId) params.programId = programId

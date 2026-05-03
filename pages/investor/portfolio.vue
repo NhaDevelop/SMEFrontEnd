@@ -222,14 +222,13 @@
                       <p v-if="goal.proofNote" class="text-sm text-gray-700 italic border-l-2 border-purple-200 pl-3">
                         "{{ goal.proofNote }}"
                       </p>
-                      <a v-if="goal.proofDocument"
-                        :href="getDocumentUrl(goal.proofDocument)" target="_blank"
+                      <button v-if="goal.proofDocument" @click.stop="downloadProof(goal.id)"
                         class="flex items-center gap-2 text-teal-700 font-bold text-xs bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100 hover:bg-teal-100 transition-colors w-fit shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                         </svg>
                         View & Download Proof Document
-                      </a>
+                      </button>
                       <div class="flex gap-2 pt-1">
                         <button @click="handleVerifyGoal(goal.id)"
                           :disabled="verifyingGoalId === goal.id"
@@ -540,13 +539,29 @@ const openGoalDetail = (goal: any) => {
   isDetailOpen.value = true
 }
 
-const getDocumentUrl = (path: string) => {
-  if (!path) return '#'
-  if (path.startsWith('http')) return path
-  
-  const config = useRuntimeConfig()
-  const apiBase = config.public.apiBase.replace('/api', '')
-  return `${apiBase}/storage/${path}`
+const downloadProof = async (goalId: number | string) => {
+  if (!goalId) return
+  try {
+    const token = useCookie('irip_access_token').value || (typeof localStorage !== 'undefined' ? localStorage.getItem('irip_access_token') : null)
+    const config = useRuntimeConfig()
+    const response = await fetch(`${config.public.apiBase}/sme/goals/${goalId}/proof`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } else {
+      alert('Failed to download proof or you do not have permission.')
+    }
+  } catch (e) {
+    console.error(e)
+    alert('An error occurred while downloading the document.')
+  }
 }
 
 const handleCreateGoal = async (goalData: any) => {
@@ -652,9 +667,10 @@ onMounted(async () => {
   if (store.programs.length === 0) {
     await store.fetchPrograms()
   }
-  if (store.dealFlow.length === 0) {
-    store.fetchDealFlow()
-  }
+  // Always force-refresh dealFlow on Portfolio mount with NO program filter.
+  // This ensures the Create Goal modal always shows the correct latest overall score,
+  // not a stale score from a previously filtered view (e.g. Analytics filtered by program).
+  store.fetchDealFlow(true)
 })
 
 definePageMeta({

@@ -186,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { 
   MagnifyingGlassIcon, 
@@ -214,11 +214,19 @@ const saving = ref(false)
 
 const fetchApproved = async (page: number = 1) => {
   try {
-    await adminStore.fetchUsersData(page)
+    await adminStore.fetchUsersData(page, searchQuery.value, roleFilter.value)
   } catch (e) {
     console.error('[ApprovedUsers] Failed to fetch approved users', e)
   }
 }
+
+let searchTimeout: any = null
+watch([searchQuery, roleFilter], () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchApproved(1)
+  }, 500)
+})
 
 // Refresh button handler
 const refresh = () => fetchApproved()
@@ -230,13 +238,7 @@ onMounted(() => {
 })
 
 const filteredUsers = computed(() => {
-  return adminStore.users.filter(user => {
-    const matchesSearch = !searchQuery.value ||
-      user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesRole = roleFilter.value === 'all' || user.role === roleFilter.value
-    return matchesSearch && matchesRole
-  })
+  return adminStore.users
 })
 
 const deleteUser = async (id: number | string) => {

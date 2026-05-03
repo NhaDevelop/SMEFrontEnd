@@ -3,8 +3,8 @@ import { AdminRepository } from './admin.repository'
 export class AdminService {
   private repo = new AdminRepository()
 
-  async fetchUsers(page: number = 1) {
-    const response = await this.repo.getUsers(page) as any
+  async fetchUsers(page: number = 1, search?: string, role?: string) {
+    const response = await this.repo.getUsers(page, search, role) as any
     const mapUser = (u: any) => ({
       ...u,
       id: String(u.id),
@@ -41,8 +41,8 @@ export class AdminService {
     return { data: [], meta: null, stats: null }
   }
 
-  async fetchPendingUsers(page: number = 1) {
-    const response = await this.repo.getPendingUsers(page) as any
+  async fetchPendingUsers(page: number = 1, search?: string, role?: string) {
+    const response = await this.repo.getPendingUsers(page, search, role) as any
     const mapUser = (u: any) => ({
       ...u,
       id: String(u.id),

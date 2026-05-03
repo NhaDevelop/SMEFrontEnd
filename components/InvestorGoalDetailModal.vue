@@ -449,20 +449,16 @@ const safePillars = computed(() => {
     })
 })
 const safeHistory = computed(() => props.goal?.readinessHistory || [])
+// Removed confusing dummy fallback scores. If data is missing, we shouldn't invent it.
 const defaultLabels = ['Team', 'Business', 'Market', 'Financial', 'Operations', 'Legal', 'Growth', 'Data']
-const fallbackScores = [35, 45, 65, 40, 48, 55, 40, 88]
 
 const goalData = ref<any>(null)
-
-const handleMockDownload = () => {
-    alert('Document download simulated')
-}
 
 // Radar Chart Configuration
 const radarData = computed(() => {
     const labels = safePillars.value.length > 0 ? safePillars.value.map((p: any) => p.name || p.pillar_name) : defaultLabels
-    const currentData = safePillars.value.length > 0 ? safePillars.value.map((p: any) => p.score) : fallbackScores
-    const targetData = safePillars.value.length > 0 ? safePillars.value.map((p: any) => p.target || targetScore.value) : labels.map(() => targetScore.value)
+    const currentData = safePillars.value.length > 0 ? safePillars.value.map((p: any) => p.score) : defaultLabels.map(() => 0) // No dummy data
+    const targetData = safePillars.value.length > 0 ? safePillars.value.map((p: any) => p.target || targetScore.value) : defaultLabels.map(() => targetScore.value)
 
     return {
         labels,
@@ -720,9 +716,10 @@ const gapData = computed(() => {
             target: p.target || targetScore.value
         }))
     }
-    return fallbackScores.map((score, i) => ({
-        name: defaultLabels[i],
-        current: isAchieved ? targetScore.value : score,
+    // Return zeros if no real pillars exist
+    return defaultLabels.map((name) => ({
+        name,
+        current: 0,
         target: targetScore.value
     }))
 })

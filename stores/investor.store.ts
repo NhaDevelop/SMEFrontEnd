@@ -307,10 +307,10 @@ export const useInvestorStore = defineStore('investor', {
       
       const api = useApi()
       try {
-        await api('/sme/goals', {
+        // ✅ Fixed: use /{id} in path, not body — matches backend PATCH sme/goals/{id}
+        await api(`/sme/goals/${id}`, {
           method: 'PATCH',
           body: {
-            id,
             status: status === 'Achieved' ? 'COMPLETED' : status.toUpperCase()
           }
         })
@@ -323,7 +323,8 @@ export const useInvestorStore = defineStore('investor', {
     async deleteGoal(id: number) {
       const api = useApi()
       try {
-        await api(`/sme/goals?id=${id}`, {
+        // ✅ Fixed: use /{id} in path — matches backend DELETE sme/goals/{id}
+        await api(`/sme/goals/${id}`, {
           method: 'DELETE'
         })
         await this.fetchDealFlow(true)

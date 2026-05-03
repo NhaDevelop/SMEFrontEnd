@@ -21,10 +21,11 @@
             <div class="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-5">
                 <CheckCircleIcon class="w-9 h-9 text-teal-600" />
             </div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-3">Registration Submitted!</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-3">Check Your Email! 📬</h2>
             <p class="text-gray-500 leading-relaxed mb-8">
-                Your registration is <strong class="text-gray-800">pending admin approval</strong>. You will be
-                notified by email once your account has been verified and activated.
+                We've sent a <strong class="text-gray-800">verification link</strong> to your email address.
+                Please check your inbox and click the link to confirm your email.
+                Once verified, your application will be reviewed by our admin team.
             </p>
             <NuxtLink to="/login"
                 class="inline-flex items-center gap-2 px-8 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20">
