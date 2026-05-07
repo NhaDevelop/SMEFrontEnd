@@ -340,6 +340,26 @@ const buildQuery = (params: Record<string, any>) => {
     return qs ? '?' + qs : ''
 }
 
+const fetchAndOpenReport = async (url: string, token: string | null) => {
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'text/html' }
+    })
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        alert(`Report Failed: ${err.message || err.error || 'Server error'}`)
+        return
+    }
+    const blob = await response.blob()
+    const blobUrl = window.URL.createObjectURL(new Blob([blob], { type: 'text/html' }))
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000)
+}
+
 /** Portfolio or all-SME batch report */
 const generatePortfolioReport = async () => {
     isGenerating.value = true
@@ -347,8 +367,8 @@ const generatePortfolioReport = async () => {
         const params: Record<string, any> = {}
         const token = getToken()
         if (selectedProgramId.value) params.programId = selectedProgramId.value
-        if (token) params.token = token
-        window.open(`${apiBase.value}/admin/reports/portfolio${buildQuery(params)}`, '_blank')
+        const url = `${apiBase.value}/admin/reports/portfolio${buildQuery(params)}`
+        await fetchAndOpenReport(url, token)
         pushRecent('Portfolio Report', selectedProgramName.value || 'All Programs')
     } finally {
         isGenerating.value = false
@@ -363,8 +383,8 @@ const generateSmeReport = async (sme: { id: number | string; name: string }) => 
         const params: Record<string, any> = { smeId: sme.id }
         const token = getToken()
         if (selectedProgramId.value) params.programId = selectedProgramId.value
-        if (token) params.token = token
-        window.open(`${apiBase.value}/admin/reports/readiness${buildQuery(params)}`, '_blank')
+        const url = `${apiBase.value}/admin/reports/readiness${buildQuery(params)}`
+        await fetchAndOpenReport(url, token)
         pushRecent('Readiness Report', sme.name)
     } finally {
         isGenerating.value = false
@@ -383,17 +403,27 @@ const generateSmeCsv = async (sme: { id: number | string; name: string }) => {
         }
         const token = getToken()
         if (selectedProgramId.value) params.programId = selectedProgramId.value
-        if (token) params.token = token
 
-        const downloadUrl = `${apiBase.value}/admin/reports/export${buildQuery(params)}`
-        
-        // Use hidden anchor for direct download (standard pattern for CSV streams)
+        const url = `${apiBase.value}/admin/reports/export${buildQuery(params)}`
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        })
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}))
+            alert(`CSV Export Failed: ${err.message || err.error || 'Server error'}`)
+            return
+        }
+
+        const blob = await response.blob()
+        const downloadUrl = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = downloadUrl
         link.setAttribute('download', `${sme.name.toLowerCase().replace(/\s+/g, '-')}-assessment.csv`)
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 1000)
         
         pushRecent('CSV Export', sme.name)
     } catch (e) {

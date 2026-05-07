@@ -600,18 +600,38 @@ const generateReport = async (
         const runXlsx = !runPortfolio && (t.includes('xlsx') || t.includes('csv') || t.includes('raw') || t === 'both')
         const runPdf = !runPortfolio && (t.includes('pdf') || t.includes('readiness') || t === 'both')
 
+        const fetchAndOpenReport = async (url: string) => {
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'text/html' }
+            })
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                alert(`Report Failed: ${errorData.message || errorData.error || 'Server error'}`)
+            } else {
+                const blob = await response.blob()
+                const blobUrl = window.URL.createObjectURL(new Blob([blob], { type: 'text/html' }))
+                const a = document.createElement('a')
+                a.href = blobUrl
+                a.target = '_blank'
+                document.body.appendChild(a)
+                a.click()
+                document.body.removeChild(a)
+                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000)
+            }
+        }
+
         if (runPortfolio) {
             const params: any = {}
             if (programId) params.programId = programId
-            if (token) params.token = token
-            window.open(`${apiBase}/admin/reports/portfolio${buildQuery(params)}`, '_blank')
+
+            const url = `${apiBase}/admin/reports/portfolio${buildQuery(params)}`
+            await fetchAndOpenReport(url)
         }
 
         if (runXlsx) {
             const params: any = {}
             if (smeId) params.id = smeId
             if (programId) params.programId = programId
-            if (token) params.token = token
 
             const url = `${apiBase}/admin/reports/export${buildQuery(params)}`
             const response = await fetch(url, {
@@ -632,7 +652,7 @@ const generateReport = async (
                 document.body.appendChild(a)
                 a.click()
                 document.body.removeChild(a)
-                window.URL.revokeObjectURL(downloadUrl)
+                setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 1000)
             }
         }
 
@@ -640,8 +660,9 @@ const generateReport = async (
             const params: any = {}
             if (smeId) params.smeId = smeId
             if (programId) params.programId = programId
-            if (token) params.token = token
-            window.open(`${apiBase}/admin/reports/readiness${buildQuery(params)}`, '_blank')
+
+            const url = `${apiBase}/admin/reports/readiness${buildQuery(params)}`
+            await fetchAndOpenReport(url)
         }
 
         await loadReportLogs()
