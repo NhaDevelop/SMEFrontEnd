@@ -62,15 +62,16 @@
                                 {{ doc.category }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ doc.size }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ doc.date }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ formatFileSize(doc.size) }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ formatDate(doc.uploaded_at || doc.date) }}</td>
                         <td class="px-6 py-4 text-right">
-                            <a :href="doc.is_virtual ? getStorageUrl(doc.url) : useRuntimeConfig().public.apiBase + '/documents/' + doc.id" 
-                                :download="doc.is_virtual ? 'registration_certificate.pdf' : true" 
+                            <button @click="downloadDocument(doc)" :disabled="downloadingId === doc.id"
                                 :title="'Download ' + doc.name"
-                                class="inline-flex p-2 text-teal-600 hover:text-white hover:bg-teal-600 bg-teal-50 rounded-lg transition-all shadow-sm border border-teal-100 items-center justify-center focus:ring-2 focus:ring-teal-500 outline-none">
-                                <ArrowDownTrayIcon class="w-4 h-4" />
-                            </a>
+                                class="inline-flex p-2 text-teal-600 hover:text-white hover:bg-teal-600 bg-teal-50 rounded-lg transition-all shadow-sm border border-teal-100 items-center justify-center focus:ring-2 focus:ring-teal-500 outline-none disabled:opacity-50">
+                                <span v-if="downloadingId === doc.id"
+                                    class="w-4 h-4 border-2 border-teal-300 border-t-white rounded-full animate-spin inline-block"></span>
+                                <ArrowDownTrayIcon v-else class="w-4 h-4" />
+                            </button>
                         </td>
                     </tr>
                 </tbody>
@@ -95,6 +96,7 @@ const props = defineProps<{
 
 const documents = ref<any[]>([])
 const loading = ref(true)
+const downloadingId = ref<string | null>(null)
 
 const api = useApi()
 
@@ -108,8 +110,12 @@ const getStorageUrl = (path: string) => {
 const loadDocuments = async () => {
     loading.value = true
     try {
-        const data = await api<{ documents: any[] }>(`/documents?smeId=${props.smeId}`)
-        let docs = data.documents || []
+        const response = await api<any>(`/documents?smeId=${props.smeId}`)
+        // Handle Laravel's success response wrapper ({ success: true, data: [...] })
+        let docs = response?.data || response || []
+
+        // If it's wrapped in a 'documents' object (legacy), handle that too
+        if (docs.documents) docs = docs.documents
 
         // If registration document exists, prepend it as a virtual document
         if (props.registrationDocument) {
@@ -134,6 +140,58 @@ const loadDocuments = async () => {
         documents.value = []
     } finally {
         loading.value = false
+    }
+}
+
+const downloadDocument = async (doc: any) => {
+    // If it's the virtual registration document, we can just open it since it's a public storage URL
+    if (doc.is_virtual && doc.url) {
+        window.open(getStorageUrl(doc.url), '_blank')
+        return
+    }
+
+    downloadingId.value = doc.id
+    try {
+        const downloadUrl = doc.download_url || `/documents/${doc.id}/download`
+
+        const response = await api(downloadUrl, {
+            responseType: 'blob'
+        })
+
+        const blob = response instanceof Blob ? response : new Blob([response as any])
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', doc.original_filename || doc.name || 'document')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (e) {
+        console.error('Download failed:', e)
+        alert('Failed to download document. It may have been deleted or you do not have permission.')
+    } finally {
+        downloadingId.value = null
+    }
+}
+
+const formatFileSize = (bytes: any): string => {
+    if (!bytes || bytes === 'N/A') return 'N/A'
+    const b = Number(bytes)
+    if (isNaN(b)) return String(bytes)
+    if (b < 1024) return `${b} B`
+    if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
+    return `${(b / (1024 * 1024)).toFixed(2)} MB`
+}
+
+const formatDate = (dateStr: any): string => {
+    if (!dateStr || dateStr === 'Registration') return dateStr || '—'
+    try {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+        })
+    } catch {
+        return dateStr
     }
 }
 

@@ -119,16 +119,18 @@
                                             {{ doc.category }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ doc.size }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ doc.date }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ formatFileSize(doc.size) }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(doc.uploaded_at) }}</td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <!-- Download -->
-                                            <a :href="useRuntimeConfig().public.apiBase + '/documents/' + doc.id" download
+                                            <button @click="downloadDocument(doc)" :disabled="downloadingId === doc.id"
                                                 :title="'Download ' + doc.name"
-                                                class="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors">
-                                                <ArrowDownTrayIcon class="w-4 h-4" />
-                                            </a>
+                                                class="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors disabled:opacity-40">
+                                                <ArrowDownTrayIcon v-if="downloadingId !== doc.id" class="w-4 h-4" />
+                                                <span v-else
+                                                    class="w-4 h-4 border-2 border-teal-300 border-t-teal-600 rounded-full animate-spin inline-block"></span>
+                                            </button>
                                             <!-- Delete -->
                                             <button @click="deleteDocument(doc.id)" :disabled="deletingId === doc.id"
                                                 :title="'Delete ' + doc.name"
@@ -183,7 +185,7 @@
                                 <p class="text-sm font-medium text-gray-600">
                                     <span class="text-teal-600">Click to upload</span> or drag & drop
                                 </p>
-                                <p class="text-xs text-gray-400 mt-1">PDF, Word, Excel, PowerPoint, Images (max 50MB)
+                                <p class="text-xs text-gray-400 mt-1">PDF, Word, Excel, PowerPoint (max 5MB)
                                 </p>
                             </div>
                             <div v-else class="flex items-center justify-center gap-2">
@@ -288,6 +290,7 @@ const loadingDocs = ref(true)
 const uploading = ref(false)
 const uploadError = ref('')
 const deletingId = ref<string | null>(null)
+const downloadingId = ref<string | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const categories = [
@@ -304,11 +307,13 @@ const uploadCategories = categories.filter(c => c !== 'All Categories')
 interface Doc {
     id: string
     name: string
+    original_filename?: string
     category: string
-    date: string
-    size: string
     description?: string
+    size: number
+    uploaded_at: string
     download_url?: string
+    is_verified?: boolean
 }
 
 const documents = ref<Doc[]>([])
@@ -358,8 +363,10 @@ const loadDocuments = async () => {
     const api = useApi()
     try {
         const response = await api<any>('/documents')
-        const data = response.data || response || {}
-        documents.value = data.documents || data || []
+        // Handle Laravel's { success: true, data: [...] } wrapper
+        let data = response?.data || response || []
+        if (data.documents) data = data.documents
+        documents.value = Array.isArray(data) ? data : []
     } catch (e) {
         console.error('Failed to load documents:', e)
         documents.value = []
@@ -375,9 +382,13 @@ const handleFileUpload = (event: Event) => {
     const target = event.target as HTMLInputElement
     const file = target.files?.item(0)
     if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            uploadError.value = 'File is too large. Maximum size is 5MB.'
+            return
+        }
+        uploadError.value = ''
         newDocument.value.file = file
         if (!newDocument.value.name) {
-            // Strip extension for display name
             newDocument.value.name = file.name.replace(/\.[^.]+$/, '')
         }
     }
@@ -387,6 +398,11 @@ const handleDrop = (event: DragEvent) => {
     isDragging.value = false
     const file = event.dataTransfer?.files?.item(0)
     if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            uploadError.value = 'File is too large. Maximum size is 5MB.'
+            return
+        }
+        uploadError.value = ''
         newDocument.value.file = file
         if (!newDocument.value.name) {
             newDocument.value.name = file.name.replace(/\.[^.]+$/, '')
@@ -434,16 +450,44 @@ const deleteDocument = async (id: string) => {
         type: 'danger'
     })
     if (!confirmed) return
-    
+
     deletingId.value = id
     const api = useApi()
     try {
         await api(`/documents/${id}`, { method: 'DELETE' })
         documents.value = documents.value.filter(d => d.id !== id)
     } catch (e) {
-        alert('Failed to delete document.')
+        console.error('Delete failed:', e)
+        // Show error inline rather than a blocking alert
+        uploadError.value = 'Failed to delete document. Please try again.'
     } finally {
         deletingId.value = null
+    }
+}
+
+// ── Download ──────────────────────────────────────────────────────────────────
+const downloadDocument = async (doc: Doc) => {
+    downloadingId.value = doc.id
+    const api = useApi()
+
+    try {
+        const downloadUrl = doc.download_url || `/documents/${doc.id}/download`
+        const response = await api(downloadUrl, { responseType: 'blob' })
+        const blob = response instanceof Blob ? response : new Blob([response as any])
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', doc.original_filename || doc.name || 'document')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (e) {
+        console.error('Download failed:', e)
+        // Surface error inline instead of blocking alert
+        uploadError.value = 'Failed to download "' + doc.name + '". Please try again.'
+    } finally {
+        downloadingId.value = null
     }
 }
 
@@ -451,5 +495,25 @@ const deleteDocument = async (id: string) => {
 const selectCategory = (category: string) => {
     selectedCategory.value = category
     isFilterOpen.value = false
+}
+
+const formatFileSize = (bytes: any): string => {
+    if (!bytes) return 'N/A'
+    const b = Number(bytes)
+    if (isNaN(b)) return String(bytes)
+    if (b < 1024) return `${b} B`
+    if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
+    return `${(b / (1024 * 1024)).toFixed(2)} MB`
+}
+
+const formatDate = (dateStr: any): string => {
+    if (!dateStr) return '—'
+    try {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+        })
+    } catch {
+        return dateStr
+    }
 }
 </script>

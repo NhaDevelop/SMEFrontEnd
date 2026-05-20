@@ -59,8 +59,6 @@ These endpoints are currently being called using `$fetch('/api/...')` which hits
 *   [ ] **CSV/PDF Exports** (`GET /api/reports/export`)
 *   [ ] **Readiness Visuals** (`GET /api/reports/readiness`)
 
----
-
 ## 🚀 Priority Checklist for Next Migration
 To finish the Laravel backend, I recommend migrating these in this order:
 1.  **SME Database Logic**: Move the `goals` and `assessments` tables to Laravel.

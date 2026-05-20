@@ -218,7 +218,7 @@
         </div>
 
         <!-- Custom Modals -->
-        <QuestionModal :is-open="showModal" :initial-data="editingQuestion" :pillars="pillars" :error-message="modalError"
+        <QuestionModal :is-open="showModal" :initial-data="editingQuestion" :pillars="activePillars" :error-message="modalError"
             @close="closeModal" @save="handleSave" />
         <PillarWeightModal :is-open="showWeightModal" :pillars="pillars" @close="showWeightModal = false"
             @save="handleSaveWeights" />
@@ -261,6 +261,7 @@ const modalError = ref('')
 const expandedPillars = ref<string[]>([])
 
 const pillars = computed(() => adminStore.frameworkSettings || [])
+const activePillars = computed(() => pillars.value.filter(p => Number(p.weight) > 0))
 const templates = computed(() => adminStore.templates || [])
 const selectedTemplateId = ref(route.query.templateId as string || 'temp_001')
 
@@ -357,8 +358,21 @@ const getIconForType = (type: string) => {
 
 const openCreateModal = () => {
     modalError.value = ''
+    
+    // If no active pillars exist, prevent creating a question
+    if (activePillars.value.length === 0) {
+        alert("You must configure pillar weights (greater than 0%) before adding questions.")
+        return
+    }
+
+    // Default to the first active pillar, unless currently filtering by a specific active pillar
+    let defaultPillarId = activePillars.value[0]?.id
+    if (selectedPillar.value !== 'all' && activePillars.value.some(p => p.id === selectedPillar.value)) {
+        defaultPillarId = selectedPillar.value
+    }
+
     editingQuestion.value = {
-        pillarId: selectedPillar.value === 'all' ? pillars.value[0]?.id : selectedPillar.value,
+        pillarId: defaultPillarId,
         templateId: selectedTemplateId.value
     }
     showModal.value = true

@@ -26,24 +26,26 @@
           Assess, improve, and showcase your startup's investment potential with our comprehensive readiness platform.
         </p>
 
-        <div v-if="auth.isAuthenticated.value" class="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <NuxtLink :to="dashboardRoute"
-            class="w-full sm:w-auto px-10 py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-xl shadow-teal-600/25 hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 text-base">
-            Go to Your Dashboard
-            <ArrowRightIcon class="w-5 h-5" />
-          </NuxtLink>
-        </div>
-        <div v-else class="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <NuxtLink to="/login"
-            class="w-full sm:w-auto px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition-all shadow-xl shadow-teal-600/25 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
-            Start Free Assessment
-            <ArrowRightIcon class="w-4 h-4" />
-          </NuxtLink>
-          <NuxtLink to="/login"
-            class="w-full sm:w-auto px-8 py-3 bg-white text-gray-700 border border-gray-200 hover:border-teal-200 hover:bg-teal-50 text-sm font-semibold rounded-lg transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm">
-            I'm an Investor
-          </NuxtLink>
-        </div>
+        <ClientOnly>
+          <div v-if="auth.isAuthenticated.value" class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <NuxtLink :to="dashboardRoute"
+              class="w-full sm:w-auto px-10 py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-xl shadow-teal-600/25 hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 text-base">
+              Go to Your Dashboard
+              <ArrowRightIcon class="w-5 h-5" />
+            </NuxtLink>
+          </div>
+          <div v-else class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <NuxtLink to="/login"
+              class="w-full sm:w-auto px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition-all shadow-xl shadow-teal-600/25 hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
+              Start Free Assessment
+              <ArrowRightIcon class="w-4 h-4" />
+            </NuxtLink>
+            <NuxtLink to="/login"
+              class="w-full sm:w-auto px-8 py-3 bg-white text-gray-700 border border-gray-200 hover:border-teal-200 hover:bg-teal-50 text-sm font-semibold rounded-lg transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm">
+              I'm an Investor
+            </NuxtLink>
+          </div>
+        </ClientOnly>
       </div>
     </section>
 
@@ -161,16 +163,18 @@
         <p class="text-lg text-teal-100/80 mb-10 max-w-2xl mx-auto">
           Join hundreds of SMEs who have improved their investment readiness with IRIP.
         </p>
-        <NuxtLink v-if="auth.isAuthenticated.value" :to="dashboardRoute"
-          class="px-8 py-3 bg-white text-teal-700 font-semibold rounded-lg transition-all shadow-xl hover:-translate-y-0.5 active:scale-95 flex w-fit items-center justify-center gap-2 mx-auto">
-          Go to Your Dashboard
-          <ArrowRightIcon class="w-4 h-4" />
-        </NuxtLink>
-        <NuxtLink v-else to="/login"
-          class="px-8 py-3 bg-white text-teal-700 font-semibold rounded-lg transition-all shadow-xl hover:-translate-y-0.5 active:scale-95 flex w-fit items-center justify-center gap-2 mx-auto">
-          Start Your Free Assessment
-          <ArrowRightIcon class="w-4 h-4" />
-        </NuxtLink>
+        <ClientOnly>
+          <NuxtLink v-if="auth.isAuthenticated.value" :to="dashboardRoute"
+            class="px-8 py-3 bg-white text-teal-700 font-semibold rounded-lg transition-all shadow-xl hover:-translate-y-0.5 active:scale-95 flex w-fit items-center justify-center gap-2 mx-auto">
+            Go to Your Dashboard
+            <ArrowRightIcon class="w-4 h-4" />
+          </NuxtLink>
+          <NuxtLink v-else to="/login"
+            class="px-8 py-3 bg-white text-teal-700 font-semibold rounded-lg transition-all shadow-xl hover:-translate-y-0.5 active:scale-95 flex w-fit items-center justify-center gap-2 mx-auto">
+            Start Your Free Assessment
+            <ArrowRightIcon class="w-4 h-4" />
+          </NuxtLink>
+        </ClientOnly>
       </div>
     </section>
 
